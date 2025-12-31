@@ -1,0 +1,132 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'event_model.g.dart';
+
+/// Location data stored as JSONB in Supabase
+@JsonSerializable()
+class LocationData {
+  final String? address;
+  final double? lat;
+  final double? lng;
+
+  LocationData({this.address, this.lat, this.lng});
+
+  factory LocationData.fromJson(Map<String, dynamic> json) =>
+      _$LocationDataFromJson(json);
+  Map<String, dynamic> toJson() => _$LocationDataToJson(this);
+}
+
+/// Event model - represents job/shift events created by companies
+@JsonSerializable()
+class EventModel {
+  final String id;
+  final String companyId;
+  final String title;
+  final String? description;
+  final LocationData? location;
+  final DateTime startTime;
+  final DateTime endTime;
+  final int? capacity;
+  final String? imagePath;
+  final String
+  status; // 'draft', 'pending', 'published', 'completed', 'cancelled'
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  EventModel({
+    required this.id,
+    required this.companyId,
+    required this.title,
+    this.description,
+    this.location,
+    required this.startTime,
+    required this.endTime,
+    this.capacity,
+    this.imagePath,
+    this.status = 'pending',
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  // Status helpers
+  bool get isPending => status == 'pending';
+  bool get isPublished => status == 'published';
+  bool get isCompleted => status == 'completed';
+  bool get isCancelled => status == 'cancelled';
+  bool get isDraft => status == 'draft';
+
+  // Time helpers
+  bool get isUpcoming => endTime.isAfter(DateTime.now());
+  bool get isOngoing =>
+      startTime.isBefore(DateTime.now()) && endTime.isAfter(DateTime.now());
+  bool get isPast => endTime.isBefore(DateTime.now());
+
+  EventModel copyWith({
+    String? id,
+    String? companyId,
+    String? title,
+    String? description,
+    LocationData? location,
+    DateTime? startTime,
+    DateTime? endTime,
+    int? capacity,
+    String? imagePath,
+    String? status,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return EventModel(
+      id: id ?? this.id,
+      companyId: companyId ?? this.companyId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      location: location ?? this.location,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      capacity: capacity ?? this.capacity,
+      imagePath: imagePath ?? this.imagePath,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  factory EventModel.fromJson(Map<String, dynamic> json) =>
+      _$EventModelFromJson(json);
+  Map<String, dynamic> toJson() => _$EventModelToJson(this);
+
+  @override
+  String toString() => 'EventModel($id, $title, $status)';
+}
+
+/// Extension to provide UI-expected properties
+extension EventModelExtensions on EventModel {
+  // Company name - placeholder until we implement proper company joins
+  String get company =>
+      'Company'; // TODO: Fetch from company table using companyId
+
+  // Event date - simplified date field (uses startTime)
+  DateTime get eventDate => startTime;
+
+  // Number of applicants - placeholder until we implement counting
+  int get applicants => 0; // TODO: Count applications for this event
+
+  // Rating - placeholder until we implement rating system
+  double get rating => 0.0; // TODO: Calculate average rating
+}
+
+/// Extension for LocationData
+extension LocationDataExtensions on LocationData {
+  // City extracted from address or placeholder
+  String get city {
+    if (address != null && address!.isNotEmpty) {
+      // Try to extract city from address (simple approach)
+      final parts = address!.split(',');
+      if (parts.length > 1) {
+        return parts[parts.length - 2].trim();
+      }
+      return address!;
+    }
+    return 'Unknown';
+  }
+}
