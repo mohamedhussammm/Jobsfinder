@@ -9,23 +9,23 @@ part of 'application_model.dart';
 ApplicationModel _$ApplicationModelFromJson(Map<String, dynamic> json) =>
     ApplicationModel(
       id: json['id'] as String,
-      userId: json['userId'] as String,
-      eventId: json['eventId'] as String,
+      userId: json['user_id'] as String,
+      eventId: json['event_id'] as String,
       status: json['status'] as String? ?? 'applied',
-      cvPath: json['cvPath'] as String?,
-      coverLetter: json['coverLetter'] as String?,
-      appliedAt: DateTime.parse(json['appliedAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      cvPath: json['cv_path'] as String?,
+      coverLetter: json['cover_letter'] as String?,
+      appliedAt: DateTime.parse(json['applied_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
 
 Map<String, dynamic> _$ApplicationModelToJson(ApplicationModel instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'userId': instance.userId,
-      'eventId': instance.eventId,
+      'user_id': instance.userId,
+      'event_id': instance.eventId,
       'status': instance.status,
-      'cvPath': instance.cvPath,
-      'coverLetter': instance.coverLetter,
-      'appliedAt': instance.appliedAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
+      'cv_path': instance.cvPath,
+      'cover_letter': instance.coverLetter,
+      'applied_at': instance.appliedAt.toIso8601String(),
+      'updated_at': instance.updatedAt.toIso8601String(),
     };

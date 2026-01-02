@@ -5,12 +5,25 @@ part 'company_model.g.dart';
 /// Company model - represents a company that submits event requests
 @JsonSerializable()
 class CompanyModel {
+  @JsonKey(name: 'id')
   final String id;
+
+  @JsonKey(name: 'name')
   final String name;
+
+  @JsonKey(name: 'description')
   final String? description;
+
+  @JsonKey(name: 'logo_path')
   final String? logoPath;
+
+  @JsonKey(name: 'verified')
   final bool verified;
+
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
+
+  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
   CompanyModel({
@@ -43,7 +56,8 @@ class CompanyModel {
     );
   }
 
-  factory CompanyModel.fromJson(Map<String, dynamic> json) => _$CompanyModelFromJson(json);
+  factory CompanyModel.fromJson(Map<String, dynamic> json) =>
+      _$CompanyModelFromJson(json);
   Map<String, dynamic> toJson() => _$CompanyModelToJson(this);
 
   @override

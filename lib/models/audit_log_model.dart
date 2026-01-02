@@ -5,14 +5,31 @@ part 'audit_log_model.g.dart';
 /// Audit Log model - tracks admin actions
 @JsonSerializable()
 class AuditLogModel {
+  @JsonKey(name: 'id')
   final String id;
+
+  @JsonKey(name: 'admin_user_id')
   final String? adminUserId;
+
+  @JsonKey(name: 'action')
   final String action;
+
+  @JsonKey(name: 'target_table')
   final String? targetTable;
+
+  @JsonKey(name: 'target_id')
   final String? targetId;
+
+  @JsonKey(name: 'old_values')
   final Map<String, dynamic>? oldValues;
+
+  @JsonKey(name: 'new_values')
   final Map<String, dynamic>? newValues;
+
+  @JsonKey(name: 'ip_address')
   final String? ipAddress;
+
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
   AuditLogModel({
@@ -57,7 +74,8 @@ class AuditLogModel {
     );
   }
 
-  factory AuditLogModel.fromJson(Map<String, dynamic> json) => _$AuditLogModelFromJson(json);
+  factory AuditLogModel.fromJson(Map<String, dynamic> json) =>
+      _$AuditLogModelFromJson(json);
   Map<String, dynamic> toJson() => _$AuditLogModelToJson(this);
 
   @override

@@ -8,21 +8,21 @@ part of 'rating_model.dart';
 
 RatingModel _$RatingModelFromJson(Map<String, dynamic> json) => RatingModel(
       id: json['id'] as String,
-      raterUserId: json['raterUserId'] as String,
-      ratedUserId: json['ratedUserId'] as String,
-      eventId: json['eventId'] as String?,
+      raterUserId: json['rater_user_id'] as String,
+      ratedUserId: json['rated_user_id'] as String,
+      eventId: json['event_id'] as String?,
       score: (json['score'] as num).toInt(),
-      textReview: json['textReview'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      textReview: json['text_review'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
     );
 
 Map<String, dynamic> _$RatingModelToJson(RatingModel instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'raterUserId': instance.raterUserId,
-      'ratedUserId': instance.ratedUserId,
-      'eventId': instance.eventId,
+      'rater_user_id': instance.raterUserId,
+      'rated_user_id': instance.ratedUserId,
+      'event_id': instance.eventId,
       'score': instance.score,
-      'textReview': instance.textReview,
-      'createdAt': instance.createdAt.toIso8601String(),
+      'text_review': instance.textReview,
+      'created_at': instance.createdAt.toIso8601String(),
     };

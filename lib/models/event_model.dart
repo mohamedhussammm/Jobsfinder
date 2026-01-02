@@ -5,8 +5,13 @@ part 'event_model.g.dart';
 /// Location data stored as JSONB in Supabase
 @JsonSerializable()
 class LocationData {
+  @JsonKey(name: 'address')
   final String? address;
+
+  @JsonKey(name: 'lat')
   final double? lat;
+
+  @JsonKey(name: 'lng')
   final double? lng;
 
   LocationData({this.address, this.lat, this.lng});
@@ -19,18 +24,40 @@ class LocationData {
 /// Event model - represents job/shift events created by companies
 @JsonSerializable()
 class EventModel {
+  @JsonKey(name: 'id')
   final String id;
+
+  @JsonKey(name: 'company_id')
   final String companyId;
+
+  @JsonKey(name: 'title')
   final String title;
+
+  @JsonKey(name: 'description')
   final String? description;
+
+  @JsonKey(name: 'location')
   final LocationData? location;
+
+  @JsonKey(name: 'start_time')
   final DateTime startTime;
+
+  @JsonKey(name: 'end_time')
   final DateTime endTime;
+
+  @JsonKey(name: 'capacity')
   final int? capacity;
+
+  @JsonKey(name: 'image_path')
   final String? imagePath;
-  final String
-  status; // 'draft', 'pending', 'published', 'completed', 'cancelled'
+
+  @JsonKey(name: 'status')
+  final String status; // 'draft', 'pending', 'published', 'completed', 'cancelled'
+
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
+
+  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
   EventModel({

@@ -21,33 +21,33 @@ Map<String, dynamic> _$LocationDataToJson(LocationData instance) =>
 
 EventModel _$EventModelFromJson(Map<String, dynamic> json) => EventModel(
       id: json['id'] as String,
-      companyId: json['companyId'] as String,
+      companyId: json['company_id'] as String,
       title: json['title'] as String,
       description: json['description'] as String?,
       location: json['location'] == null
           ? null
           : LocationData.fromJson(json['location'] as Map<String, dynamic>),
-      startTime: DateTime.parse(json['startTime'] as String),
-      endTime: DateTime.parse(json['endTime'] as String),
+      startTime: DateTime.parse(json['start_time'] as String),
+      endTime: DateTime.parse(json['end_time'] as String),
       capacity: (json['capacity'] as num?)?.toInt(),
-      imagePath: json['imagePath'] as String?,
+      imagePath: json['image_path'] as String?,
       status: json['status'] as String? ?? 'pending',
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
 
 Map<String, dynamic> _$EventModelToJson(EventModel instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'companyId': instance.companyId,
+      'company_id': instance.companyId,
       'title': instance.title,
       'description': instance.description,
       'location': instance.location,
-      'startTime': instance.startTime.toIso8601String(),
-      'endTime': instance.endTime.toIso8601String(),
+      'start_time': instance.startTime.toIso8601String(),
+      'end_time': instance.endTime.toIso8601String(),
       'capacity': instance.capacity,
-      'imagePath': instance.imagePath,
+      'image_path': instance.imagePath,
       'status': instance.status,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
+      'created_at': instance.createdAt.toIso8601String(),
+      'updated_at': instance.updatedAt.toIso8601String(),
     };

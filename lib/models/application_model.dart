@@ -5,14 +5,28 @@ part 'application_model.g.dart';
 /// Application model - user's application to an event
 @JsonSerializable()
 class ApplicationModel {
+  @JsonKey(name: 'id')
   final String id;
+
+  @JsonKey(name: 'user_id')
   final String userId;
+
+  @JsonKey(name: 'event_id')
   final String eventId;
-  final String
-  status; // 'applied', 'shortlisted', 'invited', 'accepted', 'declined', 'rejected'
+
+  @JsonKey(name: 'status')
+  final String status; // 'applied', 'shortlisted', 'invited', 'accepted', 'declined', 'rejected'
+
+  @JsonKey(name: 'cv_path')
   final String? cvPath;
+
+  @JsonKey(name: 'cover_letter')
   final String? coverLetter;
+
+  @JsonKey(name: 'applied_at')
   final DateTime appliedAt;
+
+  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
   ApplicationModel({

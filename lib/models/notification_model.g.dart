@@ -9,23 +9,23 @@ part of 'notification_model.dart';
 NotificationModel _$NotificationModelFromJson(Map<String, dynamic> json) =>
     NotificationModel(
       id: json['id'] as String,
-      userId: json['userId'] as String,
+      userId: json['user_id'] as String,
       type: json['type'] as String? ?? 'message',
-      relatedId: json['relatedId'] as String?,
+      relatedId: json['related_id'] as String?,
       title: json['title'] as String?,
       message: json['message'] as String?,
-      isRead: json['isRead'] as bool? ?? false,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      isRead: json['is_read'] as bool? ?? false,
+      createdAt: DateTime.parse(json['created_at'] as String),
     );
 
 Map<String, dynamic> _$NotificationModelToJson(NotificationModel instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'userId': instance.userId,
+      'user_id': instance.userId,
       'type': instance.type,
-      'relatedId': instance.relatedId,
+      'related_id': instance.relatedId,
       'title': instance.title,
       'message': instance.message,
-      'isRead': instance.isRead,
-      'createdAt': instance.createdAt.toIso8601String(),
+      'is_read': instance.isRead,
+      'created_at': instance.createdAt.toIso8601String(),
     };

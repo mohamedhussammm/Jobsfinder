@@ -2,72 +2,130 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/analytics_model.dart';
 import '../../controllers/analytics_controller.dart';
-import '../../controllers/event_controller.dart';
-import '../../controllers/stub_providers.dart';
+import '../../controllers/admin_controller.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
-import '../../core/theme/glass.dart';
 import '../../core/theme/shadows.dart';
+import 'users/admin_users_screen.dart';
+import 'events/admin_events_screen.dart';
 
-class AdminDashboardScreen extends ConsumerWidget {
+class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final analyticsAsync = ref.watch(analyticsKPIProvider);
-    final pendingEventsAsync = ref.watch(pendingEventsAdminProvider);
+  ConsumerState<AdminDashboardScreen> createState() =>
+      _AdminDashboardScreenState();
+}
 
+class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
+  int _selectedIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: AppColors.background,
         title: Text(
-          'Admin Dashboard',
+          _getTitle(_selectedIndex),
           style: AppTypography.headlineSmall.copyWith(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // KPI Cards
-            analyticsAsync.when(
-              data: (kpi) => _buildKPICards(context, kpi),
-              loading: () => const _LoadingKPICards(),
-              error: (error, st) => Text('Error: $error'),
-            ),
-            const SizedBox(height: 24),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: const [
+          _AdminOverviewTab(),
+          AdminEventsScreen(),
+          AdminUsersScreen(),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: AppColors.surface,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textSecondary,
+        currentIndex: _selectedIndex,
+        onTap: (index) => setState(() => _selectedIndex = index),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'Overview',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Events'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Users'),
+        ],
+      ),
+    );
+  }
 
-            // Pending Events Section
-            Text(
-              'Pending Event Requests',
-              style: AppTypography.titleLarge.copyWith(
-                color: AppColors.textPrimary,
-              ),
+  String _getTitle(int index) {
+    switch (index) {
+      case 0:
+        return 'Admin Dashboard';
+      case 1:
+        return 'Manage Events';
+      case 2:
+        return 'Manage Users';
+      default:
+        return 'Admin';
+    }
+  }
+}
+
+class _AdminOverviewTab extends ConsumerWidget {
+  const _AdminOverviewTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final analyticsAsync = ref.watch(analyticsKPIProvider);
+    final pendingEventsAsync = ref.watch(pendingEventsAdminProvider);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // KPI Cards
+          analyticsAsync.when(
+            data: (kpi) => _buildKPICards(context, kpi),
+            loading: () => const _LoadingKPICards(),
+            error: (error, st) => Text(
+              'Error: $error',
+              style: const TextStyle(color: Colors.red),
             ),
-            const SizedBox(height: 12),
-            pendingEventsAsync.when(
-              data: (events) => events.isEmpty
-                  ? _buildEmptyState()
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: events.length,
-                      itemBuilder: (context, index) {
-                        final event = events[index];
-                        return _buildPendingEventCard(context, event);
-                      },
-                    ),
-              loading: () => const _LoadingEventList(),
-              error: (error, st) => Text('Error: $error'),
+          ),
+          const SizedBox(height: 24),
+
+          // Pending Events Section
+          Text(
+            'Pending Event Requests',
+            style: AppTypography.titleLarge.copyWith(
+              color: AppColors.textPrimary,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          pendingEventsAsync.when(
+            data: (events) => events.isEmpty
+                ? _buildEmptyState()
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: events.length,
+                    itemBuilder: (context, index) {
+                      final event = events[index];
+                      return _buildPendingEventCard(context, event);
+                    },
+                  ),
+            loading: () => const _LoadingEventList(),
+            error: (error, st) => Text(
+              'Error: $error',
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -132,7 +190,7 @@ class AdminDashboardScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          Icon(Icons.inbox, size: 48, color: AppColors.textTertiary),
+          const Icon(Icons.inbox, size: 48, color: AppColors.textTertiary),
           const SizedBox(height: 16),
           Text(
             'No Pending Requests',
@@ -194,34 +252,6 @@ class AdminDashboardScreen extends ConsumerWidget {
                   style: AppTypography.labelSmall.copyWith(
                     color: AppColors.warning,
                     fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.check),
-                  label: const Text('Approve'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.close),
-                  label: const Text('Reject'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: const BorderSide(color: AppColors.error),
                   ),
                 ),
               ),

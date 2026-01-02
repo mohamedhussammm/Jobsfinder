@@ -5,13 +5,28 @@ part 'notification_model.g.dart';
 /// Notification model - push notifications to users
 @JsonSerializable()
 class NotificationModel {
+  @JsonKey(name: 'id')
   final String id;
+
+  @JsonKey(name: 'user_id')
   final String userId;
+
+  @JsonKey(name: 'type')
   final String type; // 'invite', 'accepted', 'declined', 'message', 'rating', 'application_status'
+
+  @JsonKey(name: 'related_id')
   final String? relatedId; // Link to related resource (event, application, etc)
+
+  @JsonKey(name: 'title')
   final String? title;
+
+  @JsonKey(name: 'message')
   final String? message;
+
+  @JsonKey(name: 'is_read')
   final bool isRead;
+
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
   NotificationModel({
@@ -54,7 +69,8 @@ class NotificationModel {
     );
   }
 
-  factory NotificationModel.fromJson(Map<String, dynamic> json) => _$NotificationModelFromJson(json);
+  factory NotificationModel.fromJson(Map<String, dynamic> json) =>
+      _$NotificationModelFromJson(json);
   Map<String, dynamic> toJson() => _$NotificationModelToJson(this);
 
   @override

@@ -9,21 +9,21 @@ part of 'team_leader_model.dart';
 TeamLeaderModel _$TeamLeaderModelFromJson(Map<String, dynamic> json) =>
     TeamLeaderModel(
       id: json['id'] as String,
-      userId: json['userId'] as String,
-      eventId: json['eventId'] as String,
-      assignedBy: json['assignedBy'] as String?,
+      userId: json['user_id'] as String,
+      eventId: json['event_id'] as String,
+      assignedBy: json['assigned_by'] as String?,
       status: json['status'] as String? ?? 'assigned',
-      assignedAt: DateTime.parse(json['assignedAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      assignedAt: DateTime.parse(json['assigned_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
 
 Map<String, dynamic> _$TeamLeaderModelToJson(TeamLeaderModel instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'userId': instance.userId,
-      'eventId': instance.eventId,
-      'assignedBy': instance.assignedBy,
+      'user_id': instance.userId,
+      'event_id': instance.eventId,
+      'assigned_by': instance.assignedBy,
       'status': instance.status,
-      'assignedAt': instance.assignedAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
+      'assigned_at': instance.assignedAt.toIso8601String(),
+      'updated_at': instance.updatedAt.toIso8601String(),
     };

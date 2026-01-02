@@ -5,12 +5,25 @@ part 'rating_model.g.dart';
 /// Rating model - team leader rates applicants
 @JsonSerializable()
 class RatingModel {
+  @JsonKey(name: 'id')
   final String id;
+
+  @JsonKey(name: 'rater_user_id')
   final String raterUserId; // Team leader
+
+  @JsonKey(name: 'rated_user_id')
   final String ratedUserId; // Applicant
+
+  @JsonKey(name: 'event_id')
   final String? eventId;
+
+  @JsonKey(name: 'score')
   final int score; // 1-5
+
+  @JsonKey(name: 'text_review')
   final String? textReview;
+
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
   RatingModel({
@@ -50,7 +63,8 @@ class RatingModel {
     );
   }
 
-  factory RatingModel.fromJson(Map<String, dynamic> json) => _$RatingModelFromJson(json);
+  factory RatingModel.fromJson(Map<String, dynamic> json) =>
+      _$RatingModelFromJson(json);
   Map<String, dynamic> toJson() => _$RatingModelToJson(this);
 
   @override

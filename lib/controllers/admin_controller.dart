@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/supabase/supabase_client.dart';
 import '../models/user_model.dart';
 import '../models/team_leader_model.dart';
+import '../models/company_model.dart';
 import '../models/audit_log_model.dart';
 import '../models/event_model.dart';
 import '../core/utils/result.dart';
@@ -14,47 +15,32 @@ final adminControllerProvider = Provider((ref) => AdminController(ref));
 final pendingEventsAdminProvider = FutureProvider.autoDispose((ref) async {
   final controller = ref.watch(adminControllerProvider);
   final result = await controller.fetchPendingEventRequests();
-  return result.when(
-    success: (events) => events,
-    error: (e) => throw e,
-  );
+  return result.when(success: (events) => events, error: (e) => throw e);
 });
 
 /// All users provider
-final allUsersProvider = FutureProvider.autoDispose.family<List<UserModel>, int>(
-  (ref, page) async {
-    final controller = ref.watch(adminControllerProvider);
-    final result = await controller.fetchAllUsers(page: page);
-    return result.when(
-      success: (users) => users,
-      error: (e) => throw e,
-    );
-  },
-);
+final allUsersProvider = FutureProvider.autoDispose
+    .family<List<UserModel>, int>((ref, page) async {
+      final controller = ref.watch(adminControllerProvider);
+      final result = await controller.fetchAllUsers(page: page);
+      return result.when(success: (users) => users, error: (e) => throw e);
+    });
 
 /// Team leaders for event provider
-final teamLeadersForEventProvider = FutureProvider.autoDispose.family<List<TeamLeaderModel>, String>(
-  (ref, eventId) async {
-    final controller = ref.watch(adminControllerProvider);
-    final result = await controller.fetchTeamLeadersForEvent(eventId);
-    return result.when(
-      success: (leaders) => leaders,
-      error: (e) => throw e,
-    );
-  },
-);
+final teamLeadersForEventProvider = FutureProvider.autoDispose
+    .family<List<TeamLeaderModel>, String>((ref, eventId) async {
+      final controller = ref.watch(adminControllerProvider);
+      final result = await controller.fetchTeamLeadersForEvent(eventId);
+      return result.when(success: (leaders) => leaders, error: (e) => throw e);
+    });
 
 /// Audit logs provider
-final auditLogsProvider = FutureProvider.autoDispose.family<List<AuditLogModel>, int>(
-  (ref, page) async {
-    final controller = ref.watch(adminControllerProvider);
-    final result = await controller.fetchAuditLogs(page: page);
-    return result.when(
-      success: (logs) => logs,
-      error: (e) => throw e,
-    );
-  },
-);
+final auditLogsProvider = FutureProvider.autoDispose
+    .family<List<AuditLogModel>, int>((ref, page) async {
+      final controller = ref.watch(adminControllerProvider);
+      final result = await controller.fetchAuditLogs(page: page);
+      return result.when(success: (logs) => logs, error: (e) => throw e);
+    });
 
 class AdminController {
   final Ref ref;
@@ -64,7 +50,9 @@ class AdminController {
   AdminController(this.ref);
 
   /// Fetch pending event requests
-  Future<Result<List<EventModel>>> fetchPendingEventRequests({int page = 0}) async {
+  Future<Result<List<EventModel>>> fetchPendingEventRequests({
+    int page = 0,
+  }) async {
     try {
       int offset = page * pageSize;
 
@@ -81,17 +69,17 @@ class AdminController {
 
       return Success(events);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to fetch pending events: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to fetch pending events: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -104,9 +92,7 @@ class AdminController {
     try {
       int offset = page * pageSize;
 
-      var query = _supabase
-          .from(SupabaseTables.users)
-          .select();
+      var query = _supabase.from(SupabaseTables.users).select();
 
       if (roleFilter != null) {
         query = query.eq('role', roleFilter);
@@ -116,7 +102,7 @@ class AdminController {
       final response = await query.order('created_at', ascending: false);
 
       List users = response;
-      
+
       if (searchQuery != null && searchQuery.isNotEmpty) {
         final lowerSearch = searchQuery.toLowerCase();
         users = users.where((u) {
@@ -136,17 +122,17 @@ class AdminController {
 
       return Success(mapped);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to fetch users: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to fetch users: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -174,17 +160,87 @@ class AdminController {
 
       return Success(user);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to toggle user status: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to toggle user status: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
+    }
+  }
+
+  /// Update user role
+  Future<Result<UserModel>> updateUserRole(
+    String userId,
+    String newRole,
+  ) async {
+    try {
+      final response = await _supabase
+          .from(SupabaseTables.users)
+          .update({
+            'role': newRole,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', userId)
+          .select()
+          .single();
+
+      final user = UserModel.fromJson(response as Map<String, dynamic>);
+
+      // Log audit
+      await _logAuditAction(
+        action: 'user_role_update',
+        targetTable: SupabaseTables.users,
+        targetId: userId,
+        newValues: {'role': newRole},
+      );
+
+      return Success(user);
+    } on PostgrestException catch (e) {
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
+    } catch (e, st) {
+      return Error(
+        AppException(
+          message: 'Failed to update user role: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
+    }
+  }
+
+  /// Fetch all companies (for dropdowns)
+  Future<Result<List<CompanyModel>>> fetchAllCompanies() async {
+    try {
+      final response = await _supabase
+          .from('companies')
+          .select()
+          .order('name', ascending: true);
+
+      final companies = (response as List)
+          .map((json) => CompanyModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      return Success(companies);
+    } on PostgrestException catch (e) {
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
+    } catch (e, st) {
+      return Error(
+        AppException(
+          message: 'Failed to fetch companies: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -237,22 +293,24 @@ class AdminController {
 
       return Success(leader);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to assign team leader: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to assign team leader: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
   /// Fetch team leaders assigned to event
-  Future<Result<List<TeamLeaderModel>>> fetchTeamLeadersForEvent(String eventId) async {
+  Future<Result<List<TeamLeaderModel>>> fetchTeamLeadersForEvent(
+    String eventId,
+  ) async {
     try {
       final response = await _supabase
           .from(SupabaseTables.teamLeaders)
@@ -266,17 +324,17 @@ class AdminController {
 
       return Success(leaders);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to fetch team leaders: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to fetch team leaders: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -300,17 +358,17 @@ class AdminController {
 
       return Success(null);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to remove team leader: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to remove team leader: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -323,9 +381,7 @@ class AdminController {
     try {
       int offset = page * pageSize;
 
-      var query = _supabase
-          .from(SupabaseTables.auditLogs)
-          .select();
+      var query = _supabase.from(SupabaseTables.auditLogs).select();
 
       final response = await query.order('created_at', ascending: false);
 
@@ -346,7 +402,10 @@ class AdminController {
       }
 
       // Manual pagination
-      final paginatedLogs = filteredResponse.skip(offset).take(pageSize).toList();
+      final paginatedLogs = filteredResponse
+          .skip(offset)
+          .take(pageSize)
+          .toList();
 
       final logs = (paginatedLogs as List)
           .map((json) => AuditLogModel.fromJson(json as Map<String, dynamic>))
@@ -354,17 +413,17 @@ class AdminController {
 
       return Success(logs);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to fetch audit logs: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to fetch audit logs: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -411,24 +470,30 @@ class AdminController {
 
       return Success(counts);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to count users by role: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to count users by role: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
   /// Get event statistics
   Future<Result<Map<String, int>>> getEventStatistics() async {
     try {
-      final statuses = ['draft', 'pending', 'published', 'completed', 'cancelled'];
+      final statuses = [
+        'draft',
+        'pending',
+        'published',
+        'completed',
+        'cancelled',
+      ];
       final counts = <String, int>{};
 
       for (final status in statuses) {
@@ -442,17 +507,17 @@ class AdminController {
 
       return Success(counts);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to get event statistics: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to get event statistics: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 }

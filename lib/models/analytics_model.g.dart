@@ -7,77 +7,77 @@ part of 'analytics_model.dart';
 // **************************************************************************
 
 AnalyticsKPI _$AnalyticsKPIFromJson(Map<String, dynamic> json) => AnalyticsKPI(
-      totalUsers: (json['totalUsers'] as num).toInt(),
-      totalCompanies: (json['totalCompanies'] as num).toInt(),
-      totalTeamLeaders: (json['totalTeamLeaders'] as num).toInt(),
-      totalEvents: (json['totalEvents'] as num).toInt(),
-      pendingEventRequests: (json['pendingEventRequests'] as num).toInt(),
-      publishedEvents: (json['publishedEvents'] as num).toInt(),
-      activeEvents: (json['activeEvents'] as num).toInt(),
-      totalApplications: (json['totalApplications'] as num).toInt(),
-      acceptedApplications: (json['acceptedApplications'] as num).toInt(),
-      rejectedApplications: (json['rejectedApplications'] as num).toInt(),
-      averageRating: (json['averageRating'] as num).toDouble(),
-      ratingsCount: (json['ratingsCount'] as num).toInt(),
-      lastUpdated: DateTime.parse(json['lastUpdated'] as String),
+      totalUsers: (json['total_users'] as num).toInt(),
+      totalCompanies: (json['total_companies'] as num).toInt(),
+      totalTeamLeaders: (json['total_team_leaders'] as num).toInt(),
+      totalEvents: (json['total_events'] as num).toInt(),
+      pendingEventRequests: (json['pending_event_requests'] as num).toInt(),
+      publishedEvents: (json['published_events'] as num).toInt(),
+      activeEvents: (json['active_events'] as num).toInt(),
+      totalApplications: (json['total_applications'] as num).toInt(),
+      acceptedApplications: (json['accepted_applications'] as num).toInt(),
+      rejectedApplications: (json['rejected_applications'] as num).toInt(),
+      averageRating: (json['average_rating'] as num).toDouble(),
+      ratingsCount: (json['ratings_count'] as num).toInt(),
+      lastUpdated: DateTime.parse(json['last_updated'] as String),
     );
 
 Map<String, dynamic> _$AnalyticsKPIToJson(AnalyticsKPI instance) =>
     <String, dynamic>{
-      'totalUsers': instance.totalUsers,
-      'totalCompanies': instance.totalCompanies,
-      'totalTeamLeaders': instance.totalTeamLeaders,
-      'totalEvents': instance.totalEvents,
-      'pendingEventRequests': instance.pendingEventRequests,
-      'publishedEvents': instance.publishedEvents,
-      'activeEvents': instance.activeEvents,
-      'totalApplications': instance.totalApplications,
-      'acceptedApplications': instance.acceptedApplications,
-      'rejectedApplications': instance.rejectedApplications,
-      'averageRating': instance.averageRating,
-      'ratingsCount': instance.ratingsCount,
-      'lastUpdated': instance.lastUpdated.toIso8601String(),
+      'total_users': instance.totalUsers,
+      'total_companies': instance.totalCompanies,
+      'total_team_leaders': instance.totalTeamLeaders,
+      'total_events': instance.totalEvents,
+      'pending_event_requests': instance.pendingEventRequests,
+      'published_events': instance.publishedEvents,
+      'active_events': instance.activeEvents,
+      'total_applications': instance.totalApplications,
+      'accepted_applications': instance.acceptedApplications,
+      'rejected_applications': instance.rejectedApplications,
+      'average_rating': instance.averageRating,
+      'ratings_count': instance.ratingsCount,
+      'last_updated': instance.lastUpdated.toIso8601String(),
     };
 
 MonthlyStats _$MonthlyStatsFromJson(Map<String, dynamic> json) => MonthlyStats(
       month: json['month'] as String,
-      eventsCreated: (json['eventsCreated'] as num).toInt(),
-      applicationsReceived: (json['applicationsReceived'] as num).toInt(),
-      eventsCompleted: (json['eventsCompleted'] as num).toInt(),
+      eventsCreated: (json['events_created'] as num).toInt(),
+      applicationsReceived: (json['applications_received'] as num).toInt(),
+      eventsCompleted: (json['events_completed'] as num).toInt(),
     );
 
 Map<String, dynamic> _$MonthlyStatsToJson(MonthlyStats instance) =>
     <String, dynamic>{
       'month': instance.month,
-      'eventsCreated': instance.eventsCreated,
-      'applicationsReceived': instance.applicationsReceived,
-      'eventsCompleted': instance.eventsCompleted,
+      'events_created': instance.eventsCreated,
+      'applications_received': instance.applicationsReceived,
+      'events_completed': instance.eventsCompleted,
     };
 
 TopEvent _$TopEventFromJson(Map<String, dynamic> json) => TopEvent(
-      eventId: json['eventId'] as String,
-      eventTitle: json['eventTitle'] as String,
-      applicationCount: (json['applicationCount'] as num).toInt(),
+      eventId: json['event_id'] as String,
+      eventTitle: json['event_title'] as String,
+      applicationCount: (json['application_count'] as num).toInt(),
     );
 
 Map<String, dynamic> _$TopEventToJson(TopEvent instance) => <String, dynamic>{
-      'eventId': instance.eventId,
-      'eventTitle': instance.eventTitle,
-      'applicationCount': instance.applicationCount,
+      'event_id': instance.eventId,
+      'event_title': instance.eventTitle,
+      'application_count': instance.applicationCount,
     };
 
 RoleDistribution _$RoleDistributionFromJson(Map<String, dynamic> json) =>
     RoleDistribution(
-      normalUsers: (json['normalUsers'] as num).toInt(),
+      normalUsers: (json['normal_users'] as num).toInt(),
       companies: (json['companies'] as num).toInt(),
-      teamLeaders: (json['teamLeaders'] as num).toInt(),
+      teamLeaders: (json['team_leaders'] as num).toInt(),
       admins: (json['admins'] as num).toInt(),
     );
 
 Map<String, dynamic> _$RoleDistributionToJson(RoleDistribution instance) =>
     <String, dynamic>{
-      'normalUsers': instance.normalUsers,
+      'normal_users': instance.normalUsers,
       'companies': instance.companies,
-      'teamLeaders': instance.teamLeaders,
+      'team_leaders': instance.teamLeaders,
       'admins': instance.admins,
     };
