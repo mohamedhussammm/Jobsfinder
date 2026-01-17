@@ -5,6 +5,7 @@ import '../views/home/event_search_screen.dart';
 import '../views/home/application_form_screen.dart';
 import '../views/admin/admin_dashboard_screen.dart';
 import '../views/user/user_profile_screen.dart';
+import '../views/user/applications_screen.dart';
 import '../views/team_leader/team_leader_events_screen.dart';
 import '../views/team_leader/rating_form_screen.dart';
 import '../views/auth/new_auth_screen.dart';
@@ -43,6 +44,10 @@ final appRouter = GoRouter(
         GoRoute(
           path: 'profile',
           builder: (context, state) => const UserProfileScreen(),
+        ),
+        GoRoute(
+          path: 'applications',
+          builder: (context, state) => const ApplicationsScreen(),
         ),
         GoRoute(
           path: 'admin/dashboard',

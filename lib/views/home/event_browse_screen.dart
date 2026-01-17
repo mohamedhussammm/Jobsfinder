@@ -62,12 +62,7 @@ class EventBrowseScreen extends ConsumerWidget {
               title: Text('My Applications', style: AppTypography.body1),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to applications
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Applications page coming soon'),
-                  ),
-                );
+                context.push('/applications');
               },
             ),
             Divider(color: AppColors.textSecondary.withOpacity(0.2)),

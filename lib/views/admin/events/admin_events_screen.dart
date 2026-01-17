@@ -405,7 +405,15 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
         ElevatedButton(
           onPressed: () async {
             if (_formKey.currentState!.validate()) {
-              await ref
+              // Show loading
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (c) =>
+                    const Center(child: CircularProgressIndicator()),
+              );
+
+              final result = await ref
                   .read(eventControllerProvider)
                   .adminCreateEvent(
                     companyId: _selectedCompanyId!,
@@ -417,8 +425,39 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
                     capacity: int.tryParse(_capacityController.text),
                     imagePath: null,
                   );
+
+              // Close loading dialog
               if (mounted) Navigator.pop(context);
-              ref.refresh(publishedEventsProvider(0));
+
+              result.when(
+                success: (event) {
+                  // Close create dialog
+                  if (mounted) Navigator.pop(context);
+
+                  // Refresh both providers
+                  ref.refresh(publishedEventsProvider(0));
+                  ref.refresh(pendingEventsAdminProvider);
+
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Event "${event.title}" created and published!',
+                      ),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                },
+                error: (error) {
+                  // Show error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to create event: $error'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                },
+              );
             }
           },
           child: const Text('Create & Publish'),

@@ -1,114 +1,86 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import '../../controllers/application_controller.dart';
+import '../../controllers/auth_controller.dart';
+import '../../models/application_model.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
-import '../../core/theme/glass.dart';
-import '../../models/application_model.dart';
-import '../../controllers/application_controller.dart';
 
-class ApplicationsScreenTab extends ConsumerWidget {
-  const ApplicationsScreenTab({Key? key}) : super(key: key);
+class ApplicationsScreen extends ConsumerWidget {
+  const ApplicationsScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final currentUser = ref.watch(currentUserProvider);
+
+    if (currentUser == null) {
+      return const Scaffold(
+        body: Center(child: Text('Please log in to view applications')),
+      );
+    }
+
     final applicationsAsync = ref.watch(
-      userApplicationsProvider('current_user_id'),
-    ); // TODO: Get actual user ID
+      userApplicationsProvider(currentUser.id),
+    );
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.darkBg,
+        backgroundColor: AppColors.background,
         elevation: 0,
-        title: Text('My Applications', style: AppTypography.heading2),
-        centerTitle: false,
+        title: Text(
+          'My Applications',
+          style: AppTypography.headlineSmall.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: applicationsAsync.when(
         data: (applications) {
           if (applications.isEmpty) {
             return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.assignment_ind_outlined,
-                      size: 64,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.description_outlined,
+                    size: 64,
+                    color: AppColors.textTertiary,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No Applications Yet',
+                    style: AppTypography.titleLarge.copyWith(
                       color: AppColors.textSecondary,
                     ),
-                    const SizedBox(height: 16),
-                    Text('No applications yet', style: AppTypography.heading3),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Apply to events to see them here',
-                      style: AppTypography.body2.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                      textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Browse events and apply to get started',
+                    style: AppTypography.body2.copyWith(
+                      color: AppColors.textTertiary,
                     ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () => context.go('/search'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Find Events'),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           }
 
-          return ListView.separated(
+          return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: applications.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
-              final application = applications[index];
-              return ApplicationCard(application: application);
+              final app = applications[index];
+              return _ApplicationCard(application: app);
             },
           );
         },
-        loading: () => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation(AppColors.accent),
-              ),
-              const SizedBox(height: 16),
-              Text('Loading applications...', style: AppTypography.body2),
-            ],
-          ),
-        ),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: AppColors.error),
-                const SizedBox(height: 16),
-                Text(
-                  'Failed to load applications',
-                  style: AppTypography.heading3.copyWith(
-                    color: AppColors.error,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  error.toString(),
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Text(
+            'Error: $error',
+            style: TextStyle(color: AppColors.error),
           ),
         ),
       ),
@@ -116,301 +88,168 @@ class ApplicationsScreenTab extends ConsumerWidget {
   }
 }
 
-class ApplicationCard extends ConsumerWidget {
+class _ApplicationCard extends ConsumerWidget {
   final ApplicationModel application;
 
-  const ApplicationCard({Key? key, required this.application})
-    : super(key: key);
+  const _ApplicationCard({required this.application});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final statusColor = _getStatusColor(application.status);
-
-    return GlassContainer(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderColor),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with Status
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      application.eventTitle,
-                      style: AppTypography.heading3,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      application.companyName,
-                      style: AppTypography.body2.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
                 child: Text(
-                  application.status.toUpperCase(),
-                  style: AppTypography.caption.copyWith(
-                    color: statusColor,
-                    fontWeight: FontWeight.w600,
+                  'Event ID: ${application.eventId}',
+                  style: AppTypography.titleSmall.copyWith(
+                    color: AppColors.textPrimary,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              _StatusBadge(status: application.status),
             ],
           ),
-          const SizedBox(height: 16),
-
-          // Application Details
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.glassSecondary,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _DetailRow(
-                  label: 'Applied On',
-                  value: _formatDate(application.appliedAt),
-                  icon: Icons.calendar_today,
-                ),
-                const SizedBox(height: 8),
-                _DetailRow(
-                  label: 'Status',
-                  value: _getStatusLabel(application.status),
-                  icon: Icons.info,
-                ),
-              ],
-            ),
+          const SizedBox(height: 8),
+          Text(
+            'Applied: ${_formatDate(application.appliedAt)}',
+            style: AppTypography.body2.copyWith(color: AppColors.textTertiary),
           ),
-          const SizedBox(height: 16),
-
-          // Cover Letter Preview
-          if (application.coverLetter != null &&
-              application.coverLetter!.isNotEmpty)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Cover Letter',
-                  style: AppTypography.body1.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.glassSecondary,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    application.coverLetter!,
-                    style: AppTypography.body2.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-
-          // Action Buttons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Handle view details
-                  },
-                  icon: const Icon(Icons.visibility, size: 16),
-                  label: const Text('View Details'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (application.status.toLowerCase() == 'pending')
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Application withdrawn'),
-                          backgroundColor: AppColors.error,
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.close, size: 16),
-                    label: const Text('Withdraw'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.error.withOpacity(0.2),
-                      foregroundColor: AppColors.error,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-
-          // Status Message
-          const SizedBox(height: 12),
-          _StatusMessage(status: application.status),
-        ],
-      ),
-    );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return AppColors.warning;
-      case 'accepted':
-        return AppColors.success;
-      case 'rejected':
-        return AppColors.error;
-      case 'reviewed':
-        return AppColors.accent;
-      default:
-        return AppColors.textSecondary;
-    }
-  }
-
-  String _getStatusLabel(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return 'Awaiting Review';
-      case 'accepted':
-        return 'Congratulations!';
-      case 'rejected':
-        return 'Application Declined';
-      case 'reviewed':
-        return 'Under Review';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.month}/${date.day}/${date.year}';
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-
-  const _DetailRow({
-    Key? key,
-    required this.label,
-    required this.value,
-    required this.icon,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 16, color: AppColors.accent),
-            const SizedBox(width: 8),
+          if (application.coverLetter != null) ...[
+            const SizedBox(height: 8),
             Text(
-              label,
+              application.coverLetter!,
               style: AppTypography.body2.copyWith(
                 color: AppColors.textSecondary,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
-        ),
-        Text(
-          value,
-          style: AppTypography.body1.copyWith(fontWeight: FontWeight.w500),
-        ),
-      ],
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              if (application.status == 'applied') ...[
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _withdrawApplication(context, ref),
+                    icon: const Icon(Icons.cancel_outlined, size: 18),
+                    label: const Text('Withdraw'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: BorderSide(color: AppColors.error),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Future<void> _withdrawApplication(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Withdraw Application'),
+        content: const Text(
+          'Are you sure you want to withdraw this application?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Withdraw'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final controller = ref.read(applicationControllerProvider);
+      await controller.withdrawApplication(application.id);
+
+      // Refresh the list
+      final currentUser = ref.read(currentUserProvider);
+      if (currentUser != null) {
+        ref.refresh(userApplicationsProvider(currentUser.id));
+      }
+    }
   }
 }
 
-class _StatusMessage extends StatelessWidget {
+class _StatusBadge extends StatelessWidget {
   final String status;
 
-  const _StatusMessage({Key? key, required this.status}) : super(key: key);
+  const _StatusBadge({required this.status});
 
   @override
   Widget build(BuildContext context) {
-    late String message;
-    late Color color;
-    late IconData icon;
+    Color color;
+    String label;
 
-    switch (status.toLowerCase()) {
-      case 'pending':
-        message = 'Your application is being reviewed. Check back soon!';
+    switch (status) {
+      case 'applied':
+        color = AppColors.info;
+        label = 'Applied';
+        break;
+      case 'shortlisted':
         color = AppColors.warning;
-        icon = Icons.schedule;
+        label = 'Shortlisted';
+        break;
+      case 'invited':
+        color = AppColors.primary;
+        label = 'Invited';
         break;
       case 'accepted':
-        message = 'Great! You\'ve been selected for this event.';
         color = AppColors.success;
-        icon = Icons.check_circle;
+        label = 'Accepted';
         break;
+      case 'declined':
       case 'rejected':
-        message = 'Thank you for applying. Keep trying!';
         color = AppColors.error;
-        icon = Icons.cancel;
-        break;
-      case 'reviewed':
-        message = 'Your application is under active review.';
-        color = AppColors.accent;
-        icon = Icons.visibility;
+        label = status == 'declined' ? 'Declined' : 'Rejected';
         break;
       default:
-        return const SizedBox();
+        color = AppColors.textSecondary;
+        label = status;
     }
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: AppTypography.caption.copyWith(color: color),
-            ),
-          ),
-        ],
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
