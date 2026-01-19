@@ -6,7 +6,7 @@ import '../../../core/theme/typography.dart';
 import '../../../models/user_model.dart';
 
 class AdminUsersScreen extends ConsumerStatefulWidget {
-  const AdminUsersScreen({Key? key}) : super(key: key);
+  const AdminUsersScreen({super.key});
 
   @override
   ConsumerState<AdminUsersScreen> createState() => _AdminUsersScreenState();
@@ -145,7 +145,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                     scrollDirection: Axis.horizontal,
                     child: SingleChildScrollView(
                       child: DataTable(
-                        headingRowColor: MaterialStateProperty.all(
+                        headingRowColor: WidgetStateProperty.all(
                           AppColors.background,
                         ),
                         columns: const [
@@ -293,13 +293,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
   }
 
   void _showEditUserDialog(BuildContext context, UserModel user) {
-    // Normalize 'user' to 'normal' and handle any invalid roles
-    const validRoles = ['normal', 'team_leader', 'company', 'admin'];
-    String selectedRole = user.role == 'user' ? 'normal' : user.role;
-
-    if (!validRoles.contains(selectedRole)) {
-      selectedRole = 'normal';
-    }
+    String selectedRole = user.role;
 
     showDialog(
       context: context,
@@ -319,7 +313,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: selectedRole,
+                initialValue: selectedRole,
                 dropdownColor: AppColors.surface,
                 items: ['normal', 'team_leader', 'company', 'admin']
                     .map(
