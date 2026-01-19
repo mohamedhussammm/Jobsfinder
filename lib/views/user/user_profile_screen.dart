@@ -8,7 +8,7 @@ import '../../core/theme/typography.dart';
 import '../../core/theme/glass.dart';
 
 class UserProfileScreen extends ConsumerWidget {
-  const UserProfileScreen({Key? key}) : super(key: key);
+  const UserProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -188,7 +188,7 @@ class UserProfileScreen extends ConsumerWidget {
             const Icon(Icons.star, color: AppColors.accent, size: 20),
             const SizedBox(width: 4),
             Text(
-              '${user.ratingAvg?.toStringAsFixed(1) ?? "0.0"} (${user.ratingCount ?? 0} reviews)',
+              '${user.ratingAvg.toStringAsFixed(1) ?? "0.0"} (${user.ratingCount ?? 0} reviews)',
               style: AppTypography.body2.copyWith(
                 color: AppColors.textSecondary,
               ),

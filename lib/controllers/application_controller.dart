@@ -75,7 +75,7 @@ class ApplicationController {
           .select()
           .single();
 
-      final application = ApplicationModel.fromJson(response as Map<String, dynamic>);
+      final application = ApplicationModel.fromJson(response);
       return Success(application);
     } on PostgrestException catch (e) {
       return Error(DatabaseException(
@@ -203,7 +203,7 @@ class ApplicationController {
           .select()
           .single();
 
-      final application = ApplicationModel.fromJson(response as Map<String, dynamic>);
+      final application = ApplicationModel.fromJson(response);
       return Success(application);
     } on PostgrestException catch (e) {
       return Error(DatabaseException(
@@ -229,7 +229,7 @@ class ApplicationController {
           .eq('id', applicationId)
           .single();
 
-      final application = ApplicationModel.fromJson(response as Map<String, dynamic>);
+      final application = ApplicationModel.fromJson(response);
       return Success(application);
     } on PostgrestException catch (e) {
       if (e.code == 'PGRST116') {

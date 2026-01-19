@@ -8,7 +8,7 @@ import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 
 class AdminEventsScreen extends ConsumerStatefulWidget {
-  const AdminEventsScreen({Key? key}) : super(key: key);
+  const AdminEventsScreen({super.key});
 
   @override
   ConsumerState<AdminEventsScreen> createState() => _AdminEventsScreenState();
@@ -16,7 +16,7 @@ class AdminEventsScreen extends ConsumerStatefulWidget {
 
 class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
   String _statusFilter = 'all'; // 'all', 'pending', 'published', 'cancelled'
-  String _searchQuery = '';
+  final String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
@@ -300,17 +300,19 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
     final res = await ref.read(adminControllerProvider).fetchAllCompanies();
     res.when(
       success: (list) {
-        if (mounted)
+        if (mounted) {
           setState(() {
             _companies = list;
             _isLoadingComp = false;
           });
+        }
       },
       error: (e) {
-        if (mounted)
+        if (mounted) {
           setState(() {
             _isLoadingComp = false;
           });
+        }
         // Handle error
       },
     );
@@ -321,7 +323,7 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
     return AlertDialog(
       title: const Text('Create New Event'),
       content: SingleChildScrollView(
-        child: Container(
+        child: SizedBox(
           width: 400,
           child: Form(
             key: _formKey,
@@ -332,7 +334,7 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
                   const LinearProgressIndicator()
                 else
                   DropdownButtonFormField<String>(
-                    value: _selectedCompanyId,
+                    initialValue: _selectedCompanyId,
                     decoration: const InputDecoration(labelText: 'Company *'),
                     items: _companies
                         .map(

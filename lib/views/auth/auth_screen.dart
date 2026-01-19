@@ -7,7 +7,7 @@ import '../../core/theme/glass.dart';
 import '../../controllers/auth_controller.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
-  const AuthScreen({Key? key}) : super(key: key);
+  const AuthScreen({super.key});
 
   @override
   ConsumerState<AuthScreen> createState() => _AuthScreenState();
@@ -23,7 +23,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _rememberMe = false;
   bool _isLoading = false;
   String? _errorMessage;
-  String _selectedRole = 'user'; // Default role: Usher/Applicant
+  final String _selectedRole = 'user'; // Default role: Usher/Applicant
 
   @override
   void initState() {

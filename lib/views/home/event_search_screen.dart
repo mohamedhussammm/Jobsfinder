@@ -8,7 +8,7 @@ import '../../models/event_model.dart';
 import '../../controllers/event_controller.dart';
 
 class EventSearchScreen extends ConsumerStatefulWidget {
-  const EventSearchScreen({Key? key}) : super(key: key);
+  const EventSearchScreen({super.key});
 
   @override
   ConsumerState<EventSearchScreen> createState() => _EventSearchScreenState();
@@ -17,7 +17,7 @@ class EventSearchScreen extends ConsumerStatefulWidget {
 class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
   late TextEditingController _searchController;
   String _selectedLocation = 'All';
-  String _selectedSalaryRange = 'All';
+  final String _selectedSalaryRange = 'All';
   bool _showFilters = false;
 
   @override
@@ -317,7 +317,7 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
 class EventSearchCard extends StatelessWidget {
   final EventModel event;
 
-  const EventSearchCard({Key? key, required this.event}) : super(key: key);
+  const EventSearchCard({super.key, required this.event});
 
   @override
   Widget build(BuildContext context) {
@@ -417,19 +417,18 @@ class EventSearchCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (event.rating != null)
-                Row(
-                  children: [
-                    Icon(Icons.star, size: 16, color: AppColors.warning),
-                    const SizedBox(width: 4),
-                    Text(
-                      event.rating!.toStringAsFixed(1),
-                      style: AppTypography.caption.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+              Row(
+                children: [
+                  Icon(Icons.star, size: 16, color: AppColors.warning),
+                  const SizedBox(width: 4),
+                  Text(
+                    event.rating!.toStringAsFixed(1),
+                    style: AppTypography.caption.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
             ],
           ),
         ],
@@ -457,8 +456,7 @@ class _DetailItem extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _DetailItem({Key? key, required this.icon, required this.label})
-    : super(key: key);
+  const _DetailItem({super.key, required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {

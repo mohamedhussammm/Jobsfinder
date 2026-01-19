@@ -116,7 +116,7 @@ class AdminController {
       // Manual pagination
       final paginatedUsers = users.skip(offset).take(pageSize).toList();
 
-      final mapped = (paginatedUsers as List)
+      final mapped = (paginatedUsers)
           .map((json) => UserModel.fromJson(json as Map<String, dynamic>))
           .toList();
 
@@ -149,7 +149,7 @@ class AdminController {
           .select()
           .single();
 
-      final user = UserModel.fromJson(response as Map<String, dynamic>);
+      final user = UserModel.fromJson(response);
 
       // Log audit
       await _logAuditAction(
@@ -190,7 +190,7 @@ class AdminController {
           .select()
           .single();
 
-      final user = UserModel.fromJson(response as Map<String, dynamic>);
+      final user = UserModel.fromJson(response);
 
       // Log audit
       await _logAuditAction(
@@ -281,7 +281,7 @@ class AdminController {
           .select()
           .single();
 
-      final leader = TeamLeaderModel.fromJson(response as Map<String, dynamic>);
+      final leader = TeamLeaderModel.fromJson(response);
 
       // Log audit
       await _logAuditAction(
@@ -407,7 +407,7 @@ class AdminController {
           .take(pageSize)
           .toList();
 
-      final logs = (paginatedLogs as List)
+      final logs = (paginatedLogs)
           .map((json) => AuditLogModel.fromJson(json as Map<String, dynamic>))
           .toList();
 

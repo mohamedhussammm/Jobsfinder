@@ -11,9 +11,9 @@ class EventDetailsScreen extends ConsumerWidget {
   final String eventId;
 
   const EventDetailsScreen({
-    Key? key,
+    super.key,
     required this.eventId,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

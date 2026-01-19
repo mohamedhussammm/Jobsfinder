@@ -10,7 +10,7 @@ import 'users/admin_users_screen.dart';
 import 'events/admin_events_screen.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
-  const AdminDashboardScreen({Key? key}) : super(key: key);
+  const AdminDashboardScreen({super.key});
 
   @override
   ConsumerState<AdminDashboardScreen> createState() =>

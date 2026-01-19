@@ -5,6 +5,7 @@ import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/theme/glass.dart';
 import '../../controllers/auth_controller.dart';
+import 'widgets/social_login_section.dart';
 
 class NewAuthScreen extends ConsumerStatefulWidget {
   const NewAuthScreen({Key? key}) : super(key: key);
@@ -480,6 +481,10 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                     ],
                   ),
                 ),
+
+                // Social Login Section
+                const SocialLoginSection(),
+
                 const SizedBox(height: 16),
 
                 // Toggle Login/Register

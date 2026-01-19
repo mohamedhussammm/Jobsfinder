@@ -51,7 +51,7 @@ class TeamLeaderController {
             .eq('id', eventId)
             .single();
 
-        events.add(EventModel.fromJson(eventResponse as Map<String, dynamic>));
+        events.add(EventModel.fromJson(eventResponse));
       }
 
       return Success(events);
@@ -84,7 +84,7 @@ class TeamLeaderController {
           .single();
 
       final assignment = TeamLeaderModel.fromJson(
-        response as Map<String, dynamic>,
+        response,
       );
       return Success(assignment);
     } on PostgrestException catch (e) {
@@ -133,7 +133,7 @@ class TeamLeaderController {
           .single();
 
       final assignment = TeamLeaderModel.fromJson(
-        response as Map<String, dynamic>,
+        response,
       );
       return Success(assignment);
     } on PostgrestException catch (e) {
@@ -266,7 +266,7 @@ class TeamLeaderController {
           .eq('event_id', eventId)
           .order('created_at', ascending: false);
 
-      return Success(response as List<Map<String, dynamic>>);
+      return Success(response);
     } on PostgrestException catch (e) {
       return Error(
         DatabaseException(message: e.message, code: e.code, originalError: e),
@@ -293,7 +293,7 @@ class TeamLeaderController {
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      return Success(response as List<Map<String, dynamic>>);
+      return Success(response);
     } on PostgrestException catch (e) {
       return Error(
         DatabaseException(message: e.message, code: e.code, originalError: e),

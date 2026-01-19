@@ -9,10 +9,10 @@ class ApplicationFormScreen extends ConsumerStatefulWidget {
   final String eventTitle;
 
   const ApplicationFormScreen({
-    Key? key,
+    super.key,
     required this.eventId,
     required this.eventTitle,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<ApplicationFormScreen> createState() =>

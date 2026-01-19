@@ -7,7 +7,7 @@ import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 
 class ApplicationsScreen extends ConsumerWidget {
-  const ApplicationsScreen({Key? key}) : super(key: key);
+  const ApplicationsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

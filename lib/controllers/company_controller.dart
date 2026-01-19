@@ -40,7 +40,7 @@ class CompanyController {
           .eq('user_id', userId)
           .single();
 
-      final company = CompanyModel.fromJson(response as Map<String, dynamic>);
+      final company = CompanyModel.fromJson(response);
       return Success(company);
     } on PostgrestException catch (e) {
       if (e.code == 'PGRST116') {
@@ -75,7 +75,7 @@ class CompanyController {
           .eq('id', companyId)
           .single();
 
-      final company = CompanyModel.fromJson(response as Map<String, dynamic>);
+      final company = CompanyModel.fromJson(response);
       return Success(company);
     } on PostgrestException catch (e) {
       if (e.code == 'PGRST116') {
@@ -125,7 +125,7 @@ class CompanyController {
           .select()
           .single();
 
-      final company = CompanyModel.fromJson(response as Map<String, dynamic>);
+      final company = CompanyModel.fromJson(response);
       return Success(company);
     } on PostgrestException catch (e) {
       return Error(
@@ -164,7 +164,7 @@ class CompanyController {
           .select()
           .single();
 
-      final company = CompanyModel.fromJson(response as Map<String, dynamic>);
+      final company = CompanyModel.fromJson(response);
       return Success(company);
     } on PostgrestException catch (e) {
       return Error(
@@ -261,7 +261,7 @@ class CompanyController {
           .select()
           .single();
 
-      final event = EventModel.fromJson(response as Map<String, dynamic>);
+      final event = EventModel.fromJson(response);
       return Success(event);
     } on PostgrestException catch (e) {
       return Error(
@@ -309,7 +309,7 @@ class CompanyController {
           .select()
           .single();
 
-      final event = EventModel.fromJson(response as Map<String, dynamic>);
+      final event = EventModel.fromJson(response);
       return Success(event);
     } on PostgrestException catch (e) {
       return Error(

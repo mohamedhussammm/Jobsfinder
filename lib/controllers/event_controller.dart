@@ -77,7 +77,7 @@ class EventController {
           .eq('id', eventId)
           .single();
 
-      final event = EventModel.fromJson(response as Map<String, dynamic>);
+      final event = EventModel.fromJson(response);
       return Success(event);
     } on PostgrestException catch (e) {
       if (e.code == 'PGRST116') {
@@ -146,7 +146,7 @@ class EventController {
           .select()
           .single();
 
-      final event = EventModel.fromJson(response as Map<String, dynamic>);
+      final event = EventModel.fromJson(response);
       return Success(event);
     } on PostgrestException catch (e) {
       return Error(
@@ -245,7 +245,7 @@ class EventController {
           .select()
           .single();
 
-      final event = EventModel.fromJson(response as Map<String, dynamic>);
+      final event = EventModel.fromJson(response);
       return Success(event);
     } on PostgrestException catch (e) {
       return Error(
@@ -278,7 +278,7 @@ class EventController {
           .select()
           .single();
 
-      final event = EventModel.fromJson(response as Map<String, dynamic>);
+      final event = EventModel.fromJson(response);
       return Success(event);
     } on PostgrestException catch (e) {
       return Error(
@@ -327,7 +327,7 @@ class EventController {
           .select()
           .single();
 
-      final event = EventModel.fromJson(response as Map<String, dynamic>);
+      final event = EventModel.fromJson(response);
       return Success(event);
     } on PostgrestException catch (e) {
       return Error(
@@ -441,7 +441,7 @@ class EventController {
           .select()
           .single();
 
-      final event = EventModel.fromJson(response as Map<String, dynamic>);
+      final event = EventModel.fromJson(response);
       return Success(event);
     } on PostgrestException catch (e) {
       return Error(

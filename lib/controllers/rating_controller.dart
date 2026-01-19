@@ -69,7 +69,7 @@ class RatingController {
           .select()
           .single();
 
-      final rating = RatingModel.fromJson(response as Map<String, dynamic>);
+      final rating = RatingModel.fromJson(response);
 
       // Update user's average rating
       await _updateUserAverageRating(ratedUserId);

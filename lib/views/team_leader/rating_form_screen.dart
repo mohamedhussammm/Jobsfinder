@@ -13,11 +13,11 @@ class RatingFormScreen extends ConsumerStatefulWidget {
   final String eventTitle;
 
   const RatingFormScreen({
-    Key? key,
+    super.key,
     required this.applicantId,
     required this.applicantName,
     required this.eventTitle,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<RatingFormScreen> createState() => _RatingFormScreenState();
@@ -310,8 +310,7 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _InfoRow({Key? key, required this.label, required this.value})
-    : super(key: key);
+  const _InfoRow({super.key, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -340,12 +339,12 @@ class _RatingCriterion extends StatelessWidget {
   final bool isSelected;
 
   const _RatingCriterion({
-    Key? key,
+    super.key,
     required this.label,
     required this.rating,
     required this.description,
     required this.isSelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
