@@ -10,6 +10,7 @@ import '../views/user/applications_screen.dart';
 import '../views/team_leader/team_leader_events_screen.dart';
 import '../views/team_leader/rating_form_screen.dart';
 import '../views/auth/new_auth_screen.dart';
+import '../views/auth/registration_screen.dart'; // Added import
 import '../views/company/company_dashboard_screen.dart';
 import '../controllers/auth_controller.dart';
 
@@ -21,7 +22,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/auth',
     redirect: (context, state) {
       final path = state.uri.path;
-      final isAuthPage = path == '/auth';
+      final isAuthPage =
+          path == '/auth' ||
+          path == '/register'; // Updated to include /register
 
       // If not logged in and not on auth page, redirect to auth
       if (currentUser == null && !isAuthPage) {
