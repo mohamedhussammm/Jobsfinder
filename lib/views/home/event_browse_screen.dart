@@ -7,7 +7,7 @@ import '../../controllers/event_controller.dart';
 import 'event_card.dart';
 
 class EventBrowseScreen extends ConsumerWidget {
-  const EventBrowseScreen({Key? key}) : super(key: key);
+  const EventBrowseScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

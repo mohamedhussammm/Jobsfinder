@@ -293,7 +293,13 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
   }
 
   void _showEditUserDialog(BuildContext context, UserModel user) {
-    String selectedRole = user.role;
+    // Normalize 'user' to 'normal' and handle any invalid roles
+    const validRoles = ['normal', 'team_leader', 'company', 'admin'];
+    String selectedRole = user.role == 'user' ? 'normal' : user.role;
+
+    if (!validRoles.contains(selectedRole)) {
+      selectedRole = 'normal';
+    }
 
     showDialog(
       context: context,

@@ -10,7 +10,7 @@ import '../../controllers/team_leader_controller.dart';
 import '../../controllers/stub_providers.dart';
 
 class TeamLeaderEventsScreen extends ConsumerWidget {
-  const TeamLeaderEventsScreen({Key? key}) : super(key: key);
+  const TeamLeaderEventsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -166,12 +166,12 @@ class StatCard extends StatelessWidget {
   final Color color;
 
   const StatCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.value,
     required this.icon,
     required this.color,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -206,7 +206,7 @@ class StatCard extends StatelessWidget {
 class EventAssignmentCard extends ConsumerWidget {
   final EventModel event;
 
-  const EventAssignmentCard({Key? key, required this.event}) : super(key: key);
+  const EventAssignmentCard({super.key, required this.event});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -366,8 +366,7 @@ class _DetailItem extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _DetailItem({Key? key, required this.icon, required this.label})
-    : super(key: key);
+  const _DetailItem({super.key, required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {

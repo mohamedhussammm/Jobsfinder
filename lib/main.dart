@@ -7,15 +7,11 @@ import 'package:shiftsphere/routes/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Supabase
   await initializeSupabase();
 
-  runApp(
-    const ProviderScope(
-      child: ShiftSphereApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: ShiftSphereApp()));
 }
 
 class ShiftSphereApp extends ConsumerWidget {
@@ -23,10 +19,12 @@ class ShiftSphereApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+
     return MaterialApp.router(
       title: 'ShiftSphere',
       debugShowCheckedModeBanner: false,
-      routerConfig: appRouter,
+      routerConfig: router,
       theme: _buildTheme(),
     );
   }
@@ -96,7 +94,10 @@ class ShiftSphereApp extends ConsumerWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.error),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
         hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.gray400),
       ),
       chipTheme: ChipThemeData(
