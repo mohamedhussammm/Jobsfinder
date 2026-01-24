@@ -8,6 +8,7 @@ import '../../core/theme/shadows.dart';
 import '../../models/event_model.dart';
 import '../../controllers/team_leader_controller.dart';
 import '../../controllers/stub_providers.dart';
+import '../../services/logout_service.dart';
 
 class TeamLeaderEventsScreen extends ConsumerWidget {
   const TeamLeaderEventsScreen({super.key});
@@ -27,6 +28,18 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
         elevation: 0,
         title: Text('My Assignments', style: AppTypography.heading2),
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () async {
+              await ref.read(logoutProvider).logout();
+              if (context.mounted) {
+                context.go('/auth');
+              }
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

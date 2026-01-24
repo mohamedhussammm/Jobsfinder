@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/theme/glass.dart';
+import '../../services/logout_service.dart';
 
 class CompanyDashboardScreen extends ConsumerWidget {
   const CompanyDashboardScreen({super.key});
@@ -16,6 +18,18 @@ class CompanyDashboardScreen extends ConsumerWidget {
         elevation: 0,
         title: Text('Company Dashboard', style: AppTypography.heading2),
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () async {
+              await ref.read(logoutProvider).logout();
+              if (context.mounted) {
+                context.go('/auth');
+              }
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../controllers/event_controller.dart';
+import '../../services/logout_service.dart';
 import 'event_card.dart';
 
 class EventBrowseScreen extends ConsumerWidget {
@@ -56,7 +57,7 @@ class EventBrowseScreen extends ConsumerWidget {
             ),
             ListTile(
               leading: const Icon(
-                Icons.work_outline,
+                Icons.assignment_outlined,
                 color: AppColors.textSecondary,
               ),
               title: Text('My Applications', style: AppTypography.body1),
@@ -65,17 +66,27 @@ class EventBrowseScreen extends ConsumerWidget {
                 context.push('/applications');
               },
             ),
-            Divider(color: AppColors.textSecondary.withOpacity(0.2)),
             ListTile(
-              leading: const Icon(Icons.logout, color: AppColors.error),
-              title: Text(
-                'Logout',
-                style: AppTypography.body1.copyWith(color: AppColors.error),
-              ),
+              leading: const Icon(Icons.search, color: AppColors.textSecondary),
+              title: Text('Search Events', style: AppTypography.body1),
               onTap: () {
                 Navigator.pop(context);
-                // Logout logic
-                context.go('/auth');
+                context.push('/search');
+              },
+            ),
+            const Divider(color: AppColors.textSecondary),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.redAccent),
+              title: Text(
+                'Logout',
+                style: AppTypography.body1.copyWith(color: Colors.redAccent),
+              ),
+              onTap: () async {
+                Navigator.pop(context);
+                await ref.read(logoutProvider).logout();
+                if (context.mounted) {
+                  context.go('/auth');
+                }
               },
             ),
           ],

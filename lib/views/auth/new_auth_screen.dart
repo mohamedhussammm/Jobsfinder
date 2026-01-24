@@ -23,7 +23,7 @@ class NewAuthScreen extends ConsumerStatefulWidget {
 }
 
 class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
-  bool _isLogin = true; // Start with login view
+  bool _isLogin = false; // Start with registration view
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
   late TextEditingController _fullNameController;
@@ -508,16 +508,23 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                 Center(
                   child: TextButton(
                     onPressed: () {
-                      context.push('/register');
+                      setState(() {
+                        _isLogin = !_isLogin;
+                        _errorMessage = null;
+                      });
                     },
                     child: RichText(
                       text: TextSpan(
                         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                        children: const [
-                          TextSpan(text: "Don't have an account? "),
+                        children: [
                           TextSpan(
-                            text: 'Sign Up',
-                            style: TextStyle(
+                            text: _isLogin
+                                ? "Don't have an account? "
+                                : "Already have an account? ",
+                          ),
+                          TextSpan(
+                            text: _isLogin ? 'Sign Up' : 'Sign In',
+                            style: const TextStyle(
                               color: Color(0xFF176782),
                               fontWeight: FontWeight.bold,
                             ),

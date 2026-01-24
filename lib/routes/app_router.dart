@@ -96,6 +96,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/auth',
         builder: (context, state) => const NewAuthScreen(),
       ),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegistrationScreen(),
+      ),
 
       // Normal User Routes (Home)
       GoRoute(
