@@ -10,11 +10,7 @@ class EventCard extends StatelessWidget {
   final EventModel event;
   final VoidCallback? onTap;
 
-  const EventCard({
-    super.key,
-    required this.event,
-    this.onTap,
-  });
+  const EventCard({super.key, required this.event, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -54,11 +50,7 @@ class EventCard extends StatelessWidget {
                           );
                         },
                       )
-                    : Icon(
-                        Icons.event,
-                        color: AppColors.gray400,
-                        size: 48,
-                      ),
+                    : Icon(Icons.event, color: AppColors.gray400, size: 48),
               ),
               // Event details
               Padding(

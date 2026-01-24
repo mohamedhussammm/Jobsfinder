@@ -221,8 +221,9 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
                     : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  disabledBackgroundColor:
-                      AppColors.textTertiary.withOpacity(0.3),
+                  disabledBackgroundColor: AppColors.textTertiary.withOpacity(
+                    0.3,
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -234,8 +235,9 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : Text(
@@ -254,7 +256,10 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: const BorderSide(color: AppColors.borderColor, width: 1),
+                  side: const BorderSide(
+                    color: AppColors.borderColor,
+                    width: 1,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

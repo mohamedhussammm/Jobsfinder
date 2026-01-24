@@ -10,16 +10,11 @@ import '../../core/theme/shadows.dart';
 class EventDetailsScreen extends ConsumerWidget {
   final String eventId;
 
-  const EventDetailsScreen({
-    super.key,
-    required this.eventId,
-  });
+  const EventDetailsScreen({super.key, required this.eventId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final eventAsync = ref.watch(
-      eventDetailsProvider(eventId),
-    );
+    final eventAsync = ref.watch(eventDetailsProvider(eventId));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -127,8 +122,9 @@ class EventDetailsScreen extends ConsumerWidget {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: _getStatusColor(event.status)
-                                  .withOpacity(0.1),
+                              color: _getStatusColor(
+                                event.status,
+                              ).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: _getStatusColor(event.status),
@@ -151,8 +147,7 @@ class EventDetailsScreen extends ConsumerWidget {
                       _buildInfoCard(
                         icon: Icons.location_on,
                         label: 'Location',
-                        value:
-                            event.location?.city ?? 'Not specified',
+                        value: event.location?.city ?? 'Not specified',
                         color: AppColors.info,
                       ),
                       const SizedBox(height: 12),
@@ -167,8 +162,7 @@ class EventDetailsScreen extends ConsumerWidget {
                       _buildInfoCard(
                         icon: Icons.people,
                         label: 'Capacity',
-                        value:
-                            '${event.capacity ?? 0} people',
+                        value: '${event.capacity ?? 0} people',
                         color: AppColors.success,
                       ),
                     ],
@@ -280,10 +274,7 @@ class EventDetailsScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
       ),
       child: Row(
         children: [
@@ -346,9 +337,7 @@ class EventDetailsScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(
-              color: AppColors.primary,
-            ),
+            const CircularProgressIndicator(color: AppColors.primary),
             const SizedBox(height: 16),
             Text(
               'Loading event details...',
@@ -369,11 +358,7 @@ class EventDetailsScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppColors.error,
-            ),
+            Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
             Text(
               'Error loading event',
