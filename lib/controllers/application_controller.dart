@@ -5,31 +5,25 @@ import '../models/application_model.dart';
 import '../core/utils/result.dart';
 
 /// User applications provider
-final userApplicationsProvider = FutureProvider.autoDispose.family<List<ApplicationModel>, String>(
-  (ref, userId) async {
-    final controller = ref.watch(applicationControllerProvider);
-    final result = await controller.fetchUserApplications(userId);
-    return result.when(
-      success: (apps) => apps,
-      error: (e) => throw e,
-    );
-  },
-);
+final userApplicationsProvider = FutureProvider.autoDispose
+    .family<List<ApplicationModel>, String>((ref, userId) async {
+      final controller = ref.watch(applicationControllerProvider);
+      final result = await controller.fetchUserApplications(userId);
+      return result.when(success: (apps) => apps, error: (e) => throw e);
+    });
 
 /// Event applications provider (for team leaders)
-final eventApplicationsProvider = FutureProvider.autoDispose.family<List<ApplicationModel>, String>(
-  (ref, eventId) async {
-    final controller = ref.watch(applicationControllerProvider);
-    final result = await controller.fetchEventApplications(eventId);
-    return result.when(
-      success: (apps) => apps,
-      error: (e) => throw e,
-    );
-  },
-);
+final eventApplicationsProvider = FutureProvider.autoDispose
+    .family<List<ApplicationModel>, String>((ref, eventId) async {
+      final controller = ref.watch(applicationControllerProvider);
+      final result = await controller.fetchEventApplications(eventId);
+      return result.when(success: (apps) => apps, error: (e) => throw e);
+    });
 
 /// Application controller provider
-final applicationControllerProvider = Provider((ref) => ApplicationController(ref));
+final applicationControllerProvider = Provider(
+  (ref) => ApplicationController(ref),
+);
 
 class ApplicationController {
   final Ref ref;
@@ -78,17 +72,17 @@ class ApplicationController {
       final application = ApplicationModel.fromJson(response);
       return Success(application);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to apply: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to apply: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -102,22 +96,24 @@ class ApplicationController {
 
       return Success(null);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to withdraw application: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to withdraw application: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
   /// Fetch user's applications
-  Future<Result<List<ApplicationModel>>> fetchUserApplications(String userId) async {
+  Future<Result<List<ApplicationModel>>> fetchUserApplications(
+    String userId,
+  ) async {
     try {
       final response = await _supabase
           .from(SupabaseTables.applications)
@@ -126,22 +122,24 @@ class ApplicationController {
           .order('applied_at', ascending: false);
 
       final applications = (response as List)
-          .map((json) => ApplicationModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) => ApplicationModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
 
       return Success(applications);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to fetch applications: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to fetch applications: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -163,22 +161,24 @@ class ApplicationController {
       final response = await query.order('applied_at', ascending: false);
 
       final applications = (response as List)
-          .map((json) => ApplicationModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) => ApplicationModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
 
       return Success(applications);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to fetch event applications: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to fetch event applications: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -188,7 +188,14 @@ class ApplicationController {
     required String newStatus,
   }) async {
     try {
-      final validStatuses = ['applied', 'shortlisted', 'invited', 'accepted', 'declined', 'rejected'];
+      final validStatuses = [
+        'applied',
+        'shortlisted',
+        'invited',
+        'accepted',
+        'declined',
+        'rejected',
+      ];
       if (!validStatuses.contains(newStatus)) {
         throw ValidationException(message: 'Invalid status');
       }
@@ -206,22 +213,24 @@ class ApplicationController {
       final application = ApplicationModel.fromJson(response);
       return Success(application);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to update application status: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to update application status: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
   /// Get application with related event/user info
-  Future<Result<ApplicationModel>> getApplicationById(String applicationId) async {
+  Future<Result<ApplicationModel>> getApplicationById(
+    String applicationId,
+  ) async {
     try {
       final response = await _supabase
           .from(SupabaseTables.applications)
@@ -233,23 +242,25 @@ class ApplicationController {
       return Success(application);
     } on PostgrestException catch (e) {
       if (e.code == 'PGRST116') {
-        return Error(NotFoundException(
-          message: 'Application not found',
-          code: 'APPLICATION_NOT_FOUND',
-          originalError: e,
-        ));
+        return Error(
+          NotFoundException(
+            message: 'Application not found',
+            code: 'APPLICATION_NOT_FOUND',
+            originalError: e,
+          ),
+        );
       }
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to fetch application: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to fetch application: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -270,29 +281,38 @@ class ApplicationController {
           .range(offset, offset + pageSize - 1);
 
       final applications = (response as List)
-          .map((json) => ApplicationModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) => ApplicationModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
 
       return Success(applications);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to fetch applications: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to fetch applications: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
   /// Count applications per status
   Future<Result<Map<String, int>>> countApplicationsByStatus() async {
     try {
-      final statuses = ['applied', 'shortlisted', 'invited', 'accepted', 'declined', 'rejected'];
+      final statuses = [
+        'applied',
+        'shortlisted',
+        'invited',
+        'accepted',
+        'declined',
+        'rejected',
+      ];
       final counts = <String, int>{};
 
       for (final status in statuses) {
@@ -306,17 +326,17 @@ class ApplicationController {
 
       return Success(counts);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to count applications: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to count applications: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 }

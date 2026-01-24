@@ -8,10 +8,7 @@ import '../core/utils/result.dart';
 final analyticsKPIProvider = FutureProvider.autoDispose((ref) async {
   final controller = ref.watch(analyticsControllerProvider);
   final result = await controller.getAnalyticsKPI();
-  return result.when(
-    success: (kpi) => kpi,
-    error: (e) => throw e,
-  );
+  return result.when(success: (kpi) => kpi, error: (e) => throw e);
 });
 
 /// Analytics controller provider
@@ -33,20 +30,33 @@ class AnalyticsController {
       final teamLeaders = users.where((u) => u['role'] == 'team_leader').length;
 
       // Get event stats
-      final events = await _supabase.from(SupabaseTables.events).select('id, status');
+      final events = await _supabase
+          .from(SupabaseTables.events)
+          .select('id, status');
       final totalEvents = events.length;
-      final publishedEvents = events.where((e) => e['status'] == 'published').length;
+      final publishedEvents = events
+          .where((e) => e['status'] == 'published')
+          .length;
 
       // Get application stats
-      final applications = await _supabase.from(SupabaseTables.applications).select('id, status');
+      final applications = await _supabase
+          .from(SupabaseTables.applications)
+          .select('id, status');
       final totalApplications = applications.length;
-      final acceptedApplications = applications.where((a) => a['status'] == 'accepted').length;
+      final acceptedApplications = applications
+          .where((a) => a['status'] == 'accepted')
+          .length;
 
       // Get ratings
-      final ratings = await _supabase.from(SupabaseTables.ratings).select('score');
+      final ratings = await _supabase
+          .from(SupabaseTables.ratings)
+          .select('score');
       double avgRating = 0;
       if (ratings.isNotEmpty) {
-        final totalScore = ratings.fold<int>(0, (sum, r) => sum + (r['score'] as int));
+        final totalScore = ratings.fold<int>(
+          0,
+          (sum, r) => sum + (r['score'] as int),
+        );
         avgRating = totalScore / ratings.length;
       }
 
@@ -55,7 +65,9 @@ class AnalyticsController {
         totalCompanies: companyUsers,
         totalTeamLeaders: teamLeaders,
         totalEvents: totalEvents,
-        pendingEventRequests: events.where((e) => e['status'] == 'pending').length,
+        pendingEventRequests: events
+            .where((e) => e['status'] == 'pending')
+            .length,
         publishedEvents: publishedEvents,
         activeEvents: publishedEvents,
         totalApplications: totalApplications,
@@ -68,22 +80,24 @@ class AnalyticsController {
 
       return Success(kpi);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to get analytics KPI: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to get analytics KPI: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
   /// Get monthly statistics (last 12 months)
-  Future<Result<List<MonthlyStats>>> getMonthlyStatistics({int months = 12}) async {
+  Future<Result<List<MonthlyStats>>> getMonthlyStatistics({
+    int months = 12,
+  }) async {
     try {
       final stats = <MonthlyStats>[];
       final now = DateTime.now();
@@ -116,29 +130,32 @@ class AnalyticsController {
             .gte('updated_at', monthStart.toIso8601String())
             .lte('updated_at', monthEnd.toIso8601String());
 
-        final monthStr = '${monthStart.year}-${monthStart.month.toString().padLeft(2, '0')}';
+        final monthStr =
+            '${monthStart.year}-${monthStart.month.toString().padLeft(2, '0')}';
 
-        stats.add(MonthlyStats(
-          month: monthStr,
-          eventsCreated: eventsData.length,
-          applicationsReceived: applicationsData.length,
-          eventsCompleted: completedData.length,
-        ));
+        stats.add(
+          MonthlyStats(
+            month: monthStr,
+            eventsCreated: eventsData.length,
+            applicationsReceived: applicationsData.length,
+            eventsCompleted: completedData.length,
+          ),
+        );
       }
 
       return Success(stats);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to get monthly statistics: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to get monthly statistics: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -156,17 +173,17 @@ class AnalyticsController {
 
       return Success(distribution);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to get role distribution: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to get role distribution: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -174,7 +191,9 @@ class AnalyticsController {
   Future<Result<List<TopEvent>>> getTopEvents({int limit = 10}) async {
     try {
       // Get all events
-      final events = await _supabase.from(SupabaseTables.events).select('id, title');
+      final events = await _supabase
+          .from(SupabaseTables.events)
+          .select('id, title');
 
       // Get application counts
       final appCounts = <String, int>{};
@@ -192,36 +211,45 @@ class AnalyticsController {
           .map((e) => MapEntry(e, appCounts[e['id']] ?? 0))
           .toList();
       sorted.sort((a, b) => b.value.compareTo(a.value));
-      
+
       final topEvents = sorted
           .take(limit)
-          .map((entry) => TopEvent(
-            eventId: entry.key['id'] as String,
-            eventTitle: entry.key['title'] as String,
-            applicationCount: entry.value,
-          ))
+          .map(
+            (entry) => TopEvent(
+              eventId: entry.key['id'] as String,
+              eventTitle: entry.key['title'] as String,
+              applicationCount: entry.value,
+            ),
+          )
           .toList();
 
       return Success(topEvents);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to get top events: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to get top events: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
   /// Get application status distribution
   Future<Result<Map<String, int>>> getApplicationStatusDistribution() async {
     try {
-      final statuses = ['applied', 'shortlisted', 'invited', 'accepted', 'declined', 'rejected'];
+      final statuses = [
+        'applied',
+        'shortlisted',
+        'invited',
+        'accepted',
+        'declined',
+        'rejected',
+      ];
       final distribution = <String, int>{};
 
       for (final status in statuses) {
@@ -234,24 +262,30 @@ class AnalyticsController {
 
       return Success(distribution);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to get application distribution: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to get application distribution: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
   /// Get event status distribution
   Future<Result<Map<String, int>>> getEventStatusDistribution() async {
     try {
-      final statuses = ['draft', 'pending', 'published', 'completed', 'cancelled'];
+      final statuses = [
+        'draft',
+        'pending',
+        'published',
+        'completed',
+        'cancelled',
+      ];
       final distribution = <String, int>{};
 
       for (final status in statuses) {
@@ -264,17 +298,17 @@ class AnalyticsController {
 
       return Success(distribution);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to get event distribution: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to get event distribution: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 }
