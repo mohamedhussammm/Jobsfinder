@@ -5,16 +5,12 @@ import '../models/rating_model.dart';
 import '../core/utils/result.dart';
 
 /// User ratings provider
-final userRatingsProvider = FutureProvider.autoDispose.family<List<RatingModel>, String>(
-  (ref, userId) async {
-    final controller = ref.watch(ratingControllerProvider);
-    final result = await controller.getUserRatings(userId);
-    return result.when(
-      success: (ratings) => ratings,
-      error: (e) => throw e,
-    );
-  },
-);
+final userRatingsProvider = FutureProvider.autoDispose
+    .family<List<RatingModel>, String>((ref, userId) async {
+      final controller = ref.watch(ratingControllerProvider);
+      final result = await controller.getUserRatings(userId);
+      return result.when(success: (ratings) => ratings, error: (e) => throw e);
+    });
 
 /// Rating controller provider
 final ratingControllerProvider = Provider((ref) => RatingController(ref));
@@ -36,7 +32,9 @@ class RatingController {
     try {
       // Validate score
       if (score < 1 || score > 5) {
-        throw ValidationException(message: 'Rating score must be between 1 and 5');
+        throw ValidationException(
+          message: 'Rating score must be between 1 and 5',
+        );
       }
 
       // Check if rating already exists (immutable)
@@ -76,17 +74,17 @@ class RatingController {
 
       return Success(rating);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to save rating: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to save rating: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -105,17 +103,17 @@ class RatingController {
 
       return Success(ratings);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to fetch ratings: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to fetch ratings: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -134,17 +132,17 @@ class RatingController {
 
       return Success(ratings);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to fetch ratings given: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to fetch ratings given: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 
@@ -163,17 +161,17 @@ class RatingController {
 
       return Success(ratings);
     } on PostgrestException catch (e) {
-      return Error(DatabaseException(
-        message: e.message,
-        code: e.code,
-        originalError: e,
-      ));
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
     } catch (e, st) {
-      return Error(AppException(
-        message: 'Failed to fetch event ratings: $e',
-        originalError: e,
-        stackTrace: st,
-      ));
+      return Error(
+        AppException(
+          message: 'Failed to fetch event ratings: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
     }
   }
 

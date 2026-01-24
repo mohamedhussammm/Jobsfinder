@@ -83,9 +83,7 @@ class TeamLeaderController {
           .eq('event_id', eventId)
           .single();
 
-      final assignment = TeamLeaderModel.fromJson(
-        response,
-      );
+      final assignment = TeamLeaderModel.fromJson(response);
       return Success(assignment);
     } on PostgrestException catch (e) {
       if (e.code == 'PGRST116') {
@@ -132,9 +130,7 @@ class TeamLeaderController {
           .select()
           .single();
 
-      final assignment = TeamLeaderModel.fromJson(
-        response,
-      );
+      final assignment = TeamLeaderModel.fromJson(response);
       return Success(assignment);
     } on PostgrestException catch (e) {
       return Error(
