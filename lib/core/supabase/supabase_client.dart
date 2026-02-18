@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Supabase initialization provider
 final supabaseProvider = Provider<SupabaseClient>((ref) {
@@ -14,8 +15,12 @@ final supabaseAuthProvider = Provider<GoTrueClient>((ref) {
 /// Initialize Supabase - call this in main.dart before runApp()
 Future<void> initializeSupabase() async {
   await Supabase.initialize(
-    url: 'https://qxdgkioixstyigbvohmc.supabase.co',
-    anonKey: 'sb_publishable_2GrDJ_wAU1ofjJI1HGy7Kw_BDhMSOWt',
+    url:
+        dotenv.env['SUPABASE_URL'] ??
+        'https://qxdgkioixstyigbvohmc.supabase.co',
+    anonKey:
+        dotenv.env['SUPABASE_ANON_KEY'] ??
+        'sb_publishable_2GrDJ_wAU1ofjJI1HGy7Kw_BDhMSOWt',
   );
 }
 
@@ -29,12 +34,17 @@ class SupabaseTables {
   static const String ratings = 'ratings';
   static const String notifications = 'notifications';
   static const String auditLogs = 'audit_logs';
+  static const String messages = 'messages';
+  static const String attendance = 'attendance';
+  static const String conversations = 'conversations';
 }
 
 /// Common Supabase RLS error messages
 class SupabaseErrors {
-  static const String unauthorized = 'You do not have permission to perform this action';
+  static const String unauthorized =
+      'You do not have permission to perform this action';
   static const String notFound = 'Resource not found';
   static const String conflict = 'This resource already exists';
-  static const String serverError = 'Server error occurred. Please try again later';
+  static const String serverError =
+      'Server error occurred. Please try again later';
 }

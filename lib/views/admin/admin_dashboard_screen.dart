@@ -7,7 +7,9 @@ import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/theme/shadows.dart';
 import 'users/admin_users_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'events/admin_events_screen.dart';
+import '../../controllers/auth_controller.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -34,6 +36,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            tooltip: 'Sign Out',
+            color: AppColors.error,
+            onPressed: () => _confirmLogout(context, ref),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: IndexedStack(
         index: _selectedIndex,
@@ -69,8 +80,46 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         return 'Manage Events';
       case 2:
         return 'Manage Users';
-      default:
-        return 'Admin';
+    }
+    return 'Admin';
+  }
+
+  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text(
+          'Sign Out',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: const Text(
+          'Are you sure you want to sign out of your session?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await ref.read(authControllerProvider).logout();
+      if (context.mounted) {
+        context.go('/auth');
+      }
     }
   }
 }
@@ -292,7 +341,7 @@ class _KPICard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 24),

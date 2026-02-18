@@ -21,9 +21,9 @@ class RatingController {
 
   RatingController(this.ref);
 
-  /// Team leader rates an applicant
+  /// Rate an applicant (by team leader or company)
   Future<Result<RatingModel>> rateApplicant({
-    required String raterUserId, // Team leader
+    required String raterUserId, // Team leader or company user
     required String ratedUserId, // Applicant
     required String eventId,
     required int score,
@@ -175,6 +175,25 @@ class RatingController {
     }
   }
 
+  /// Check if a rater has already rated an applicant for an event
+  Future<bool> hasRatedApplicant({
+    required String raterUserId,
+    required String ratedUserId,
+    required String eventId,
+  }) async {
+    try {
+      final existing = await _supabase
+          .from(SupabaseTables.ratings)
+          .select('id')
+          .eq('rater_user_id', raterUserId)
+          .eq('rated_user_id', ratedUserId)
+          .eq('event_id', eventId);
+      return existing.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Update user's average rating
   Future<void> _updateUserAverageRating(String userId) async {
     try {
@@ -200,8 +219,8 @@ class RatingController {
             'updated_at': DateTime.now().toIso8601String(),
           })
           .eq('id', userId);
-    } catch (e) {
-      print('Failed to update user average rating: $e');
+    } catch (_) {
+      // Non-critical: average rating update failure is ignored
     }
   }
 }

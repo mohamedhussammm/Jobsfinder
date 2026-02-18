@@ -194,6 +194,7 @@ class _ApplicationCard extends ConsumerWidget {
       // Refresh the list
       final currentUser = ref.read(currentUserProvider);
       if (currentUser != null) {
+        // ignore: unused_result
         ref.refresh(userApplicationsProvider(currentUser.id));
       }
     }
@@ -240,7 +241,7 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(

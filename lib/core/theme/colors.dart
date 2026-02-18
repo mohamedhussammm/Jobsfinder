@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Primary Colors
-  static const Color primary = Color(0xFF6366F1);
-  static const Color primaryLight = Color(0xFFE0E7FF);
-  static const Color primaryDark = Color(0xFF4F46E5);
+  // Primary Colors — CYAN/TEAL (matching reference designs)
+  static const Color primary = Color(0xFF0EA5E9);
+  static const Color primaryLight = Color(0xFFE0F2FE);
+  static const Color primaryDark = Color(0xFF0284C7);
 
   // Secondary Colors
   static const Color secondary = Color(0xFF10B981);
@@ -20,7 +20,7 @@ class AppColors {
   static const Color success = Color(0xFF10B981);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF4444);
-  static const Color info = Color(0xFF3B82F6);
+  static const Color info = Color(0xFF0EA5E9);
 
   // Neutral Colors
   static const Color white = Color(0xFFFFFFFF);
@@ -63,7 +63,7 @@ class AppColors {
   // Status-specific
   static const Color pending = Color(0xFFF59E0B);
   static const Color published = Color(0xFF10B981);
-  static const Color completed = Color(0xFF3B82F6);
+  static const Color completed = Color(0xFF0EA5E9);
   static const Color cancelled = Color(0xFFEF4444);
 
   // Gradients

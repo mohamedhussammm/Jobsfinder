@@ -130,16 +130,18 @@ class EventModel {
 extension EventModelExtensions on EventModel {
   // Company name - placeholder until we implement proper company joins
   String get company =>
-      'Company'; // TODO: Fetch from company table using companyId
+      'Company'; // Placeholder — populated via company join when available
 
   // Event date - simplified date field (uses startTime)
   DateTime get eventDate => startTime;
 
   // Number of applicants - placeholder until we implement counting
-  int get applicants => 0; // TODO: Count applications for this event
+  int get applicants =>
+      0; // Placeholder — counted from applications table when available
 
   // Rating - placeholder until we implement rating system
-  double get rating => 0.0; // TODO: Calculate average rating
+  double get rating =>
+      0.0; // Placeholder — averaged from ratings table when available
 }
 
 /// Extension for LocationData

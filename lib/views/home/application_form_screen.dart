@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../controllers/application_controller.dart';
+import '../../controllers/auth_controller.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
-import '../../core/theme/shadows.dart';
 
 class ApplicationFormScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -21,7 +23,6 @@ class ApplicationFormScreen extends ConsumerStatefulWidget {
 
 class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
   late final TextEditingController _coverLetterController;
-  String? _selectedCV;
   bool _agreedToTerms = false;
   bool _isSubmitting = false;
 
@@ -64,8 +65,7 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
                 color: AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.primary.withOpacity(0.2),
-                  width: 1,
+                  color: AppColors.primary.withValues(alpha: 0.2),
                 ),
               ),
               child: Row(
@@ -73,11 +73,11 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.2),
+                      color: AppColors.primary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
-                      Icons.info,
+                      Icons.event_rounded,
                       color: AppColors.primary,
                       size: 24,
                     ),
@@ -111,24 +111,19 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
             ),
             const SizedBox(height: 24),
 
-            // CV Upload Section
-            Text(
-              'Upload CV / Resume',
-              style: AppTypography.titleMedium.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildFileUploadCard(),
-            const SizedBox(height: 24),
-
             // Cover Letter Section
             Text(
               'Cover Letter',
               style: AppTypography.titleMedium.copyWith(
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Optional — tell us why you\'re a great fit',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textTertiary,
               ),
             ),
             const SizedBox(height: 12),
@@ -145,17 +140,11 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: AppColors.borderColor,
-                    width: 1,
-                  ),
+                  borderSide: const BorderSide(color: AppColors.borderColor),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: AppColors.borderColor,
-                    width: 1,
-                  ),
+                  borderSide: const BorderSide(color: AppColors.borderColor),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -174,9 +163,11 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
 
             // Terms Agreement
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
                   width: 24,
+                  height: 24,
                   child: Checkbox(
                     value: _agreedToTerms,
                     onChanged: (value) {
@@ -204,6 +195,13 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
                             decoration: TextDecoration.underline,
                           ),
                         ),
+                        TextSpan(
+                          text:
+                              ' and confirm that the information I provide is accurate.',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -221,8 +219,8 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
                     : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  disabledBackgroundColor: AppColors.textTertiary.withOpacity(
-                    0.3,
+                  disabledBackgroundColor: AppColors.textTertiary.withValues(
+                    alpha: 0.3,
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -249,17 +247,14 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
                       ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: _isSubmitting ? null : () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: const BorderSide(
-                    color: AppColors.borderColor,
-                    width: 1,
-                  ),
+                  side: const BorderSide(color: AppColors.borderColor),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -280,82 +275,69 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
     );
   }
 
-  Widget _buildFileUploadCard() {
-    return GestureDetector(
-      onTap: () {
-        // Handle file selection
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('File picker would open here')),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.borderColor,
-            width: 2,
-            style: BorderStyle.solid,
-          ),
+  Future<void> _submitApplication() async {
+    final currentUser = ref.read(currentUserProvider);
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You must be logged in to apply'),
+          backgroundColor: AppColors.error,
         ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.cloud_upload,
-                color: AppColors.primary,
-                size: 32,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _selectedCV ?? 'No file selected',
-              style: AppTypography.titleSmall.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Click to upload PDF or Word document',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.textTertiary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Max file size: 10 MB',
-              style: AppTypography.labelSmall.copyWith(
-                color: AppColors.textTertiary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+      );
+      return;
+    }
 
-  void _submitApplication() {
     setState(() => _isSubmitting = true);
 
-    // Simulate API call
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
+    final controller = ref.read(applicationControllerProvider);
+    final result = await controller.applyToEvent(
+      userId: currentUser.id,
+      eventId: widget.eventId,
+      coverLetter: _coverLetterController.text.trim().isEmpty
+          ? null
+          : _coverLetterController.text.trim(),
+    );
+
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+
+    result.when(
+      success: (application) {
+        // Invalidate the user's applications cache so the list refreshes
+        ref.invalidate(userApplicationsProvider(currentUser.id));
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Application submitted successfully!'),
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 10),
+                Text('Application submitted successfully!'),
+              ],
+            ),
             backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
-        Navigator.pop(context);
-      }
-    });
+
+        // Navigate back to applications list
+        context.go('/applications');
+      },
+      error: (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.message),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      },
+    );
   }
 }

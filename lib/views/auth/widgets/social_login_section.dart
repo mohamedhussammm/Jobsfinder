@@ -5,7 +5,7 @@ import '../../../services/social_auth_service.dart';
 import '../../../core/theme/colors.dart';
 
 class SocialLoginSection extends ConsumerWidget {
-  const SocialLoginSection({Key? key}) : super(key: key);
+  const SocialLoginSection({super.key});
 
   Future<void> _handleGoogleSignIn(BuildContext context, WidgetRef ref) async {
     try {
@@ -99,7 +99,7 @@ class SocialLoginSection extends ConsumerWidget {
           children: [
             Expanded(
               child: Divider(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 thickness: 1,
               ),
             ),
@@ -108,7 +108,7 @@ class SocialLoginSection extends ConsumerWidget {
               child: Text(
                 'Or continue with',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -116,7 +116,7 @@ class SocialLoginSection extends ConsumerWidget {
             ),
             Expanded(
               child: Divider(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 thickness: 1,
               ),
             ),

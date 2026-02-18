@@ -5,7 +5,6 @@ import '../../models/user_model.dart';
 import '../../controllers/auth_controller.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
-import '../../core/theme/glass.dart';
 
 class UserProfileScreen extends ConsumerWidget {
   const UserProfileScreen({super.key});
@@ -24,10 +23,6 @@ class UserProfileScreen extends ConsumerWidget {
         title: Text('My Profile', style: AppTypography.heading2),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => context.go('/'),
-        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -47,85 +42,55 @@ class UserProfileScreen extends ConsumerWidget {
               title: 'Personal Information',
               icon: Icons.person_outline,
               subtitle: 'Username, Phone Number',
-              onTap: () {
-                // Navigate to Personal Info Edit
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Edit Personal Info')),
-                );
-              },
+              onTap: () => context.push('/edit-profile'),
             ),
 
-            // 2. Professional Details
+            // 2. My Applications
             _buildSectionRow(
               context,
-              title: 'Professional Details',
-              icon: Icons.work_outline,
-              subtitle: 'Experience, Skills, Certificates',
-              onTap: () {
-                // Navigate to Professional Details
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Edit Professional Details')),
-                );
-              },
+              title: 'My Applications',
+              icon: Icons.assignment_outlined,
+              subtitle: 'View application history',
+              onTap: () => context.go('/applications'),
             ),
 
-            // 3. Portfolio & Documents
+            // 3. My Ratings
             _buildSectionRow(
               context,
-              title: 'Portfolio & Documents',
-              icon: Icons.folder_open,
-              subtitle: 'Upload CV, Portfolio',
-              onTap: () {
-                // Navigate to Documents
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Manage Documents')),
-                );
-              },
+              title: 'My Ratings',
+              icon: Icons.star_outline,
+              subtitle: 'View received ratings',
+              onTap: () => context.push('/ratings'),
             ),
 
-            // 4. Privacy Settings
+            // 4. Calendar
             _buildSectionRow(
               context,
-              title: 'Privacy Settings',
-              icon: Icons.lock_outline,
-              subtitle: 'Visibility, Data usage',
-              onTap: () {},
+              title: 'Calendar',
+              icon: Icons.calendar_today_outlined,
+              subtitle: 'View scheduled events',
+              onTap: () => context.push('/calendar'),
             ),
 
             // 5. Notification Settings
             _buildSectionRow(
               context,
-              title: 'Notification Settings',
+              title: 'Notifications',
               icon: Icons.notifications_outlined,
-              subtitle: 'Push, Email, SMS',
-              onTap: () {},
+              subtitle: 'View your notifications',
+              onTap: () => context.go('/notifications'),
             ),
 
-            // 6. Account Settings
+            // 6. Settings
             _buildSectionRow(
               context,
-              title: 'Account Settings',
+              title: 'Settings',
               icon: Icons.settings_outlined,
-              subtitle: 'Password, Language, Logout',
+              subtitle: 'Password, Privacy, Account',
               isLast: true,
-              onTap: () {},
+              onTap: () => context.push('/settings'),
             ),
 
-            const SizedBox(height: 32),
-            OutlinedButton(
-              onPressed: () {
-                context.go('/auth');
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.error,
-                side: const BorderSide(color: AppColors.error),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Center(child: Text('Log Out')),
-            ),
             const SizedBox(height: 32),
           ],
         ),
@@ -188,7 +153,7 @@ class UserProfileScreen extends ConsumerWidget {
             const Icon(Icons.star, color: AppColors.accent, size: 20),
             const SizedBox(width: 4),
             Text(
-              '${user.ratingAvg.toStringAsFixed(1) ?? "0.0"} (${user.ratingCount ?? 0} reviews)',
+              '${user.ratingAvg.toStringAsFixed(1)} (${user.ratingCount} reviews)',
               style: AppTypography.body2.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -200,9 +165,7 @@ class UserProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildCompletionCard(UserModel user) {
-    final completion = user.profileComplete == true
-        ? 1.0
-        : 0.4; // Placeholder logic
+    final completion = user.profileComplete == true ? 1.0 : 0.4;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -211,7 +174,7 @@ class UserProfileScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -272,7 +235,7 @@ class UserProfileScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -283,7 +246,7 @@ class UserProfileScreen extends ConsumerWidget {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.primaryLight.withOpacity(0.5),
+            color: AppColors.primaryLight.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: AppColors.primary, size: 24),

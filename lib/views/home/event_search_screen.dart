@@ -17,7 +17,6 @@ class EventSearchScreen extends ConsumerStatefulWidget {
 class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
   late TextEditingController _searchController;
   String _selectedLocation = 'All';
-  final String _selectedSalaryRange = 'All';
   bool _showFilters = false;
 
   @override
@@ -59,7 +58,7 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
       // Filter by location
       if (_selectedLocation != 'All') {
         filtered = filtered
-            .where((event) => event.location == _selectedLocation)
+            .where((event) => event.location?.city == _selectedLocation)
             .toList();
       }
 
@@ -86,7 +85,7 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
                     color: AppColors.glassSecondary,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.accent.withOpacity(0.3),
+                      color: AppColors.accent.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -257,7 +256,7 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
                 return ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: events.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, i) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final event = events[index];
                     return EventSearchCard(event: event);
@@ -355,7 +354,7 @@ class EventSearchCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.2),
+                  color: AppColors.accent.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -422,7 +421,7 @@ class EventSearchCard extends StatelessWidget {
                   Icon(Icons.star, size: 16, color: AppColors.warning),
                   const SizedBox(width: 4),
                   Text(
-                    event.rating!.toStringAsFixed(1),
+                    event.rating.toStringAsFixed(1),
                     style: AppTypography.caption.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -456,7 +455,7 @@ class _DetailItem extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _DetailItem({super.key, required this.icon, required this.label});
+  const _DetailItem({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {

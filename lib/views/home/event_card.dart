@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/glass.dart';
-import '../../core/theme/shadows.dart';
 import '../../core/theme/typography.dart';
 import '../../models/event_model.dart';
 import '../../core/utils/extensions.dart';
@@ -177,17 +176,17 @@ class EventCard extends StatelessWidget {
 
     switch (status) {
       case 'published':
-        bgColor = AppColors.successGradient.colors[0].withOpacity(0.15);
+        bgColor = AppColors.successGradient.colors[0].withValues(alpha: 0.15);
         textColor = AppColors.success;
         icon = Icons.check_circle;
         break;
       case 'pending':
-        bgColor = AppColors.warning.withOpacity(0.15);
+        bgColor = AppColors.warning.withValues(alpha: 0.15);
         textColor = AppColors.warning;
         icon = Icons.schedule;
         break;
       case 'completed':
-        bgColor = AppColors.info.withOpacity(0.15);
+        bgColor = AppColors.info.withValues(alpha: 0.15);
         textColor = AppColors.info;
         icon = Icons.task_alt;
         break;

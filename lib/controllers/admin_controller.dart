@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/supabase/supabase_client.dart';
 import '../models/user_model.dart';
 import '../models/team_leader_model.dart';
-import '../models/company_model.dart';
 import '../models/audit_log_model.dart';
 import '../models/event_model.dart';
 import '../core/utils/result.dart';
@@ -216,34 +215,6 @@ class AdminController {
     }
   }
 
-  /// Fetch all companies (for dropdowns)
-  Future<Result<List<CompanyModel>>> fetchAllCompanies() async {
-    try {
-      final response = await _supabase
-          .from('companies')
-          .select()
-          .order('name', ascending: true);
-
-      final companies = (response as List)
-          .map((json) => CompanyModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-
-      return Success(companies);
-    } on PostgrestException catch (e) {
-      return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
-      );
-    } catch (e, st) {
-      return Error(
-        AppException(
-          message: 'Failed to fetch companies: $e',
-          originalError: e,
-          stackTrace: st,
-        ),
-      );
-    }
-  }
-
   /// Assign team leader to event
   Future<Result<TeamLeaderModel>> assignTeamLeaderToEvent({
     required String userId,
@@ -447,16 +418,15 @@ class AdminController {
         'new_values': newValues,
         'created_at': DateTime.now().toIso8601String(),
       });
-    } catch (e) {
-      // Log silently - audit failure shouldn't block operations
-      print('Failed to log audit: $e');
+    } catch (_) {
+      // Audit failure is non-critical; ignore silently
     }
   }
 
   /// Get user count by role
   Future<Result<Map<String, int>>> getUserCountByRole() async {
     try {
-      final roles = ['normal', 'company', 'team_leader', 'admin'];
+      final roles = ['normal', 'team_leader', 'admin'];
       final counts = <String, int>{};
 
       for (final role in roles) {

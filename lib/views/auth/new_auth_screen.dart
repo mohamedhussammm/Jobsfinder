@@ -20,7 +20,6 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
   late TextEditingController _fullNameController;
   late TextEditingController _phoneController;
   late TextEditingController _nationalIdController;
-  final bool _rememberMe = false;
   bool _isLoading = false;
   String? _errorMessage;
   String _selectedRole = 'normal'; // Default role: Usher/Applicant
@@ -127,9 +126,6 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
       case 'team_leader':
         context.go('/team-leader/events');
         break;
-      case 'company':
-        context.go('/company/dashboard');
-        break;
       case 'normal':
       case 'user': // Backward compatibility
       default:
@@ -145,8 +141,6 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
         return 'Usher / Applicant';
       case 'team_leader':
         return 'Team Leader';
-      case 'company':
-        return 'Company';
       default:
         return role;
     }
@@ -187,10 +181,10 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withOpacity(0.1),
+                      color: AppColors.accent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: AppColors.accent.withOpacity(0.3),
+                        color: AppColors.accent.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -219,7 +213,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.error),
                     ),
@@ -264,7 +258,9 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: AppColors.textSecondary.withOpacity(0.3),
+                                color: AppColors.textSecondary.withValues(
+                                  alpha: 0.3,
+                                ),
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
@@ -296,7 +292,9 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: AppColors.textSecondary.withOpacity(0.3),
+                              color: AppColors.textSecondary.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
@@ -324,7 +322,9 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: AppColors.textSecondary.withOpacity(0.3),
+                              color: AppColors.textSecondary.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
@@ -355,7 +355,9 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: AppColors.textSecondary.withOpacity(0.3),
+                                color: AppColors.textSecondary.withValues(
+                                  alpha: 0.3,
+                                ),
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
@@ -371,10 +373,6 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                             DropdownMenuItem(
                               value: 'team_leader',
                               child: Text(_getRoleDisplayName('team_leader')),
-                            ),
-                            DropdownMenuItem(
-                              value: 'company',
-                              child: Text(_getRoleDisplayName('company')),
                             ),
                           ],
                           onChanged: (value) {
@@ -405,7 +403,9 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: AppColors.textSecondary.withOpacity(0.3),
+                                color: AppColors.textSecondary.withValues(
+                                  alpha: 0.3,
+                                ),
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
@@ -435,7 +435,9 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: AppColors.textSecondary.withOpacity(0.3),
+                                color: AppColors.textSecondary.withValues(
+                                  alpha: 0.3,
+                                ),
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../controllers/event_controller.dart';
 import '../../../controllers/admin_controller.dart';
-import '../../../models/company_model.dart';
 import '../../../models/event_model.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
+import 'package:go_router/go_router.dart';
+import '../../../models/team_leader_model.dart';
+import '../../../models/user_model.dart';
 
 class AdminEventsScreen extends ConsumerStatefulWidget {
   const AdminEventsScreen({super.key});
@@ -16,7 +18,6 @@ class AdminEventsScreen extends ConsumerStatefulWidget {
 
 class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
   String _statusFilter = 'all'; // 'all', 'pending', 'published', 'cancelled'
-  final String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +92,7 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
                   }
                   return ListView.separated(
                     itemCount: events.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, i) =>
                         const Divider(color: AppColors.borderColor),
                     itemBuilder: (context, index) {
                       final event = events[index];
@@ -156,6 +157,20 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
                               ),
                               onPressed: () => _deleteEvent(event.id),
                             ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.person_add_alt_1,
+                                color: AppColors.primary,
+                              ),
+                              tooltip: 'Assign Team Leader',
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) =>
+                                      _AssignTeamLeaderDialog(event: event),
+                                );
+                              },
+                            ),
                           ],
                         ),
                         onTap: () {
@@ -191,7 +206,7 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
         });
       },
       backgroundColor: AppColors.surface,
-      selectedColor: AppColors.primary.withOpacity(0.2),
+      selectedColor: AppColors.primary.withValues(alpha: 0.2),
       labelStyle: TextStyle(
         color: isSelected ? AppColors.primary : AppColors.textSecondary,
       ),
@@ -216,7 +231,7 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
@@ -232,12 +247,15 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
 
   Future<void> _approveEvent(String id) async {
     await ref.read(eventControllerProvider).approveEvent(id);
+    // ignore: unused_result
     ref.refresh(pendingEventsAdminProvider);
+    // ignore: unused_result
     ref.refresh(publishedEventsProvider(0));
   }
 
   Future<void> _rejectEvent(String id) async {
     await ref.read(eventControllerProvider).rejectEvent(id);
+    // ignore: unused_result
     ref.refresh(pendingEventsAdminProvider);
   }
 
@@ -261,9 +279,11 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
         ],
       ),
     );
-    if (cur == true) {
+    if (cur == true && mounted) {
       await ref.read(eventControllerProvider).deleteEvent(id);
+      // ignore: unused_result
       ref.refresh(pendingEventsAdminProvider);
+      // ignore: unused_result
       ref.refresh(publishedEventsProvider(0));
     }
   }
@@ -284,38 +304,14 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
   final _descController = TextEditingController();
   final _capacityController = TextEditingController();
 
-  String? _selectedCompanyId;
+  String _selectedCompanyId = '';
+  final _organizerController = TextEditingController();
   DateTime _startDate = DateTime.now().add(const Duration(days: 1));
   DateTime _endDate = DateTime.now().add(const Duration(days: 1, hours: 4));
-  bool _isLoadingComp = true;
-  List<CompanyModel> _companies = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchCompanies();
-  }
-
-  Future<void> _fetchCompanies() async {
-    final res = await ref.read(adminControllerProvider).fetchAllCompanies();
-    res.when(
-      success: (list) {
-        if (mounted) {
-          setState(() {
-            _companies = list;
-            _isLoadingComp = false;
-          });
-        }
-      },
-      error: (e) {
-        if (mounted) {
-          setState(() {
-            _isLoadingComp = false;
-          });
-        }
-        // Handle error
-      },
-    );
   }
 
   @override
@@ -330,25 +326,16 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (_isLoadingComp)
-                  const LinearProgressIndicator()
-                else
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedCompanyId,
-                    decoration: const InputDecoration(labelText: 'Company *'),
-                    items: _companies
-                        .map(
-                          (c) => DropdownMenuItem(
-                            value: c.id,
-                            child: Text(c.name),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (val) =>
-                        setState(() => _selectedCompanyId = val),
-                    validator: (v) =>
-                        v == null ? 'Please select a company' : null,
+                TextFormField(
+                  controller: _organizerController,
+                  decoration: const InputDecoration(
+                    labelText: 'Organizer / Company Name',
                   ),
+                  onChanged: (val) => _selectedCompanyId = val,
+                  validator: (v) => v == null || v.isEmpty
+                      ? 'Please enter organizer name'
+                      : null,
+                ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _titleController,
@@ -418,7 +405,7 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
               final result = await ref
                   .read(eventControllerProvider)
                   .adminCreateEvent(
-                    companyId: _selectedCompanyId!,
+                    companyId: _selectedCompanyId,
                     title: _titleController.text,
                     description: _descController.text,
                     location: null, // Simplified for now
@@ -428,20 +415,27 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
                     imagePath: null,
                   );
 
-              // Close loading dialog
-              if (mounted) Navigator.pop(context);
+              // Capture navigator before async gap for loading dialog
+              final loadingNav = Navigator.of(context);
+              if (mounted) loadingNav.pop();
+
+              if (!mounted) return;
+              final messenger = ScaffoldMessenger.of(context);
+              final nav = Navigator.of(context);
 
               result.when(
                 success: (event) {
                   // Close create dialog
-                  if (mounted) Navigator.pop(context);
+                  nav.pop();
 
                   // Refresh both providers
+                  // ignore: unused_result
                   ref.refresh(publishedEventsProvider(0));
+                  // ignore: unused_result
                   ref.refresh(pendingEventsAdminProvider);
 
                   // Show success message
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     SnackBar(
                       content: Text(
                         'Event "${event.title}" created and published!',
@@ -451,8 +445,8 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
                   );
                 },
                 error: (error) {
-                  // Show error message
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  // Show error using pre-captured messenger (no async gap)
+                  messenger.showSnackBar(
                     SnackBar(
                       content: Text('Failed to create event: $error'),
                       backgroundColor: AppColors.error,
@@ -465,6 +459,217 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
           child: const Text('Create & Publish'),
         ),
       ],
+    );
+  }
+}
+
+class _AssignTeamLeaderDialog extends ConsumerStatefulWidget {
+  final EventModel event;
+
+  const _AssignTeamLeaderDialog({super.key, required this.event});
+
+  @override
+  ConsumerState<_AssignTeamLeaderDialog> createState() =>
+      _AssignTeamLeaderDialogState();
+}
+
+class _AssignTeamLeaderDialogState
+    extends ConsumerState<_AssignTeamLeaderDialog> {
+  String? _selectedUserId;
+  bool _isAssigning = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // Fetch currently assigned team leaders
+    final teamLeadersAsync = ref.watch(
+      teamLeadersForEventProvider(widget.event.id),
+    );
+
+    return AlertDialog(
+      title: Text('Manage Team Leaders\n${widget.event.title}'),
+      content: SizedBox(
+        width: 400,
+        height: 400,
+        child: Column(
+          children: [
+            // List of assigned team leaders
+            Expanded(
+              child: teamLeadersAsync.when(
+                data: (leaders) {
+                  if (leaders.isEmpty) {
+                    return const Center(
+                      child: Text('No team leaders assigned'),
+                    );
+                  }
+                  return ListView.builder(
+                    itemCount: leaders.length,
+                    itemBuilder: (context, index) {
+                      final leader = leaders[index];
+                      return ListTile(
+                        leading: const Icon(Icons.person),
+                        title: const Text('Team Leader'),
+                        subtitle: Text(
+                          'ID: ${leader.userId.substring(0, 8)}...',
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.remove_circle_outline),
+                          color: AppColors.error,
+                          onPressed: () => _removeLeader(leader.id),
+                        ),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, s) => Center(child: Text('Error: $e')),
+              ),
+            ),
+            const Divider(),
+            // Assign new
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(
+                'Assign New Team Leader',
+                style: AppTypography.titleSmall,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _UserDropdown(
+                    onChanged: (val) => setState(() => _selectedUserId = val),
+                    selectedId: _selectedUserId,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _selectedUserId == null || _isAssigning
+                      ? null
+                      : _assignLeader,
+                  child: _isAssigning
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Assign'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _assignLeader() async {
+    if (_selectedUserId == null) return;
+    setState(() => _isAssigning = true);
+
+    final result = await ref
+        .read(adminControllerProvider)
+        .assignTeamLeaderToEvent(
+          userId: _selectedUserId!,
+          eventId: widget.event.id,
+        );
+
+    if (mounted) setState(() => _isAssigning = false);
+
+    result.when(
+      success: (_) {
+        ref.invalidate(teamLeadersForEventProvider(widget.event.id));
+        setState(() => _selectedUserId = null);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Team leader assigned successfully'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      },
+      error: (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to assign: ${e.message}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  Future<void> _removeLeader(String id) async {
+    final result = await ref
+        .read(adminControllerProvider)
+        .removeTeamLeaderFromEvent(id);
+    result.when(
+      success: (_) {
+        ref.invalidate(teamLeadersForEventProvider(widget.event.id));
+      },
+      error: (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to remove: ${e.message}')),
+          );
+        }
+      },
+    );
+  }
+}
+
+class _UserDropdown extends ConsumerWidget {
+  final ValueChanged<String?> onChanged;
+  final String? selectedId;
+
+  const _UserDropdown({required this.onChanged, this.selectedId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final usersFuture = ref.watch(allUsersProvider(0));
+
+    return usersFuture.when(
+      data: (allUsers) {
+        final teamLeaders = allUsers
+            .where((u) => u.role == 'team_leader')
+            .toList();
+
+        if (teamLeaders.isEmpty) {
+          return const Text('No Team Leaders found');
+        }
+
+        return DropdownButtonFormField<String>(
+          value: selectedId,
+          hint: const Text('Select Team Leader'),
+          isExpanded: true,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          items: teamLeaders.map((user) {
+            return DropdownMenuItem(
+              value: user.id,
+              child: Text(
+                '${user.name} (${user.email})',
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList(),
+          onChanged: onChanged,
+        );
+      },
+      loading: () => const LinearProgressIndicator(),
+      error: (e, s) => Text('Error loading users: $e'),
     );
   }
 }

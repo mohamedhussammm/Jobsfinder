@@ -183,7 +183,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                                     CircleAvatar(
                                       radius: 16,
                                       backgroundColor: AppColors.primary
-                                          .withOpacity(0.2),
+                                          .withValues(alpha: 0.2),
                                       child: Text(
                                         (user.name ?? user.email)[0]
                                             .toUpperCase(),
@@ -227,7 +227,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                                   decoration: BoxDecoration(
                                     color: _getRoleColor(
                                       user.role,
-                                    ).withOpacity(0.1),
+                                    ).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
@@ -279,8 +279,8 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
     );
   }
 
-  Color _getRoleColor(Stringrole) {
-    switch (Stringrole) {
+  Color _getRoleColor(String role) {
+    switch (role) {
       case 'admin':
         return AppColors.error;
       case 'company':
@@ -347,9 +347,11 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
             ElevatedButton(
               onPressed: () async {
                 final controller = ref.read(adminControllerProvider);
+                final nav = Navigator.of(context);
                 await controller.updateUserRole(user.id, selectedRole);
-                Navigator.pop(context);
-                ref.refresh(allUsersProvider(0)); // Refresh list
+                nav.pop();
+                // ignore: unused_result
+                ref.refresh(allUsersProvider(0));
               },
               child: const Text('Save'),
             ),

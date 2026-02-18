@@ -25,8 +25,6 @@ class AnalyticsController {
     try {
       // Get user counts
       final users = await _supabase.from(SupabaseTables.users).select('id');
-      final normalUsers = users.where((u) => u['role'] == 'normal').length;
-      final companyUsers = users.where((u) => u['role'] == 'company').length;
       final teamLeaders = users.where((u) => u['role'] == 'team_leader').length;
 
       // Get event stats
@@ -62,7 +60,7 @@ class AnalyticsController {
 
       final kpi = AnalyticsKPI(
         totalUsers: users.length,
-        totalCompanies: companyUsers,
+        totalCompanies: users.where((u) => u['role'] == 'company').length,
         totalTeamLeaders: teamLeaders,
         totalEvents: totalEvents,
         pendingEventRequests: events

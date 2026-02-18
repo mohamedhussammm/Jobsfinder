@@ -94,18 +94,8 @@ class AuthController {
               .eq('id', user.id)
               .single();
 
-          // DEBUG: Print raw data from database
-          print('=== RAW USER DATA FROM DB ===');
-          print(userData);
-          print('=== END RAW DATA ===');
-
           // Use helper to sanitize data
           final sanitizedData = _sanitizeUserData(userData, email.trim());
-
-          // DEBUG: Print sanitized data
-          print('=== SANITIZED DATA ===');
-          print(sanitizedData);
-          print('=== END SANITIZED ===');
 
           final userModel = UserModel.fromJson(sanitizedData);
           ref.read(currentUserProvider.notifier).state = userModel;
@@ -239,7 +229,6 @@ class AuthController {
 
       return true;
     } catch (e) {
-      print('Registration error: $e');
       return false;
     }
   }
@@ -277,11 +266,9 @@ class AuthController {
       }
 
       return false;
-    } on AuthException catch (e) {
-      print('Login error: ${e.message}');
+    } on AuthException catch (_) {
       return false;
-    } catch (e) {
-      print('Login error: $e');
+    } catch (_) {
       return false;
     }
   }
@@ -292,8 +279,7 @@ class AuthController {
       await _supabase.auth.signOut();
       ref.read(currentUserProvider.notifier).state = null;
       return true;
-    } catch (e) {
-      print('Logout error: $e');
+    } catch (_) {
       return false;
     }
   }
@@ -317,8 +303,7 @@ class AuthController {
 
       final userModel = UserModel.fromJson(sanitizedData);
       return userModel;
-    } catch (e) {
-      print('Get current user error: $e');
+    } catch (_) {
       return null;
     }
   }
@@ -328,11 +313,9 @@ class AuthController {
     try {
       await _supabase.auth.resetPasswordForEmail(email);
       return true;
-    } on AuthException catch (e) {
-      print('Reset password error: ${e.message}');
+    } on AuthException catch (_) {
       return false;
-    } catch (e) {
-      print('Reset password error: $e');
+    } catch (_) {
       return false;
     }
   }
@@ -372,28 +355,51 @@ class AuthController {
       ref.read(currentUserProvider.notifier).state = userModel;
 
       return true;
-    } catch (e) {
-      print('Update profile error: $e');
+    } catch (_) {
       return false;
     }
   }
 
-  /// Fetch user by ID (internal helper)
-  Future<UserModel?> _fetchUserById(String userId) async {
+  /// Change password using Supabase auth
+  Future<bool> changePassword({required String newPassword}) async {
     try {
-      final userData = await _supabase
+      if (newPassword.length < 6) {
+        throw Exception('Password must be at least 6 characters');
+      }
+
+      await _supabase.auth.updateUser(UserAttributes(password: newPassword));
+      return true;
+    } on AuthException catch (_) {
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Delete account (soft-delete: mark as deleted, then sign out)
+  Future<bool> deleteAccount() async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return false;
+
+      // Soft-delete: set deleted_at on users table
+      await _supabase
           .from('users')
-          .select()
-          .eq('id', userId)
-          .single();
+          .update({
+            'deleted_at': DateTime.now().toIso8601String(),
+            'name': 'Deleted User',
+            'email': 'deleted_${user.id}@removed.com',
+            'phone': null,
+            'avatar_path': null,
+          })
+          .eq('id', user.id);
 
-      // FIXED: Use sanitization helper
-      final sanitizedData = _sanitizeUserData(userData, null);
-
-      return UserModel.fromJson(sanitizedData);
-    } catch (e) {
-      print('Fetch user error: $e');
-      return null;
+      // Sign out
+      await _supabase.auth.signOut();
+      ref.read(currentUserProvider.notifier).state = null;
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 }

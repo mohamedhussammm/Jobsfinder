@@ -28,7 +28,7 @@ class EventBrowseScreen extends ConsumerWidget {
           children: [
             DrawerHeader(
               decoration: BoxDecoration(
-                color: AppColors.accent.withOpacity(0.1),
+                color: AppColors.accent.withValues(alpha: 0.1),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,7 +121,10 @@ class EventBrowseScreen extends ConsumerWidget {
             itemCount: events.length,
             itemBuilder: (context, index) {
               final event = events[index];
-              return EventCard(event: event);
+              return EventCard(
+                event: event,
+                onTap: () => context.push('/event/${event.id}'),
+              );
             },
           );
         },

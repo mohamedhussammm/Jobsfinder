@@ -1,21 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shiftsphere/core/supabase/supabase_client.dart';
 import 'package:shiftsphere/core/theme/colors.dart';
+import 'package:shiftsphere/core/theme/dark_colors.dart';
 import 'package:shiftsphere/core/theme/typography.dart';
+import 'package:shiftsphere/core/theme/theme_provider.dart';
 import 'package:shiftsphere/routes/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Initialize Hive for local storage (theme, etc.)
+  await Hive.initFlutter();
+
+  // Load environment variables
+  await dotenv.load(fileName: '.env').catchError((_) {});
+
   // Initialize Supabase
   await initializeSupabase();
 
-  runApp(
-    const ProviderScope(
-      child: ShiftSphereApp(),
-    ),
-  );
+  // Global error handler for uncaught widget errors
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Material(
+      child: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 56,
+                color: Colors.redAccent,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Something went wrong',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                details.exceptionAsString(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 13, color: Colors.black54),
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  };
+
+  runApp(const ProviderScope(child: ShiftSphereApp()));
 }
 
 class ShiftSphereApp extends ConsumerWidget {
@@ -23,19 +68,25 @@ class ShiftSphereApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+    final themeMode = ref.watch(themeModeProvider);
+
     return MaterialApp.router(
       title: 'ShiftSphere',
       debugShowCheckedModeBanner: false,
-      routerConfig: appRouter,
-      theme: _buildTheme(),
+      routerConfig: router,
+      themeMode: themeMode,
+      theme: _buildLightTheme(),
+      darkTheme: _buildDarkTheme(),
     );
   }
 
-  static ThemeData _buildTheme() {
+  static ThemeData _buildLightTheme() {
     return ThemeData(
       useMaterial3: true,
+      brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
+        seedColor: AppColors.primary, // Cyan
         brightness: Brightness.light,
       ),
       fontFamily: AppTypography.fontFamily,
@@ -57,10 +108,6 @@ class ShiftSphereApp extends ConsumerWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: AppTypography.titleMedium.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -70,10 +117,6 @@ class ShiftSphereApp extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-          ),
-          textStyle: AppTypography.titleMedium.copyWith(
-            color: AppColors.primary,
-            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -96,14 +139,82 @@ class ShiftSphereApp extends ConsumerWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.error),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
         hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.gray400),
       ),
-      chipTheme: ChipThemeData(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        labelStyle: AppTypography.labelMedium,
-        backgroundColor: AppColors.gray100,
-        selectedColor: AppColors.primary,
+    );
+  }
+
+  static ThemeData _buildDarkTheme() {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: DarkColors.primary, // Cyan
+        brightness: Brightness.dark,
+        surface: DarkColors.surface,
+        onSurface: DarkColors.textPrimary,
+      ),
+      fontFamily: AppTypography.fontFamily,
+      textTheme: _buildTextTheme(),
+      scaffoldBackgroundColor: DarkColors.background, // Deep navy #0A0E1A
+      appBarTheme: AppBarTheme(
+        elevation: 0,
+        backgroundColor: DarkColors.background,
+        titleTextStyle: AppTypography.headlineMedium.copyWith(
+          color: DarkColors.textPrimary,
+        ),
+        iconTheme: const IconThemeData(color: DarkColors.textPrimary),
+      ),
+      cardColor: DarkColors.surface, // Teal-tinted navy #131B2E
+      dividerColor: DarkColors.borderColor,
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: DarkColors.primary,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: DarkColors.primary,
+          side: const BorderSide(color: DarkColors.primary, width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: DarkColors.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: DarkColors.borderColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: DarkColors.borderColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: DarkColors.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: DarkColors.error),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+        hintStyle: AppTypography.bodyMedium.copyWith(color: DarkColors.gray400),
       ),
     );
   }

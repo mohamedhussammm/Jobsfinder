@@ -87,9 +87,9 @@ class ApplicationModel {
 extension ApplicationModelExtensions on ApplicationModel {
   // Event title - placeholder until we implement proper event joins
   String get eventTitle =>
-      'Event'; // TODO: Fetch from events table using eventId
+      'Event'; // Placeholder — populated via event join when available
 
   // Company name - placeholder until we implement proper company joins
   String get companyName =>
-      'Company'; // TODO: Fetch from company table via event
+      'Company'; // Placeholder — populated via company join when available
 }

@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/theme/glass.dart';
-import '../../core/theme/shadows.dart';
 import '../../models/event_model.dart';
 import '../../controllers/team_leader_controller.dart';
+import '../../controllers/auth_controller.dart';
 import '../../controllers/stub_providers.dart';
 import '../../services/logout_service.dart';
 
@@ -15,9 +15,9 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final assignmentsAsync = ref.watch(
-      teamLeaderEventsProvider('current_user_id'),
-    ); // TODO: Get actual user ID
+    final currentUser = ref.watch(currentUserProvider);
+    final userId = currentUser?.id ?? '';
+    final assignmentsAsync = ref.watch(teamLeaderEventsProvider(userId));
     final activeCountAsync = ref.watch(activeAssignmentsCountProvider);
     final completedCountAsync = ref.watch(completedAssignmentsCountProvider);
 
@@ -30,12 +30,42 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
+            icon: const Icon(Icons.logout_rounded),
+            tooltip: 'Sign Out',
+            color: AppColors.error,
             onPressed: () async {
-              await ref.read(logoutProvider).logout();
-              if (context.mounted) {
-                context.go('/auth');
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text(
+                    'Sign Out',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  content: const Text(
+                    'Are you sure you want to sign out of your session?',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Sign Out'),
+                    ),
+                  ],
+                ),
+              );
+              if (confirmed == true && context.mounted) {
+                await ref.read(logoutProvider).logout();
+                if (context.mounted) context.go('/auth');
               }
             },
           ),
@@ -55,7 +85,7 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
                     value: activeCountAsync.when(
                       data: (count) => count.toString(),
                       loading: () => '...',
-                      error: (_, __) => '0',
+                      error: (_, e) => '0',
                     ),
                     icon: Icons.assignment,
                     color: AppColors.accent,
@@ -68,7 +98,7 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
                     value: completedCountAsync.when(
                       data: (count) => count.toString(),
                       loading: () => '...',
-                      error: (_, __) => '0',
+                      error: (_, e) => '0',
                     ),
                     icon: Icons.check_circle,
                     color: AppColors.success,
@@ -111,7 +141,7 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: events.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, i) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final event = events[index];
                     return EventAssignmentCard(event: event);
@@ -196,7 +226,7 @@ class StatCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -261,7 +291,7 @@ class EventAssignmentCard extends ConsumerWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: _getStatusColor(event.status).withOpacity(0.2),
+                  color: _getStatusColor(event.status).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -323,20 +353,43 @@ class EventAssignmentCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    context.go('/event/${event.id}');
-                  },
-                  icon: const Icon(Icons.arrow_forward, size: 16),
-                  label: const Text('View'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                Row(
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        context.push(
+                          '/team-leader/attendance/${event.id}'
+                          '?title=${Uri.encodeComponent(event.title)}',
+                        );
+                      },
+                      icon: const Icon(Icons.people, size: 16),
+                      label: const Text('Manage'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.accent,
+                        side: BorderSide(color: AppColors.accent),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        context.go('/event/${event.id}');
+                      },
+                      icon: const Icon(Icons.arrow_forward, size: 16),
+                      label: const Text('View'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -379,7 +432,7 @@ class _DetailItem extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _DetailItem({super.key, required this.icon, required this.label});
+  const _DetailItem({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {

@@ -8,12 +8,12 @@ class SocialButton extends StatelessWidget {
   final bool isOutlined;
 
   const SocialButton({
-    Key? key,
+    super.key,
     required this.label,
     required this.iconPath,
     required this.onTap,
     this.isOutlined = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,13 +25,13 @@ class SocialButton extends StatelessWidget {
           color: isOutlined ? Colors.transparent : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: isOutlined
-              ? Border.all(color: Colors.white.withOpacity(0.3))
+              ? Border.all(color: Colors.white.withValues(alpha: 0.3))
               : null,
           boxShadow: isOutlined
               ? null
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),

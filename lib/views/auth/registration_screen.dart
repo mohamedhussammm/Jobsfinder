@@ -5,7 +5,7 @@ import 'dart:ui';
 import '../../controllers/auth_controller.dart';
 
 class RegistrationScreen extends ConsumerStatefulWidget {
-  const RegistrationScreen({Key? key}) : super(key: key);
+  const RegistrationScreen({super.key});
 
   @override
   ConsumerState<RegistrationScreen> createState() => _RegistrationScreenState();
@@ -108,7 +108,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     center: const Alignment(0.8, 0.8),
                     radius: 1.5,
                     colors: [
-                      const Color(0xFF176782).withOpacity(0.27),
+                      const Color(0xFF176782).withValues(alpha: 0.27),
                       Colors.transparent,
                     ],
                   ),
@@ -218,7 +218,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 child: Container(
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -228,7 +228,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 child: Container(
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -246,10 +246,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(40),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 50,
             spreadRadius: -12,
           ),
@@ -261,7 +261,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Container(
             padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.04)),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.04),
+            ),
             child: Stack(
               children: [
                 // Glow effect
@@ -272,7 +274,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     width: 192,
                     height: 192,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF176782).withOpacity(0.1),
+                      color: const Color(0xFF176782).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: BackdropFilter(
@@ -313,10 +315,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
+                            color: Colors.red.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.red.withOpacity(0.3),
+                              color: Colors.red.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Text(
@@ -459,14 +461,18 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             hintText: placeholder,
             hintStyle: TextStyle(color: Colors.grey[800]),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.05),
+            fillColor: Colors.white.withValues(alpha: 0.05),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
@@ -521,12 +527,6 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
               subtitle: 'Find shifts',
             ),
             _buildRoleCard(
-              role: 'company',
-              icon: Icons.corporate_fare,
-              title: 'Company',
-              subtitle: 'Hire talent',
-            ),
-            _buildRoleCard(
               role: 'team_leader',
               icon: Icons.groups,
               title: 'Team Leader',
@@ -554,12 +554,12 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           border: Border.all(
             color: isSelected
                 ? const Color(0xFF176782)
-                : Colors.white.withOpacity(0.05),
+                : Colors.white.withValues(alpha: 0.05),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
               blurRadius: 50,
               spreadRadius: -12,
             ),
@@ -573,8 +573,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF176782).withOpacity(0.05)
-                    : Colors.white.withOpacity(0.04),
+                    ? const Color(0xFF176782).withValues(alpha: 0.05)
+                    : Colors.white.withValues(alpha: 0.04),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -588,20 +588,22 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Colors.white.withOpacity(0.1),
-                          Colors.white.withOpacity(0.02),
+                          Colors.white.withValues(alpha: 0.1),
+                          Colors.white.withValues(alpha: 0.02),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 15,
                           offset: const Offset(0, 10),
                         ),
                         BoxShadow(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           blurRadius: 1,
                           offset: const Offset(0, 1),
                         ),
@@ -689,7 +691,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
               blurRadius: 40,
               offset: const Offset(0, 20),
             ),
@@ -701,8 +703,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                color: Colors.white.withValues(alpha: 0.1),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Material(
