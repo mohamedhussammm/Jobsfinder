@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 /// Dark theme color palette — matches reference designs with navy + cyan/teal
 class DarkColors {
-  // Primary Colors — CYAN/TEAL (brighter for dark backgrounds)
-  static const Color primary = Color(0xFF0EA5E9);
+  // Primary Colors — Premium Cyan/Teal
+  static const Color primary = Color(0xFF176782);
   static const Color primaryLight = Color(0xFF1E3A5F);
-  static const Color primaryDark = Color(0xFF0284C7);
+  static const Color primaryDark = Color(0xFF0F4D63);
 
   // Secondary Colors
   static const Color secondary = Color(0xFF10B981);
@@ -23,10 +23,12 @@ class DarkColors {
   static const Color error = Color(0xFFF87171);
   static const Color info = Color(0xFF0EA5E9);
 
-  // Neutral Colors — DEEP NAVY PALETTE
-  static const Color gray50 = Color(0xFF0A0E1A); // Deep navy background
-  static const Color gray100 = Color(0xFF131B2E); // Card surface
-  static const Color gray200 = Color(0xFF1E2D3D); // Borders (teal-tinted)
+  // Neutral Colors — DEEP LUXURY DARK PALETTE
+  static const Color gray50 = Color(0xFF111117); // Premium dark background
+  static const Color gray100 = Color(0xFF1A1A23); // Elevated surface
+  static const Color gray200 = Color(
+    0xFF24242F,
+  ); // Component background / Borders
   static const Color gray300 = Color(0xFF2A3F54);
   static const Color gray400 = Color(0xFF64748B);
   static const Color gray500 = Color(0xFF94A3B8);
@@ -35,10 +37,12 @@ class DarkColors {
   static const Color gray800 = Color(0xFFF1F5F9);
   static const Color gray900 = Color(0xFFF8FAFC);
 
-  // Semantic Colors — NAVY-FIRST
-  static const Color background = Color(0xFF0A0E1A); // Deep navy
-  static const Color surface = Color(0xFF131B2E); // Teal-tinted navy
-  static const Color borderColor = Color(0xFF1E2D3D); // Subtle teal border
+  // Semantic Colors
+  static const Color background = Color(0xFF111117);
+  static const Color surface = Color(0xFF1A1A23);
+  static const Color borderColor = Color(
+    0x14FFFFFF,
+  ); // Glass-like white (0.08 opacity)
 
   // Text Colors
   static const Color textPrimary = Color(0xFFF1F5F9);

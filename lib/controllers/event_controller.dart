@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/supabase/supabase_client.dart';
 import '../models/event_model.dart';
+import '../models/category_model.dart';
 import '../core/utils/result.dart';
 
 /// Published events provider (for homepage)
@@ -11,6 +12,25 @@ final publishedEventsProvider = FutureProvider.autoDispose
       final result = await controller.fetchPublishedEvents(page: page);
       return result.when(success: (events) => events, error: (e) => throw e);
     });
+
+/// Published events filtered by category
+final publishedEventsByCategoryProvider = FutureProvider.autoDispose
+    .family<List<EventModel>, String?>((ref, categoryId) async {
+      final controller = ref.watch(eventControllerProvider);
+      final result = await controller.fetchPublishedEvents(
+        categoryId: categoryId,
+      );
+      return result.when(success: (events) => events, error: (e) => throw e);
+    });
+
+/// Categories provider
+final categoriesProvider = FutureProvider.autoDispose<List<CategoryModel>>((
+  ref,
+) async {
+  final controller = ref.watch(eventControllerProvider);
+  final result = await controller.fetchCategories();
+  return result.when(success: (cats) => cats, error: (e) => throw e);
+});
 
 /// Event details provider
 final eventDetailsProvider = FutureProvider.autoDispose
@@ -30,23 +50,28 @@ class EventController {
 
   EventController(this.ref);
 
-  /// Fetch published events (homepage, with pagination)
+  /// Fetch published events (with pagination and optional category filter)
   Future<Result<List<EventModel>>> fetchPublishedEvents({
     int page = 0,
     String? searchQuery,
     List<String>? filters,
+    String? categoryId,
   }) async {
     try {
       int offset = page * pageSize;
 
-      var query = _supabase
+      var queryBase = _supabase
           .from(SupabaseTables.events)
-          .select()
-          .eq('status', 'published')
+          .select('*, categories(id, name, icon)')
+          .eq('status', 'published');
+
+      if (categoryId != null) {
+        queryBase = queryBase.eq('category_id', categoryId);
+      }
+
+      final response = await queryBase
           .order('start_time', ascending: true)
           .range(offset, offset + pageSize - 1);
-
-      final response = await query;
 
       final events = (response as List)
           .map((json) => EventModel.fromJson(json as Map<String, dynamic>))
@@ -61,6 +86,97 @@ class EventController {
       return Error(
         AppException(
           message: 'Failed to fetch published events: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
+    }
+  }
+
+  /// Fetch all categories
+  Future<Result<List<CategoryModel>>> fetchCategories() async {
+    try {
+      final response = await _supabase
+          .from('categories')
+          .select()
+          .order('name', ascending: true);
+
+      final categories = (response as List)
+          .map((json) => CategoryModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      return Success(categories);
+    } on PostgrestException catch (e) {
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
+    } catch (e, st) {
+      return Error(
+        AppException(
+          message: 'Failed to fetch categories: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
+    }
+  }
+
+  /// Admin creates and publishes an event directly
+  Future<Result<EventModel>> adminCreateEvent({
+    required String companyId,
+    required String title,
+    String? description,
+    LocationData? location,
+    required DateTime startTime,
+    required DateTime endTime,
+    int? capacity,
+    String? imagePath,
+    String? categoryId,
+  }) async {
+    try {
+      if (title.isEmpty) {
+        return Error(ValidationException(message: 'Event title is required'));
+      }
+      if (endTime.isBefore(startTime)) {
+        return Error(
+          ValidationException(message: 'End time must be after start time'),
+        );
+      }
+
+      final eventData = <String, dynamic>{
+        'company_id': companyId.isEmpty ? 'admin' : companyId,
+        'title': title,
+        'description': description,
+        'location': location?.toJson(),
+        'start_time': startTime.toIso8601String(),
+        'end_time': endTime.toIso8601String(),
+        'capacity': capacity,
+        'image_path': imagePath,
+        'status': 'published',
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      if (categoryId != null && categoryId.isNotEmpty) {
+        eventData['category_id'] = categoryId;
+      }
+
+      final response = await _supabase
+          .from(SupabaseTables.events)
+          .insert(eventData)
+          .select()
+          .single();
+
+      final event = EventModel.fromJson(response);
+      return Success(event);
+    } on PostgrestException catch (e) {
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
+    } catch (e, st) {
+      return Error(
+        AppException(
+          message: 'Failed to create event: $e',
           originalError: e,
           stackTrace: st,
         ),
@@ -391,66 +507,6 @@ class EventController {
       return Error(
         AppException(
           message: 'Failed to delete event: $e',
-          originalError: e,
-          stackTrace: st,
-        ),
-      );
-    }
-  }
-
-  /// Admin creates event (published directly)
-  Future<Result<EventModel>> adminCreateEvent({
-    required String companyId,
-    required String title,
-    required String? description,
-    required LocationData? location,
-    required DateTime startTime,
-    required DateTime endTime,
-    required int? capacity,
-    required String? imagePath,
-  }) async {
-    try {
-      // Validate
-      if (title.isEmpty) {
-        return Error(ValidationException(message: 'Event title is required'));
-      }
-
-      if (endTime.isBefore(startTime)) {
-        return Error(
-          ValidationException(message: 'End time must be after start time'),
-        );
-      }
-
-      final eventData = {
-        'company_id': companyId,
-        'title': title,
-        'description': description,
-        'location': location?.toJson(),
-        'start_time': startTime.toIso8601String(),
-        'end_time': endTime.toIso8601String(),
-        'capacity': capacity,
-        'image_path': imagePath,
-        'status': 'published', // Admin events are published immediately
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      };
-
-      final response = await _supabase
-          .from(SupabaseTables.events)
-          .insert(eventData)
-          .select()
-          .single();
-
-      final event = EventModel.fromJson(response);
-      return Success(event);
-    } on PostgrestException catch (e) {
-      return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
-      );
-    } catch (e, st) {
-      return Error(
-        AppException(
-          message: 'Failed to create admin event: $e',
           originalError: e,
           stackTrace: st,
         ),

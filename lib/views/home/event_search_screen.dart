@@ -1,11 +1,15 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/theme/colors.dart';
+import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../l10n/app_localizations.dart';
+import '../../core/theme/dark_colors.dart';
 import '../../core/theme/typography.dart';
-import '../../core/theme/glass.dart';
 import '../../models/event_model.dart';
 import '../../controllers/event_controller.dart';
+import '../common/skeleton_loader.dart';
 
 class EventSearchScreen extends ConsumerStatefulWidget {
   const EventSearchScreen({super.key});
@@ -34,216 +38,139 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
   @override
   Widget build(BuildContext context) {
     final eventsAsync = ref.watch(publishedEventsProvider(0));
-    final filteredEvents = eventsAsync.whenData((events) {
-      var filtered = events;
-
-      // Filter by search query
-      if (_searchController.text.isNotEmpty) {
-        filtered = filtered
-            .where(
-              (event) =>
-                  event.title.toLowerCase().contains(
-                    _searchController.text.toLowerCase(),
-                  ) ||
-                  event.description!.toLowerCase().contains(
-                    _searchController.text.toLowerCase(),
-                  ) ||
-                  event.company.toLowerCase().contains(
-                    _searchController.text.toLowerCase(),
-                  ),
-            )
-            .toList();
-      }
-
-      // Filter by location
-      if (_selectedLocation != 'All') {
-        filtered = filtered
-            .where((event) => event.location?.city == _selectedLocation)
-            .toList();
-      }
-
-      return filtered;
-    });
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
-      appBar: AppBar(
-        backgroundColor: AppColors.darkBg,
-        elevation: 0,
-        title: Text('Search Events', style: AppTypography.heading2),
-        centerTitle: false,
-      ),
-      body: Column(
-        children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.glassSecondary,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.accent.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (value) => setState(() {}),
-                    style: AppTypography.body2,
-                    decoration: InputDecoration(
-                      hintText: 'Search events, companies...',
-                      hintStyle: AppTypography.body2.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                      prefixIcon: Icon(Icons.search, color: AppColors.accent),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              color: AppColors.textSecondary,
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() {});
-                              },
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Filter Button
-                GestureDetector(
-                  onTap: () => setState(() => _showFilters = !_showFilters),
-                  child: GlassContainer(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _showFilters ? Icons.filter_list : Icons.filter_list,
-                          color: _showFilters
-                              ? AppColors.accent
-                              : AppColors.textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _showFilters ? 'Hide Filters' : 'Show Filters',
-                          style: AppTypography.caption.copyWith(
-                            color: _showFilters
-                                ? AppColors.accent
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Filters Section
-          if (_showFilters)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Location',
-                    style: AppTypography.body1.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children:
-                        [
-                          'All',
-                          'New York',
-                          'Los Angeles',
-                          'Chicago',
-                          'Houston',
-                          'Remote',
-                        ].map((location) {
-                          final isSelected = _selectedLocation == location;
-                          return GestureDetector(
-                            onTap: () =>
-                                setState(() => _selectedLocation = location),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.accent
-                                    : AppColors.glassSecondary,
-                                borderRadius: BorderRadius.circular(20),
-                                border: isSelected
-                                    ? Border.all(
-                                        color: AppColors.accent,
-                                        width: 2,
-                                      )
-                                    : null,
-                              ),
-                              child: Text(
-                                location,
-                                style: AppTypography.caption.copyWith(
-                                  color: isSelected
-                                      ? Colors.white
-                                      : AppColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                ],
+      backgroundColor: DarkColors.background,
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            // Sticky Search Header
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _SearchHeaderDelegate(
+                controller: _searchController,
+                onChanged: (val) => setState(() {}),
+                onToggleFilters: () =>
+                    setState(() => _showFilters = !_showFilters),
+                showFilters: _showFilters,
               ),
             ),
 
-          // Events List
-          Expanded(
-            child: filteredEvents.when(
+            // Filters Section
+            if (_showFilters)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppLocalizations.of(context)!.location,
+                        style: AppTypography.labelLarge.copyWith(
+                          color: DarkColors.primary,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children:
+                              [
+                                'All',
+                                'New York',
+                                'Los Angeles',
+                                'Chicago',
+                                'Houston',
+                                'Remote',
+                              ].map((loc) {
+                                final isSelected = _selectedLocation == loc;
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: ChoiceChip(
+                                    label: Text(loc),
+                                    selected: isSelected,
+                                    onSelected: (selected) {
+                                      if (selected) {
+                                        setState(() => _selectedLocation = loc);
+                                      }
+                                    },
+                                    backgroundColor: DarkColors.gray100,
+                                    selectedColor: DarkColors.primary,
+                                    labelStyle: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : DarkColors.textSecondary,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    side: BorderSide(
+                                      color: isSelected
+                                          ? DarkColors.primary
+                                          : DarkColors.borderColor,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Events List
+            eventsAsync.when(
               data: (events) {
-                if (events.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
+                // Apply logic filters
+                var filtered = events;
+                if (_searchController.text.isNotEmpty) {
+                  final query = _searchController.text.toLowerCase();
+                  filtered = filtered
+                      .where(
+                        (e) =>
+                            e.title.toLowerCase().contains(query) ||
+                            (e.description?.toLowerCase().contains(query) ??
+                                false) ||
+                            e.company.toLowerCase().contains(query),
+                      )
+                      .toList();
+                }
+                if (_selectedLocation != 'All') {
+                  filtered = filtered
+                      .where((e) => e.location?.city == _selectedLocation)
+                      .toList();
+                }
+
+                if (filtered.isEmpty) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.search_off,
                             size: 64,
-                            color: AppColors.textSecondary,
+                            color: DarkColors.textTertiary,
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'No events found',
-                            style: AppTypography.heading3,
+                            AppLocalizations.of(context)!.noEventsFound,
+                            style: AppTypography.titleLarge.copyWith(
+                              color: Colors.white,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Try adjusting your search or filters',
-                            style: AppTypography.body2.copyWith(
-                              color: AppColors.textSecondary,
+                            AppLocalizations.of(context)!.tryAdjustingSearch,
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: DarkColors.textSecondary,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -253,227 +180,295 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
                   );
                 }
 
-                return ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: events.length,
-                  separatorBuilder: (_, i) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final event = events[index];
-                    return EventSearchCard(event: event);
-                  },
+                return SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, i) => _EventSearchCard(event: filtered[i]),
+                      childCount: filtered.length,
+                    ),
+                  ),
                 );
               },
-              loading: () => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation(AppColors.accent),
-                    ),
-                    const SizedBox(height: 16),
-                    Text('Searching events...', style: AppTypography.body2),
-                  ],
+              loading: () => SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, i) => const SkeletonCard(),
+                    childCount: 6,
+                  ),
                 ),
               ),
-              error: (error, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: AppColors.error,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Failed to load events',
-                        style: AppTypography.heading3.copyWith(
-                          color: AppColors.error,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        error.toString(),
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+              error: (e, _) => SliverFillRemaining(
+                child: Center(
+                  child: Text(
+                    'Error: $e',
+                    style: const TextStyle(color: DarkColors.error),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-class EventSearchCard extends StatelessWidget {
-  final EventModel event;
+class _SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onToggleFilters;
+  final bool showFilters;
 
-  const EventSearchCard({super.key, required this.event});
+  _SearchHeaderDelegate({
+    required this.controller,
+    required this.onChanged,
+    required this.onToggleFilters,
+    required this.showFilters,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    return GlassContainer(
-      padding: const EdgeInsets.all(16),
-      onTap: () => context.go('/event/${event.id}'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  double get minExtent => 88;
+  @override
+  double get maxExtent => 88;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          color: DarkColors.background.withValues(alpha: 0.8),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+          child: Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      event.title,
-                      style: AppTypography.heading3,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      event.company,
-                      style: AppTypography.body2.copyWith(
-                        color: AppColors.textSecondary,
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: DarkColors.gray100,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: DarkColors.borderColor),
+                  ),
+                  child: TextField(
+                    controller: controller,
+                    onChanged: onChanged,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: AppLocalizations.of(context)!.searchHint,
+                      hintStyle: const TextStyle(
+                        color: DarkColors.textSecondary,
+                        fontSize: 14,
                       ),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: DarkColors.textSecondary,
+                        size: 20,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.arrow_forward,
-                  color: AppColors.accent,
-                  size: 20,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Description Preview
-          if (event.description != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                event.description!,
-                style: AppTypography.body2.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-
-          // Details Grid
-          Row(
-            children: [
-              Expanded(
-                child: _DetailItem(
-                  icon: Icons.location_on,
-                  label: event.location?.city ?? 'Unknown',
-                ),
-              ),
-              Expanded(
-                child: _DetailItem(
-                  icon: Icons.calendar_today,
-                  label: _formatDate(event.eventDate),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Capacity and Applicants
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.people, size: 16, color: AppColors.accent),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${event.applicants}/${event.capacity} applied',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+              GestureDetector(
+                onTap: onToggleFilters,
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: showFilters
+                        ? DarkColors.primary
+                        : DarkColors.gray100,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: DarkColors.borderColor),
                   ),
-                ],
-              ),
-              Row(
-                children: [
-                  Icon(Icons.star, size: 16, color: AppColors.warning),
-                  const SizedBox(width: 4),
-                  Text(
-                    event.rating.toStringAsFixed(1),
-                    style: AppTypography.caption.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: Icon(
+                    Icons.tune,
+                    color: showFilters ? Colors.white : DarkColors.textPrimary,
+                    size: 20,
                   ),
-                ],
+                ),
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = date.difference(now);
-
-    if (difference.inDays == 0) {
-      return 'Today';
-    } else if (difference.inDays == 1) {
-      return 'Tomorrow';
-    } else if (difference.inDays > 0 && difference.inDays <= 7) {
-      return 'In ${difference.inDays} days';
-    } else {
-      return '${date.month}/${date.day}/${date.year}';
-    }
-  }
+  @override
+  bool shouldRebuild(covariant _SearchHeaderDelegate oldDelegate) =>
+      oldDelegate.showFilters != showFilters ||
+      oldDelegate.controller != controller;
 }
 
-class _DetailItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
+class _EventSearchCard extends StatelessWidget {
+  final EventModel event;
 
-  const _DetailItem({required this.icon, required this.label});
+  const _EventSearchCard({required this.event});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: AppColors.accent),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            label,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textSecondary,
+    final timeStr =
+        '${DateFormat('h:mm a').format(event.startTime)} - ${DateFormat('h:mm a').format(event.endTime)}';
+
+    return GestureDetector(
+      onTap: () => context.push('/event/${event.id}', extra: event),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: DarkColors.gray100,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: DarkColors.borderColor),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: 80,
+                height: 80,
+                child: event.imagePath != null
+                    ? CachedNetworkImage(
+                        imageUrl: event.imagePath!,
+                        fit: BoxFit.cover,
+                        errorWidget: (_, __, ___) =>
+                            _ImagePlaceholder(event.categoryName ?? 'EVENT'),
+                      )
+                    : _ImagePlaceholder(event.categoryName ?? 'EVENT'),
+              ),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        (event.categoryName ?? 'GENERAL').toUpperCase(),
+                        style: AppTypography.labelLarge.copyWith(
+                          fontSize: 10,
+                          color: DarkColors.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        AppLocalizations.of(
+                          context,
+                        )!.spots(event.capacity ?? 0),
+                        style: AppTypography.bodySmall.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    event.title,
+                    style: AppTypography.bodyLarge.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.access_time,
+                        size: 12,
+                        color: DarkColors.textSecondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        timeStr,
+                        style: TextStyle(
+                          color: DarkColors.textSecondary,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (event.location?.address != null) ...[
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 12,
+                          color: DarkColors.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            event.location!.address!,
+                            style: TextStyle(
+                              color: DarkColors.textSecondary,
+                              fontSize: 11,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: DarkColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.chevron_right,
+                color: DarkColors.primary,
+                size: 18,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ImagePlaceholder extends StatelessWidget {
+  final String label;
+  const _ImagePlaceholder(this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: DarkColors.primary.withValues(alpha: 0.1),
+      child: Center(
+        child: Text(
+          label.substring(0, 1).toUpperCase(),
+          style: const TextStyle(
+            color: DarkColors.primary,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
           ),
         ),
-      ],
+      ),
     );
   }
 }

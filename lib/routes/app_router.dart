@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../views/home/event_browse_screen.dart';
 import '../views/home/event_details_screen.dart';
+import '../models/event_model.dart';
 import '../views/home/event_search_screen.dart';
 import '../views/home/application_form_screen.dart';
 import '../views/admin/admin_dashboard_screen.dart';
@@ -135,8 +136,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Normal User — Pages without bottom nav
       GoRoute(
         path: '/event/:eventId',
-        builder: (context, state) =>
-            EventDetailsScreen(eventId: state.pathParameters['eventId']!),
+        builder: (context, state) {
+          final eventId = state.pathParameters['eventId']!;
+          final initialEvent = state.extra as EventModel?;
+          return EventDetailsScreen(
+            eventId: eventId,
+            initialEvent: initialEvent,
+          );
+        },
       ),
       GoRoute(
         path: '/apply/:eventId',

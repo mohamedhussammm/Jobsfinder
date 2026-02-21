@@ -35,7 +35,7 @@ class EventCard extends StatelessWidget {
                     topLeft: Radius.circular(GlassConfig.radiusLarge),
                     topRight: Radius.circular(GlassConfig.radiusLarge),
                   ),
-                  color: AppColors.gray200,
+                  color: Theme.of(context).cardColor,
                 ),
                 child: event.imagePath != null
                     ? Image.network(
@@ -61,7 +61,7 @@ class EventCard extends StatelessWidget {
                     Text(
                       event.title,
                       style: AppTypography.titleLarge.copyWith(
-                        color: AppColors.gray900,
+                        color: Colors.white,
                         fontWeight: FontWeight.w700,
                       ),
                       maxLines: 2,
@@ -76,7 +76,7 @@ class EventCard extends StatelessWidget {
                       Text(
                         event.description!,
                         style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.gray600,
+                          color: Colors.white.withValues(alpha: 0.6),
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -99,7 +99,7 @@ class EventCard extends StatelessWidget {
                             Text(
                               event.startTime.toDisplayDate(),
                               style: AppTypography.titleSmall.copyWith(
-                                color: AppColors.gray900,
+                                color: Colors.white.withValues(alpha: 0.9),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -119,7 +119,7 @@ class EventCard extends StatelessWidget {
                               Text(
                                 '${event.capacity} spots',
                                 style: AppTypography.titleSmall.copyWith(
-                                  color: AppColors.gray900,
+                                  color: Colors.white.withValues(alpha: 0.9),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -156,6 +156,10 @@ class EventCard extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: onTap,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          foregroundColor: Colors.white,
+                        ),
                         child: const Text('View Details'),
                       ),
                     ),

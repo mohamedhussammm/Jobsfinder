@@ -60,6 +60,16 @@ class EventModel {
   @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
+  // Category fields — populated via JOIN (categories!category_id)
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? categoryId;
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? categoryName;
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? categoryIcon;
+
   EventModel({
     required this.id,
     required this.companyId,
@@ -73,6 +83,9 @@ class EventModel {
     this.status = 'pending',
     required this.createdAt,
     required this.updatedAt,
+    this.categoryId,
+    this.categoryName,
+    this.categoryIcon,
   });
 
   // Status helpers
@@ -101,6 +114,9 @@ class EventModel {
     String? status,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? categoryId,
+    String? categoryName,
+    String? categoryIcon,
   }) {
     return EventModel(
       id: id ?? this.id,
@@ -115,6 +131,9 @@ class EventModel {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
+      categoryIcon: categoryIcon ?? this.categoryIcon,
     );
   }
 

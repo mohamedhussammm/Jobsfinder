@@ -137,6 +137,79 @@ class AuthController {
     }
   }
 
+  /// Synchronize the current auth session with the user profile in database.
+  /// This is useful for OAuth callbacks and app restarts.
+  Future<void> syncUser() async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) {
+        ref.read(currentUserProvider.notifier).state = null;
+        return;
+      }
+
+      await syncUserProfile(user);
+    } catch (e) {
+      // Log error but don't throw - this is a background sync
+      print('Error during auth sync: $e');
+    }
+  }
+
+  /// Fetch or create user profile for a given auth user
+  Future<void> syncUserProfile(User user) async {
+    try {
+      final userData = await _supabase
+          .from('users')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (userData != null) {
+        // Profile exists, sync it
+        final sanitizedData = _sanitizeUserData(userData, user.email);
+        final userModel = UserModel.fromJson(sanitizedData);
+        ref.read(currentUserProvider.notifier).state = userModel;
+      } else {
+        // Profile doesn't exist - likely a new OAuth user
+        final email = user.email ?? '';
+        final name =
+            user.userMetadata?['full_name'] ??
+            user.userMetadata?['name'] ??
+            'New User';
+        final phone = user.userMetadata?['phone'] ?? user.phone ?? '';
+        final role = user.userMetadata?['role'] ?? 'normal';
+
+        final newProfile = {
+          'id': user.id,
+          'email': email,
+          'name': name,
+          'role': role,
+          'phone': phone,
+          'national_id_number': 'PENDING',
+          'profile_complete': false,
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        };
+
+        await _supabase.from('users').insert(newProfile);
+
+        // Fetch back to ensure all defaults from DB are present
+        final freshData = await _supabase
+            .from('users')
+            .select()
+            .eq('id', user.id)
+            .single();
+
+        final sanitized = _sanitizeUserData(freshData, email);
+        ref.read(currentUserProvider.notifier).state = UserModel.fromJson(
+          sanitized,
+        );
+      }
+    } catch (e) {
+      print('Failed to sync user profile: $e');
+      rethrow;
+    }
+  }
+
   /// Register user with role
   Future<LoginResult> registerUserWithRole({
     required String email,

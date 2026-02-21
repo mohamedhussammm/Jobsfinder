@@ -7,10 +7,10 @@ part of 'event_model.dart';
 // **************************************************************************
 
 LocationData _$LocationDataFromJson(Map<String, dynamic> json) => LocationData(
-      address: json['address'] as String?,
-      lat: (json['lat'] as num?)?.toDouble(),
-      lng: (json['lng'] as num?)?.toDouble(),
-    );
+  address: json['address'] as String?,
+  lat: (json['lat'] as num?)?.toDouble(),
+  lng: (json['lng'] as num?)?.toDouble(),
+);
 
 Map<String, dynamic> _$LocationDataToJson(LocationData instance) =>
     <String, dynamic>{
@@ -19,22 +19,29 @@ Map<String, dynamic> _$LocationDataToJson(LocationData instance) =>
       'lng': instance.lng,
     };
 
-EventModel _$EventModelFromJson(Map<String, dynamic> json) => EventModel(
-      id: json['id'] as String,
-      companyId: json['company_id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String?,
-      location: json['location'] == null
-          ? null
-          : LocationData.fromJson(json['location'] as Map<String, dynamic>),
-      startTime: DateTime.parse(json['start_time'] as String),
-      endTime: DateTime.parse(json['end_time'] as String),
-      capacity: (json['capacity'] as num?)?.toInt(),
-      imagePath: json['image_path'] as String?,
-      status: json['status'] as String? ?? 'pending',
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
-    );
+EventModel _$EventModelFromJson(Map<String, dynamic> json) {
+  // Parse nested category from JOIN (categories!category_id)
+  final cat = json['categories'] as Map<String, dynamic>?;
+  return EventModel(
+    id: json['id'] as String,
+    companyId: json['company_id'] as String,
+    title: json['title'] as String,
+    description: json['description'] as String?,
+    location: json['location'] == null
+        ? null
+        : LocationData.fromJson(json['location'] as Map<String, dynamic>),
+    startTime: DateTime.parse(json['start_time'] as String),
+    endTime: DateTime.parse(json['end_time'] as String),
+    capacity: (json['capacity'] as num?)?.toInt(),
+    imagePath: json['image_path'] as String?,
+    status: json['status'] as String? ?? 'pending',
+    createdAt: DateTime.parse(json['created_at'] as String),
+    updatedAt: DateTime.parse(json['updated_at'] as String),
+    categoryId: (json['category_id'] as String?) ?? cat?['id'] as String?,
+    categoryName: cat?['name'] as String?,
+    categoryIcon: cat?['icon'] as String?,
+  );
+}
 
 Map<String, dynamic> _$EventModelToJson(EventModel instance) =>
     <String, dynamic>{

@@ -45,5 +45,22 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>io.supabase.shiftsphere</string>
+			</array>
+		</dict>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to allow you to take and upload a profile picture.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs photo library access to allow you to select and upload a profile picture or CV.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to your location to show you relevant job listings nearby.</string>
 </dict>
 </plist>

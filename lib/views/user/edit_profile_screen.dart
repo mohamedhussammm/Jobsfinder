@@ -57,11 +57,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   children: [
                     CircleAvatar(
                       radius: ResponsiveHelper.sp(context, 50),
-                      backgroundColor: AppColors.primaryLight,
+                      backgroundColor: Theme.of(
+                        context,
+                      ).primaryColor.withValues(alpha: 0.1),
                       child: Icon(
                         Icons.person,
                         size: ResponsiveHelper.sp(context, 48),
-                        color: AppColors.primary,
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                     Positioned(
@@ -69,9 +71,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       right: 0,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
+                          color: Theme.of(context).primaryColor,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
+                          border: Border.all(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            width: 2,
+                          ),
                         ),
                         child: IconButton(
                           icon: const Icon(
@@ -136,19 +141,24 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   vertical: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.gray50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.borderColor),
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.08),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.badge_outlined, color: AppColors.gray400),
+                    Icon(
+                      Icons.badge_outlined,
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
                     const SizedBox(width: 12),
                     Text(
                       (currentUser?.role ?? 'User').toUpperCase(),
                       style: TextStyle(
                         fontSize: ResponsiveHelper.sp(context, 14),
-                        color: AppColors.textSecondary,
+                        color: Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -203,7 +213,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         style: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: ResponsiveHelper.sp(context, 14),
-          color: AppColors.textPrimary,
+          color: Colors.white.withValues(alpha: 0.9),
         ),
       ),
     );
@@ -212,25 +222,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   InputDecoration _inputDecoration(String hint, IconData icon) {
     return InputDecoration(
       hintText: hint,
-      prefixIcon: Icon(icon, color: AppColors.gray400),
-      filled: true,
-      fillColor: AppColors.gray50,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppColors.borderColor),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppColors.borderColor),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.primary, width: 2),
-      ),
-      disabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppColors.gray200),
-      ),
+      prefixIcon: Icon(icon),
+      // inherits from global theme's inputDecorationTheme
     );
   }
 

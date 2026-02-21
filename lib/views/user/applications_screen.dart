@@ -24,14 +24,14 @@ class ApplicationsScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: Text(
           'My Applications',
           style: AppTypography.headlineSmall.copyWith(
-            color: AppColors.textPrimary,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -99,9 +99,9 @@ class _ApplicationCard extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderColor),
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

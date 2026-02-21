@@ -7,9 +7,13 @@ import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/theme/shadows.dart';
 import 'users/admin_users_screen.dart';
-import 'package:go_router/go_router.dart';
+import 'applications/admin_applications_screen.dart';
 import 'events/admin_events_screen.dart';
 import '../../controllers/auth_controller.dart';
+import '../../core/theme/dark_colors.dart';
+import '../../core/utils/responsive.dart';
+import '../common/skeleton_loader.dart';
+import 'package:go_router/go_router.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -25,14 +29,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text(
           _getTitle(_selectedIndex),
           style: AppTypography.headlineSmall.copyWith(
-            color: AppColors.textPrimary,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -51,13 +55,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         children: const [
           _AdminOverviewTab(),
           AdminEventsScreen(),
+          AdminApplicationsScreen(),
           AdminUsersScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
+        backgroundColor: Theme.of(context).cardColor,
+        selectedItemColor: DarkColors.primary,
+        unselectedItemColor: Colors.white60,
+        type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
         items: const [
@@ -66,6 +72,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             label: 'Overview',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Events'),
+          BottomNavigationBarItem(icon: Icon(Icons.description), label: 'Apps'),
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Users'),
         ],
       ),
@@ -79,6 +86,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       case 1:
         return 'Manage Events';
       case 2:
+        return 'Manage Applications';
+      case 3:
         return 'Manage Users';
     }
     return 'Admin';
@@ -88,12 +97,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
         title: const Text(
           'Sign Out',
-          style: TextStyle(fontWeight: FontWeight.w700),
+          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         content: const Text(
           'Are you sure you want to sign out of your session?',
+          style: TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
@@ -152,13 +163,14 @@ class _AdminOverviewTab extends ConsumerWidget {
           Text(
             'Pending Event Requests',
             style: AppTypography.titleLarge.copyWith(
-              color: AppColors.textPrimary,
+              color: Colors.white,
+              fontSize: ResponsiveHelper.sp(context, 18),
             ),
           ),
           const SizedBox(height: 12),
           pendingEventsAsync.when(
             data: (events) => events.isEmpty
-                ? _buildEmptyState()
+                ? _buildEmptyState(context)
                 : ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -229,13 +241,16 @@ class _AdminOverviewTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderColor, width: 1),
+        border: Border.all(
+          color: DarkColors.borderColor.withValues(alpha: 0.1),
+          width: 1,
+        ),
       ),
       child: Column(
         children: [
@@ -275,7 +290,7 @@ class _AdminOverviewTab extends ConsumerWidget {
                     Text(
                       event.title,
                       style: AppTypography.titleSmall.copyWith(
-                        color: AppColors.textPrimary,
+                        color: Colors.white,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -330,10 +345,19 @@ class _KPICard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderColor, width: 1),
-        boxShadow: [AppShadows.sm],
+        border: Border.all(
+          color: DarkColors.borderColor.withValues(alpha: 0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,8 +374,9 @@ class _KPICard extends StatelessWidget {
           Text(
             value,
             style: AppTypography.headlineSmall.copyWith(
-              color: AppColors.textPrimary,
+              color: Colors.white,
               fontWeight: FontWeight.bold,
+              fontSize: ResponsiveHelper.sp(context, 20),
             ),
           ),
           const SizedBox(height: 4),
@@ -359,6 +384,7 @@ class _KPICard extends StatelessWidget {
             title,
             style: AppTypography.bodySmall.copyWith(
               color: AppColors.textTertiary,
+              fontSize: ResponsiveHelper.sp(context, 11),
             ),
           ),
         ],
@@ -394,12 +420,10 @@ class _LoadingKPICards extends StatelessWidget {
   }
 
   Widget _shimmerCard() {
-    return Container(
+    return const SkeletonLoader(
       height: 120,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      width: double.infinity,
+      borderRadius: 12,
     );
   }
 }
@@ -412,13 +436,10 @@ class _LoadingEventList extends StatelessWidget {
     return Column(
       children: List.generate(
         3,
-        (index) => Container(
-          margin: const EdgeInsets.only(bottom: 12),
+        (index) => const SkeletonLoader(
           height: 100,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-          ),
+          width: double.infinity,
+          borderRadius: 12,
         ),
       ),
     );

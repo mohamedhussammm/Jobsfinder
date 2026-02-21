@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
+import '../../core/theme/dark_colors.dart';
 import '../../core/theme/glass.dart';
 import '../../controllers/auth_controller.dart';
+import 'widgets/social_login_section.dart';
 
 class NewAuthScreen extends ConsumerStatefulWidget {
   const NewAuthScreen({super.key});
@@ -149,7 +151,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -162,7 +164,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                 Text(
                   'ShiftSphere',
                   style: AppTypography.displayLarge.copyWith(
-                    color: AppColors.accent,
+                    color: DarkColors.primary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -199,7 +201,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                           child: Text(
                             'Admin: admin@shiftsphere.com',
                             style: AppTypography.caption.copyWith(
-                              color: AppColors.accent,
+                              color: DarkColors.primary,
                             ),
                           ),
                         ),
@@ -245,12 +247,9 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                           style: AppTypography.body1,
                           decoration: InputDecoration(
                             labelText: 'Full Name',
-                            labelStyle: AppTypography.body2.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                            prefixIcon: Icon(
+                            prefixIcon: const Icon(
                               Icons.person,
-                              color: AppColors.accent,
+                              color: DarkColors.primary,
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -264,8 +263,11 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.accent),
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                color: DarkColors.primary,
+                                width: 2,
+                              ),
                             ),
                           ),
                         ),
@@ -279,28 +281,11 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           labelText: 'Email',
-                          labelStyle: AppTypography.body2.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                          prefixIcon: Icon(
+                          prefixIcon: const Icon(
                             Icons.email,
-                            color: AppColors.accent,
+                            color: DarkColors.primary,
                           ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: AppColors.textSecondary.withValues(
-                                alpha: 0.3,
-                              ),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.accent),
-                          ),
+                          // Inherits other styles from theme
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -312,25 +297,11 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                         obscureText: true,
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          labelStyle: AppTypography.body2.copyWith(
-                            color: AppColors.textSecondary,
+                          prefixIcon: const Icon(
+                            Icons.lock,
+                            color: DarkColors.primary,
                           ),
-                          prefixIcon: Icon(Icons.lock, color: AppColors.accent),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: AppColors.textSecondary.withValues(
-                                alpha: 0.3,
-                              ),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.accent),
-                          ),
+                          // Inherits other styles from theme
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -340,30 +311,13 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                         DropdownButtonFormField<String>(
                           initialValue: _selectedRole,
                           style: AppTypography.body1,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'I am a...',
-                            labelStyle: AppTypography.body2.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
                             prefixIcon: Icon(
                               Icons.work,
-                              color: AppColors.accent,
+                              color: DarkColors.primary,
                             ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppColors.textSecondary.withValues(
-                                  alpha: 0.3,
-                                ),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.accent),
-                            ),
+                            // Inherits borders from theme
                           ),
                           items: [
                             DropdownMenuItem(
@@ -390,28 +344,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                           keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
                             labelText: 'Phone',
-                            labelStyle: AppTypography.body2.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.phone,
-                              color: AppColors.accent,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppColors.textSecondary.withValues(
-                                  alpha: 0.3,
-                                ),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.accent),
-                            ),
+                            // Inherits borders from theme
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -422,28 +355,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                           style: AppTypography.body1,
                           decoration: InputDecoration(
                             labelText: 'National ID',
-                            labelStyle: AppTypography.body2.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.badge,
-                              color: AppColors.accent,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppColors.textSecondary.withValues(
-                                  alpha: 0.3,
-                                ),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: AppColors.accent),
-                            ),
+                            // Inherits borders from theme
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -455,11 +367,11 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _handleSubmit,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.accent,
+                            backgroundColor: DarkColors.primary,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 18),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(16),
                             ),
                           ),
                           child: _isLoading
@@ -475,13 +387,20 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                                 )
                               : Text(
                                   _isLogin ? 'Login' : 'Register',
-                                  style: AppTypography.button,
+                                  style: AppTypography.button.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.1,
+                                  ),
                                 ),
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                // Social Login Section
+                const SocialLoginSection(),
                 const SizedBox(height: 16),
 
                 // Toggle Login/Register
@@ -506,8 +425,8 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                         ),
                         TextSpan(
                           text: _isLogin ? 'Register' : 'Login',
-                          style: TextStyle(
-                            color: AppColors.accent,
+                          style: const TextStyle(
+                            color: DarkColors.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

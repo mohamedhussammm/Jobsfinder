@@ -5,9 +5,10 @@ import '../../../controllers/admin_controller.dart';
 import '../../../models/event_model.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
-import 'package:go_router/go_router.dart';
-import '../../../models/team_leader_model.dart';
-import '../../../models/user_model.dart';
+import '../../../core/theme/dark_colors.dart';
+import '../../../core/utils/responsive.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../common/skeleton_loader.dart';
 
 class AdminEventsScreen extends ConsumerStatefulWidget {
   const AdminEventsScreen({super.key});
@@ -43,19 +44,24 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
         children: [
           Row(
             children: [
-              Text(
-                'Event Management',
-                style: AppTypography.titleLarge.copyWith(
-                  color: AppColors.textPrimary,
+              Expanded(
+                child: Text(
+                  'Event Management',
+                  style: AppTypography.titleLarge.copyWith(
+                    color: Colors.white,
+                    fontSize: ResponsiveHelper.sp(context, 20),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () => _showCreateEventDialog(context),
                 icon: const Icon(Icons.add),
                 label: const Text('Create Event'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: DarkColors.primary,
                   foregroundColor: Colors.white,
                 ),
               ),
@@ -63,22 +69,28 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
           ),
           const SizedBox(height: 16),
           // Filters
-          Row(
-            children: [
-              _buildFilterChip('All', 'all'),
-              const SizedBox(width: 8),
-              _buildFilterChip('Pending', 'pending'),
-              const SizedBox(width: 8),
-              _buildFilterChip('Published', 'published'),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildFilterChip('All', 'all'),
+                const SizedBox(width: 8),
+                _buildFilterChip('Pending', 'pending'),
+                const SizedBox(width: 8),
+                _buildFilterChip('Published', 'published'),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: DarkColors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderColor),
+                border: Border.all(
+                  color: DarkColors.borderColor.withValues(alpha: 0.1),
+                  width: 1,
+                ),
               ),
               child: eventsAsync.when(
                 data: (events) {
@@ -86,7 +98,9 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
                     return Center(
                       child: Text(
                         'No events found',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        style: AppTypography.body1.copyWith(
+                          color: DarkColors.textTertiary,
+                        ),
                       ),
                     );
                   }
@@ -101,11 +115,13 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: AppColors.background,
+                            color: Theme.of(context).scaffoldBackgroundColor,
                             borderRadius: BorderRadius.circular(8),
                             image: event.imagePath != null
                                 ? DecorationImage(
-                                    image: NetworkImage(event.imagePath!),
+                                    image: CachedNetworkImageProvider(
+                                      event.imagePath!,
+                                    ),
                                     fit: BoxFit.cover,
                                   )
                                 : null,
@@ -120,58 +136,73 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
                         title: Text(
                           event.title,
                           style: AppTypography.body1.copyWith(
-                            color: AppColors.textPrimary,
+                            color: Colors.white,
                           ),
                         ),
                         subtitle: Text(
                           '${event.companyId} • ${event.startTime.toString().split(' ')[0]}',
-                          style: TextStyle(color: AppColors.textTertiary),
+                          style: TextStyle(color: DarkColors.textTertiary),
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _buildStatusBadge(event.status),
-                            const SizedBox(width: 8),
-                            if (event.status == 'pending') ...[
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.check_circle,
-                                  color: AppColors.success,
+                        trailing: IntrinsicWidth(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              _buildStatusBadge(event.status),
+                              const SizedBox(width: 4),
+                              if (event.status == 'pending') ...[
+                                IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  icon: const Icon(
+                                    Icons.check_circle,
+                                    color: DarkColors.success,
+                                    size: 20,
+                                  ),
+                                  onPressed: () => _approveEvent(event.id),
+                                  tooltip: 'Approve',
                                 ),
-                                onPressed: () => _approveEvent(event.id),
-                                tooltip: 'Approve',
+                                IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  icon: const Icon(
+                                    Icons.cancel,
+                                    color: DarkColors.error,
+                                    size: 20,
+                                  ),
+                                  onPressed: () => _rejectEvent(event.id),
+                                  tooltip: 'Reject',
+                                ),
+                              ],
+                              IconButton(
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: DarkColors.error,
+                                  size: 20,
+                                ),
+                                onPressed: () => _deleteEvent(event.id),
                               ),
                               IconButton(
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
                                 icon: const Icon(
-                                  Icons.cancel,
-                                  color: AppColors.error,
+                                  Icons.person_add_alt_1,
+                                  color: DarkColors.accent,
+                                  size: 20,
                                 ),
-                                onPressed: () => _rejectEvent(event.id),
-                                tooltip: 'Reject',
+                                tooltip: 'Assign Team Leader',
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) =>
+                                        _AssignTeamLeaderDialog(event: event),
+                                  );
+                                },
                               ),
                             ],
-                            IconButton(
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: AppColors.error,
-                              ),
-                              onPressed: () => _deleteEvent(event.id),
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.person_add_alt_1,
-                                color: AppColors.primary,
-                              ),
-                              tooltip: 'Assign Team Leader',
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) =>
-                                      _AssignTeamLeaderDialog(event: event),
-                                );
-                              },
-                            ),
-                          ],
+                          ),
                         ),
                         onTap: () {
                           // Show details dialog
@@ -180,11 +211,13 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
                     },
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => Column(
+                  children: List.generate(5, (index) => const SkeletonCard()),
+                ),
                 error: (e, s) => Center(
                   child: Text(
                     'Error: $e',
-                    style: TextStyle(color: AppColors.error),
+                    style: TextStyle(color: DarkColors.error),
                   ),
                 ),
               ),
@@ -205,10 +238,16 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
           _statusFilter = value;
         });
       },
-      backgroundColor: AppColors.surface,
-      selectedColor: AppColors.primary.withValues(alpha: 0.2),
+      backgroundColor: Colors.transparent,
+      selectedColor: DarkColors.primary.withValues(alpha: 0.2),
+      checkmarkColor: DarkColors.primary,
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.primary : AppColors.textSecondary,
+        color: isSelected ? DarkColors.primary : Colors.white60,
+      ),
+      side: BorderSide(
+        color: isSelected
+            ? DarkColors.primary
+            : DarkColors.borderColor.withValues(alpha: 0.3),
       ),
     );
   }
@@ -217,16 +256,16 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
     Color color;
     switch (status) {
       case 'published':
-        color = AppColors.success;
+        color = DarkColors.success;
         break;
       case 'pending':
-        color = AppColors.warning;
+        color = DarkColors.warning;
         break;
       case 'cancelled':
-        color = AppColors.error;
+        color = DarkColors.error;
         break;
       default:
-        color = AppColors.textSecondary;
+        color = DarkColors.textSecondary;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -305,6 +344,7 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
   final _capacityController = TextEditingController();
 
   String _selectedCompanyId = '';
+  String? _selectedCategoryId;
   final _organizerController = TextEditingController();
   DateTime _startDate = DateTime.now().add(const Duration(days: 1));
   DateTime _endDate = DateTime.now().add(const Duration(days: 1, hours: 4));
@@ -317,7 +357,11 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Create New Event'),
+      backgroundColor: DarkColors.surface,
+      title: const Text(
+        'Create New Event',
+        style: TextStyle(color: Colors.white),
+      ),
       content: SingleChildScrollView(
         child: SizedBox(
           width: 400,
@@ -381,6 +425,12 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
                   decoration: const InputDecoration(labelText: 'Capacity'),
                   keyboardType: TextInputType.number,
                 ),
+                const SizedBox(height: 12),
+                // Category dropdown
+                _CategoryDropdown(
+                  selectedId: _selectedCategoryId,
+                  onChanged: (id) => setState(() => _selectedCategoryId = id),
+                ),
               ],
             ),
           ),
@@ -408,11 +458,12 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
                     companyId: _selectedCompanyId,
                     title: _titleController.text,
                     description: _descController.text,
-                    location: null, // Simplified for now
+                    location: null,
                     startTime: _startDate,
                     endTime: _endDate,
                     capacity: int.tryParse(_capacityController.text),
                     imagePath: null,
+                    categoryId: _selectedCategoryId,
                   );
 
               // Capture navigator before async gap for loading dialog
@@ -440,7 +491,7 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
                       content: Text(
                         'Event "${event.title}" created and published!',
                       ),
-                      backgroundColor: AppColors.success,
+                      backgroundColor: DarkColors.success,
                     ),
                   );
                 },
@@ -449,7 +500,7 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
                   messenger.showSnackBar(
                     SnackBar(
                       content: Text('Failed to create event: $error'),
-                      backgroundColor: AppColors.error,
+                      backgroundColor: DarkColors.error,
                     ),
                   );
                 },
@@ -463,10 +514,52 @@ class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
   }
 }
 
+/// Category dropdown for the Create Event form
+class _CategoryDropdown extends ConsumerWidget {
+  final String? selectedId;
+  final ValueChanged<String?> onChanged;
+
+  const _CategoryDropdown({required this.selectedId, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categoriesAsync = ref.watch(categoriesProvider);
+
+    return categoriesAsync.when(
+      data: (categories) {
+        if (categories.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return DropdownButtonFormField<String>(
+          value: selectedId,
+          hint: const Text('Category (optional)'),
+          isExpanded: true,
+          decoration: const InputDecoration(
+            labelText: 'Category',
+            border: OutlineInputBorder(),
+          ),
+          items: [
+            const DropdownMenuItem(value: null, child: Text('No category')),
+            ...categories.map(
+              (cat) => DropdownMenuItem(
+                value: cat.id,
+                child: Text('${cat.icon ?? ''} ${cat.name}'),
+              ),
+            ),
+          ],
+          onChanged: onChanged,
+        );
+      },
+      loading: () => const LinearProgressIndicator(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
 class _AssignTeamLeaderDialog extends ConsumerStatefulWidget {
   final EventModel event;
 
-  const _AssignTeamLeaderDialog({super.key, required this.event});
+  const _AssignTeamLeaderDialog({required this.event});
 
   @override
   ConsumerState<_AssignTeamLeaderDialog> createState() =>
@@ -486,7 +579,11 @@ class _AssignTeamLeaderDialogState
     );
 
     return AlertDialog(
-      title: Text('Manage Team Leaders\n${widget.event.title}'),
+      backgroundColor: DarkColors.surface,
+      title: Text(
+        'Manage Team Leaders\n${widget.event.title}',
+        style: const TextStyle(color: Colors.white),
+      ),
       content: SizedBox(
         width: 400,
         height: 400,
@@ -513,7 +610,7 @@ class _AssignTeamLeaderDialogState
                         ),
                         trailing: IconButton(
                           icon: const Icon(Icons.remove_circle_outline),
-                          color: AppColors.error,
+                          color: DarkColors.error,
                           onPressed: () => _removeLeader(leader.id),
                         ),
                       );
@@ -591,7 +688,7 @@ class _AssignTeamLeaderDialogState
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Team leader assigned successfully'),
-              backgroundColor: AppColors.success,
+              backgroundColor: DarkColors.success,
             ),
           );
         }
@@ -601,7 +698,7 @@ class _AssignTeamLeaderDialogState
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to assign: ${e.message}'),
-              backgroundColor: AppColors.error,
+              backgroundColor: DarkColors.error,
             ),
           );
         }

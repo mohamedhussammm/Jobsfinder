@@ -98,49 +98,6 @@ class SocialAuthService {
       );
     }
   }
-
-  /// Handle the OAuth callback and create user profile if needed
-  Future<Result<void>> handleOAuthCallback() async {
-    try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) {
-        return Error(AppException(message: 'No user found after OAuth'));
-      }
-
-      // Check if user exists in our users table
-      final existingUser = await _supabase
-          .from('users')
-          .select()
-          .eq('id', user.id)
-          .maybeSingle();
-
-      // If user doesn't exist, create profile
-      if (existingUser == null) {
-        await _supabase.from('users').insert({
-          'id': user.id,
-          'email': user.email,
-          'full_name':
-              user.userMetadata?['full_name'] ??
-              user.userMetadata?['name'] ??
-              'User',
-          'role': 'normal', // Default role for social sign-ins
-          'phone': user.phone ?? '',
-          'national_id': '', // Will need to be filled later
-          'created_at': DateTime.now().toIso8601String(),
-        });
-      }
-
-      return Success(null);
-    } catch (e, st) {
-      return Error(
-        AppException(
-          message: 'Failed to handle OAuth callback: $e',
-          originalError: e,
-          stackTrace: st,
-        ),
-      );
-    }
-  }
 }
 
 /// Provider for SocialAuthService

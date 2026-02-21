@@ -151,7 +151,7 @@ class ApplicationController {
     try {
       var query = _supabase
           .from(SupabaseTables.applications)
-          .select()
+          .select('*, user:users(*)')
           .eq('event_id', eventId);
 
       if (filterStatus != null) {

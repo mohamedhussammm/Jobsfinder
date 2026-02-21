@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'user_model.dart';
 
 part 'application_model.g.dart';
 
@@ -29,6 +30,9 @@ class ApplicationModel {
   @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
+  @JsonKey(includeFromJson: true, includeToJson: false)
+  final UserModel? user;
+
   ApplicationModel({
     required this.id,
     required this.userId,
@@ -38,6 +42,7 @@ class ApplicationModel {
     this.coverLetter,
     required this.appliedAt,
     required this.updatedAt,
+    this.user,
   });
 
   // Status helpers
@@ -61,6 +66,7 @@ class ApplicationModel {
     String? coverLetter,
     DateTime? appliedAt,
     DateTime? updatedAt,
+    UserModel? user,
   }) {
     return ApplicationModel(
       id: id ?? this.id,
@@ -71,6 +77,7 @@ class ApplicationModel {
       coverLetter: coverLetter ?? this.coverLetter,
       appliedAt: appliedAt ?? this.appliedAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      user: user ?? this.user,
     );
   }
 

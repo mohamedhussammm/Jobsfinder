@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shiftsphere/core/supabase/supabase_client.dart';
+import 'package:shiftsphere/controllers/auth_controller.dart';
 import 'package:shiftsphere/core/theme/colors.dart';
 import 'package:shiftsphere/core/theme/dark_colors.dart';
 import 'package:shiftsphere/core/theme/typography.dart';
 import 'package:shiftsphere/core/theme/theme_provider.dart';
 import 'package:shiftsphere/routes/app_router.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shiftsphere/l10n/app_localizations.dart';
+import 'package:shiftsphere/core/providers/locale_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -70,6 +75,22 @@ class ShiftSphereApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final locale = ref.watch(localeProvider);
+
+    // Listen for auth state changes globally
+    ref.listen(authStateProvider, (previous, next) {
+      if (next is AsyncData<AuthState>) {
+        final data = next.value;
+        final event = data.event;
+        if (event == AuthChangeEvent.signedIn ||
+            event == AuthChangeEvent.tokenRefreshed ||
+            event == AuthChangeEvent.initialSession) {
+          ref.read(authControllerProvider).syncUser();
+        } else if (event == AuthChangeEvent.signedOut) {
+          ref.read(currentUserProvider.notifier).state = null;
+        }
+      }
+    });
 
     return MaterialApp.router(
       title: 'ShiftSphere',
@@ -78,6 +99,17 @@ class ShiftSphereApp extends ConsumerWidget {
       themeMode: themeMode,
       theme: _buildLightTheme(),
       darkTheme: _buildDarkTheme(),
+      locale: locale,
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'), // English
+        Locale('ar'), // Arabic
+      ],
     );
   }
 
@@ -160,7 +192,7 @@ class ShiftSphereApp extends ConsumerWidget {
       ),
       fontFamily: AppTypography.fontFamily,
       textTheme: _buildTextTheme(),
-      scaffoldBackgroundColor: DarkColors.background, // Deep navy #0A0E1A
+      scaffoldBackgroundColor: DarkColors.background, // #111117
       appBarTheme: AppBarTheme(
         elevation: 0,
         backgroundColor: DarkColors.background,
@@ -195,26 +227,33 @@ class ShiftSphereApp extends ConsumerWidget {
         filled: true,
         fillColor: DarkColors.surface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: DarkColors.borderColor),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: DarkColors.borderColor),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: DarkColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: DarkColors.error),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
+          horizontal: 20,
+          vertical: 18,
         ),
-        hintStyle: AppTypography.bodyMedium.copyWith(color: DarkColors.gray400),
+        hintStyle: AppTypography.bodyMedium.copyWith(
+          color: Colors.white.withValues(alpha: 0.4),
+        ),
+        labelStyle: AppTypography.bodyMedium.copyWith(
+          color: Colors.white.withValues(alpha: 0.7),
+        ),
+        prefixIconColor: Colors.white.withValues(alpha: 0.5),
+        suffixIconColor: Colors.white.withValues(alpha: 0.5),
       ),
     );
   }

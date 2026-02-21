@@ -64,7 +64,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       body: widget.child,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).cardColor,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.06),
@@ -139,7 +139,9 @@ class _MainShellState extends ConsumerState<MainShell> {
               children: [
                 Icon(
                   isActive ? item.activeIcon : item.icon,
-                  color: isActive ? AppColors.primary : AppColors.gray400,
+                  color: isActive
+                      ? Theme.of(context).primaryColor
+                      : Colors.white.withValues(alpha: 0.4),
                   size: ResponsiveHelper.iconSize(context),
                 ),
                 // Notification badge
@@ -152,7 +154,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               Text(
                 item.label,
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: Theme.of(context).primaryColor,
                   fontWeight: FontWeight.w700,
                   fontSize: ResponsiveHelper.sp(context, 12),
                 ),
@@ -183,7 +185,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Theme.of(context).cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Sign Out',

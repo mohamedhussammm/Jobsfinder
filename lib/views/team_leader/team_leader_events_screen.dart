@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
-import '../../core/theme/glass.dart';
+import '../../core/theme/dark_colors.dart';
+import '../../core/utils/responsive.dart';
 import '../../models/event_model.dart';
 import '../../controllers/team_leader_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/stub_providers.dart';
 import '../../services/logout_service.dart';
+import '../common/skeleton_loader.dart';
 
 class TeamLeaderEventsScreen extends ConsumerWidget {
   const TeamLeaderEventsScreen({super.key});
@@ -22,17 +23,23 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
     final completedCountAsync = ref.watch(completedAssignmentsCountProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: DarkColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.darkBg,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('My Assignments', style: AppTypography.heading2),
+        title: Text(
+          'My Assignments',
+          style: AppTypography.titleLarge.copyWith(
+            color: Colors.white,
+            fontSize: ResponsiveHelper.sp(context, 20),
+          ),
+        ),
         centerTitle: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout_rounded),
             tooltip: 'Sign Out',
-            color: AppColors.error,
+            color: DarkColors.error,
             onPressed: () async {
               final confirmed = await showDialog<bool>(
                 context: context,
@@ -52,7 +59,7 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
                     ElevatedButton(
                       onPressed: () => Navigator.pop(ctx, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
+                        backgroundColor: DarkColors.error,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -88,7 +95,7 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
                       error: (_, e) => '0',
                     ),
                     icon: Icons.assignment,
-                    color: AppColors.accent,
+                    color: DarkColors.accent,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -101,7 +108,7 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
                       error: (_, e) => '0',
                     ),
                     icon: Icons.check_circle,
-                    color: AppColors.success,
+                    color: DarkColors.success,
                   ),
                 ),
               ],
@@ -122,13 +129,13 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
                           Icon(
                             Icons.assignment_ind_outlined,
                             size: 64,
-                            color: AppColors.textSecondary,
+                            color: DarkColors.textTertiary,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'No assignments yet',
                             style: AppTypography.body1.copyWith(
-                              color: AppColors.textSecondary,
+                              color: DarkColors.textTertiary,
                             ),
                           ),
                         ],
@@ -148,22 +155,8 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
                   },
                 );
               },
-              loading: () => Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 48),
-                  child: Column(
-                    children: [
-                      CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation(AppColors.accent),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Loading assignments...',
-                        style: AppTypography.body2,
-                      ),
-                    ],
-                  ),
-                ),
+              loading: () => Column(
+                children: List.generate(3, (index) => const SkeletonCard()),
               ),
               error: (error, _) => Center(
                 child: Padding(
@@ -173,20 +166,20 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
                       Icon(
                         Icons.error_outline,
                         size: 64,
-                        color: AppColors.error,
+                        color: DarkColors.error,
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'Failed to load assignments',
                         style: AppTypography.body1.copyWith(
-                          color: AppColors.error,
+                          color: DarkColors.error,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         error.toString(),
                         style: AppTypography.caption.copyWith(
-                          color: AppColors.textSecondary,
+                          color: DarkColors.textTertiary,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -218,26 +211,38 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassContainer(
+    return Container(
       padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: DarkColors.surface.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: DarkColors.borderColor),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(8),
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(height: 12),
-          Text(value, style: AppTypography.heading2.copyWith(color: color)),
+          Text(
+            value,
+            style: AppTypography.titleLarge.copyWith(
+              color: Colors.white,
+              fontSize: ResponsiveHelper.sp(context, 22),
+            ),
+          ),
           const SizedBox(height: 4),
           Text(
             title,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textSecondary,
+            style: AppTypography.bodySmall.copyWith(
+              color: DarkColors.textSecondary,
+              fontSize: ResponsiveHelper.sp(context, 12),
             ),
           ),
         ],
@@ -253,148 +258,164 @@ class EventAssignmentCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return GlassContainer(
-      padding: const EdgeInsets.all(16),
+    return InkWell(
       onTap: () {
         context.go('/event/${event.id}');
       },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      event.title,
-                      style: AppTypography.heading3,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      event.company,
-                      style: AppTypography.body2.copyWith(
-                        color: AppColors.textSecondary,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: DarkColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: DarkColors.borderColor),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        event.title,
+                        style: AppTypography.heading3,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(event.status).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  event.status.toUpperCase(),
-                  style: AppTypography.caption.copyWith(
-                    color: _getStatusColor(event.status),
-                    fontWeight: FontWeight.w600,
+                      const SizedBox(height: 4),
+                      Text(
+                        event.company,
+                        style: AppTypography.body2.copyWith(
+                          color: DarkColors.textTertiary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Details Row
-          Row(
-            children: [
-              Expanded(
-                child: _DetailItem(
-                  icon: Icons.location_on,
-                  label: event.location?.city ?? 'Unknown',
-                ),
-              ),
-              Expanded(
-                child: _DetailItem(
-                  icon: Icons.calendar_today,
-                  label: _formatDate(event.eventDate),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Applicants Info
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.glassSecondary,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${event.applicants} Applicants',
-                      style: AppTypography.body2.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(event.status).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    event.status.toUpperCase(),
+                    style: AppTypography.caption.copyWith(
+                      color: _getStatusColor(event.status),
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Capacity: ${event.capacity}',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        context.push(
-                          '/team-leader/attendance/${event.id}'
-                          '?title=${Uri.encodeComponent(event.title)}',
-                        );
-                      },
-                      icon: const Icon(Icons.people, size: 16),
-                      label: const Text('Manage'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.accent,
-                        side: BorderSide(color: AppColors.accent),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        context.go('/event/${event.id}');
-                      },
-                      icon: const Icon(Icons.arrow_forward, size: 16),
-                      label: const Text('View'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+
+            // Details Row
+            Row(
+              children: [
+                Expanded(
+                  child: _DetailItem(
+                    icon: Icons.location_on,
+                    label: event.location?.city ?? 'Unknown',
+                  ),
+                ),
+                Expanded(
+                  child: _DetailItem(
+                    icon: Icons.calendar_today,
+                    label: _formatDate(event.eventDate),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Applicants Info
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.03),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${event.applicants} Applicants',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: DarkColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Capacity: ${event.capacity}',
+                        style: AppTypography.labelSmall.copyWith(
+                          color: DarkColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          context.push(
+                            '/team-leader/attendance/${event.id}'
+                            '?title=${Uri.encodeComponent(event.title)}',
+                          );
+                        },
+                        icon: const Icon(Icons.people, size: 16),
+                        label: const Text('Manage'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: DarkColors.accent,
+                          side: const BorderSide(color: DarkColors.accent),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          context.go('/event/${event.id}');
+                        },
+                        icon: const Icon(Icons.arrow_forward, size: 16),
+                        label: const Text('View'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: DarkColors.accent,
+                          foregroundColor: DarkColors.gray50,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -402,13 +423,17 @@ class EventAssignmentCard extends ConsumerWidget {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
-        return AppColors.warning;
+        return DarkColors.pending;
       case 'approved':
-        return AppColors.success;
+      case 'active':
+        return DarkColors.success;
+      case 'completed':
+        return DarkColors.completed;
       case 'rejected':
-        return AppColors.error;
+      case 'cancelled':
+        return DarkColors.error;
       default:
-        return AppColors.textSecondary;
+        return DarkColors.textSecondary;
     }
   }
 
@@ -438,13 +463,13 @@ class _DetailItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: AppColors.accent),
+        Icon(icon, size: 16, color: DarkColors.accent),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             label,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textSecondary,
+            style: AppTypography.labelSmall.copyWith(
+              color: DarkColors.textSecondary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

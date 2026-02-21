@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/theme/colors.dart';
+import '../../core/theme/dark_colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/theme/glass.dart';
 import '../../controllers/rating_controller.dart';
@@ -71,7 +71,7 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please select a rating'),
-          backgroundColor: AppColors.error,
+          backgroundColor: DarkColors.error,
         ),
       );
       return;
@@ -82,7 +82,7 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('You must be logged in to rate'),
-          backgroundColor: AppColors.error,
+          backgroundColor: DarkColors.error,
         ),
       );
       return;
@@ -110,14 +110,14 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Rating submitted successfully! ⭐'),
-            backgroundColor: AppColors.success,
+            backgroundColor: DarkColors.success,
           ),
         );
         context.pop();
       },
       error: (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: AppColors.error),
+          SnackBar(content: Text(e.message), backgroundColor: DarkColors.error),
         );
       },
     );
@@ -126,11 +126,12 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: DarkColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.darkBg,
-        elevation: 0,
-        title: Text('Rate Applicant', style: AppTypography.heading2),
+        title: Text(
+          'Rate Applicant',
+          style: AppTypography.headlineMedium.copyWith(color: Colors.white),
+        ),
         centerTitle: false,
       ),
       body: _checkingExisting
@@ -148,7 +149,12 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Rating Details', style: AppTypography.heading3),
+                        Text(
+                          'Rating Details',
+                          style: AppTypography.titleMedium.copyWith(
+                            color: Colors.white,
+                          ),
+                        ),
                         const SizedBox(height: 16),
                         _InfoRow(
                           label: 'Applicant',
@@ -162,7 +168,12 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
                   const SizedBox(height: 24),
 
                   // Rating Stars
-                  Text('Your Rating', style: AppTypography.heading3),
+                  Text(
+                    'Your Rating',
+                    style: AppTypography.titleMedium.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   GlassContainer(
                     padding: const EdgeInsets.all(24),
@@ -184,8 +195,8 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
                                       : Icons.star_border,
                                   size: 48,
                                   color: _rating > index
-                                      ? AppColors.warning
-                                      : AppColors.textSecondary,
+                                      ? DarkColors.accent
+                                      : DarkColors.textTertiary,
                                 ),
                               ),
                             ),
@@ -195,7 +206,7 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
                         if (_rating > 0)
                           Text(
                             _getRatingLabel(_rating),
-                            style: AppTypography.heading3.copyWith(
+                            style: AppTypography.titleMedium.copyWith(
                               color: _getRatingColor(_rating),
                             ),
                           ),
@@ -205,14 +216,19 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
                   const SizedBox(height: 24),
 
                   // Review Text
-                  Text('Review (Optional)', style: AppTypography.heading3),
+                  Text(
+                    'Review (Optional)',
+                    style: AppTypography.titleMedium.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.glassSecondary,
+                      color: DarkColors.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.accent.withValues(alpha: 0.3),
+                        color: DarkColors.accent.withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -222,8 +238,8 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
                       style: AppTypography.body2,
                       decoration: InputDecoration(
                         hintText: 'Share your feedback about the applicant...',
-                        hintStyle: AppTypography.body2.copyWith(
-                          color: AppColors.textSecondary,
+                        hintStyle: AppTypography.bodyMedium.copyWith(
+                          color: DarkColors.textTertiary,
                         ),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.all(12),
@@ -233,7 +249,12 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
                   const SizedBox(height: 24),
 
                   // Rating Criteria
-                  Text('Rating Criteria', style: AppTypography.heading3),
+                  Text(
+                    'Rating Criteria',
+                    style: AppTypography.titleMedium.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   _RatingCriterion(
                     label: 'Excellent',
@@ -287,10 +308,10 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
                           ),
                           child: Text(
                             'Cancel',
-                            style: AppTypography.body1.copyWith(
+                            style: AppTypography.bodyLarge.copyWith(
                               color: _isSubmitting
-                                  ? AppColors.textSecondary
-                                  : AppColors.accent,
+                                  ? DarkColors.textTertiary
+                                  : DarkColors.accent,
                             ),
                           ),
                         ),
@@ -300,9 +321,9 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
                         child: ElevatedButton(
                           onPressed: _isSubmitting ? null : _submitRating,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.accent,
+                            backgroundColor: DarkColors.accent,
                             foregroundColor: Colors.white,
-                            disabledBackgroundColor: AppColors.accent
+                            disabledBackgroundColor: DarkColors.accent
                                 .withValues(alpha: 0.5),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
@@ -317,7 +338,7 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
                                     ),
                                   ),
                                 )
-                              : Text(
+                              : const Text(
                                   'Submit Rating',
                                   style: AppTypography.button,
                                 ),
@@ -338,17 +359,19 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle, size: 80, color: AppColors.success),
+            Icon(Icons.check_circle, size: 80, color: DarkColors.success),
             const SizedBox(height: 24),
             Text(
               'Already Rated',
-              style: AppTypography.heading2.copyWith(color: AppColors.success),
+              style: AppTypography.headlineMedium.copyWith(
+                color: DarkColors.success,
+              ),
             ),
             const SizedBox(height: 12),
             Text(
               'You have already submitted a rating for ${widget.applicantName} for this event.',
-              style: AppTypography.body1.copyWith(
-                color: AppColors.textSecondary,
+              style: AppTypography.bodyLarge.copyWith(
+                color: DarkColors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -356,7 +379,7 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
             ElevatedButton(
               onPressed: () => context.pop(),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accent,
+                backgroundColor: DarkColors.accent,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 32,
@@ -391,16 +414,16 @@ class _RatingFormScreenState extends ConsumerState<RatingFormScreen> {
   Color _getRatingColor(int rating) {
     switch (rating) {
       case 5:
-        return AppColors.success;
+        return DarkColors.success;
       case 4:
-        return AppColors.accent;
+        return DarkColors.accent;
       case 3:
-        return AppColors.warning;
+        return DarkColors.pending;
       case 2:
       case 1:
-        return AppColors.error;
+        return DarkColors.error;
       default:
-        return AppColors.textSecondary;
+        return DarkColors.textSecondary;
     }
   }
 }
@@ -418,12 +441,14 @@ class _InfoRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: AppTypography.body2.copyWith(color: AppColors.textSecondary),
+          style: AppTypography.bodyMedium.copyWith(
+            color: DarkColors.textTertiary,
+          ),
         ),
         Flexible(
           child: Text(
             value,
-            style: AppTypography.body1,
+            style: AppTypography.bodyLarge.copyWith(color: Colors.white),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.end,
@@ -457,11 +482,11 @@ class _RatingCriterion extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.accent.withValues(alpha: 0.1)
-              : AppColors.glassSecondary,
+              ? DarkColors.accent.withValues(alpha: 0.1)
+              : DarkColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.accent : Colors.transparent,
+            color: isSelected ? DarkColors.accent : DarkColors.borderColor,
             width: 1,
           ),
         ),
@@ -474,13 +499,13 @@ class _RatingCriterion extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: isSelected
-                      ? AppColors.accent
-                      : AppColors.textSecondary,
+                      ? DarkColors.accent
+                      : DarkColors.textTertiary,
                   width: 2,
                 ),
               ),
               child: isSelected
-                  ? Icon(Icons.check, size: 16, color: AppColors.accent)
+                  ? const Icon(Icons.check, size: 16, color: DarkColors.accent)
                   : null,
             ),
             const SizedBox(width: 12),
@@ -490,14 +515,14 @@ class _RatingCriterion extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: AppTypography.body1.copyWith(
-                      color: isSelected ? AppColors.accent : AppColors.text,
+                    style: AppTypography.bodyLarge.copyWith(
+                      color: isSelected ? DarkColors.accent : Colors.white,
                     ),
                   ),
                   Text(
                     description,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.textSecondary,
+                    style: AppTypography.labelSmall.copyWith(
+                      color: DarkColors.textTertiary,
                     ),
                   ),
                 ],
@@ -510,8 +535,8 @@ class _RatingCriterion extends StatelessWidget {
                   index < rating ? Icons.star : Icons.star_border,
                   size: 12,
                   color: index < rating
-                      ? AppColors.warning
-                      : AppColors.textSecondary,
+                      ? DarkColors.accent
+                      : DarkColors.textTertiary,
                 ),
               ),
             ),

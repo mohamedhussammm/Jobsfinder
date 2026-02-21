@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../controllers/admin_controller.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../models/user_model.dart';
+import '../../../core/theme/dark_colors.dart';
+import '../../../core/utils/responsive.dart';
+import '../../common/skeleton_loader.dart';
 
 class AdminUsersScreen extends ConsumerStatefulWidget {
   const AdminUsersScreen({super.key});
@@ -35,28 +39,33 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
           // Header & Filters
           Row(
             children: [
-              Text(
-                'User Management',
-                style: AppTypography.titleLarge.copyWith(
-                  color: AppColors.textPrimary,
+              Expanded(
+                child: Text(
+                  'User Management',
+                  style: AppTypography.titleLarge.copyWith(
+                    color: Colors.white,
+                    fontSize: ResponsiveHelper.sp(context, 20),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               // Role Dropdown
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: DarkColors.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.borderColor),
+                  border: Border.all(
+                    color: DarkColors.borderColor.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _roleFilter,
-                    dropdownColor: AppColors.surface,
-                    style: AppTypography.body2.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
+                    dropdownColor: DarkColors.surface,
+                    style: AppTypography.body2.copyWith(color: Colors.white),
                     items: const [
                       DropdownMenuItem(value: 'all', child: Text('All Roles')),
                       DropdownMenuItem(value: 'normal', child: Text('Users')),
@@ -82,19 +91,27 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
           // Search Bar
           TextField(
             controller: _searchController,
-            style: const TextStyle(color: AppColors.textPrimary),
+            style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Search by name or email...',
-              hintStyle: const TextStyle(color: AppColors.textTertiary),
+              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
               prefixIcon: const Icon(
                 Icons.search,
-                color: AppColors.textSecondary,
+                color: DarkColors.textSecondary,
               ),
               filled: true,
-              fillColor: AppColors.surface,
+              fillColor: Theme.of(context).cardColor,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+                borderSide: BorderSide(
+                  color: DarkColors.borderColor.withValues(alpha: 0.3),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: DarkColors.borderColor.withValues(alpha: 0.3),
+                ),
               ),
             ),
             onChanged: (val) {
@@ -106,9 +123,11 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderColor),
+                border: Border.all(
+                  color: DarkColors.borderColor.withValues(alpha: 0.5),
+                ),
               ),
               child: usersAsync.when(
                 data: (users) {
@@ -145,8 +164,9 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                     scrollDirection: Axis.horizontal,
                     child: SingleChildScrollView(
                       child: DataTable(
+                        dataRowHeight: 60,
                         headingRowColor: WidgetStateProperty.all(
-                          AppColors.background,
+                          DarkColors.surface,
                         ),
                         columns: const [
                           DataColumn(
@@ -182,16 +202,23 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                                   children: [
                                     CircleAvatar(
                                       radius: 16,
-                                      backgroundColor: AppColors.primary
+                                      backgroundColor: DarkColors.accent
                                           .withValues(alpha: 0.2),
-                                      child: Text(
-                                        (user.name ?? user.email)[0]
-                                            .toUpperCase(),
-                                        style: const TextStyle(
-                                          color: AppColors.primary,
-                                          fontSize: 12,
-                                        ),
-                                      ),
+                                      backgroundImage: user.avatarPath != null
+                                          ? CachedNetworkImageProvider(
+                                              user.avatarPath!,
+                                            )
+                                          : null,
+                                      child: user.avatarPath == null
+                                          ? Text(
+                                              (user.name ?? user.email)[0]
+                                                  .toUpperCase(),
+                                              style: const TextStyle(
+                                                color: DarkColors.accent,
+                                                fontSize: 12,
+                                              ),
+                                            )
+                                          : null,
                                     ),
                                     const SizedBox(width: 12),
                                     Column(
@@ -202,15 +229,14 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                                       children: [
                                         Text(
                                           user.name ?? 'No Name',
-                                          style: const TextStyle(
-                                            color: AppColors.textPrimary,
+                                          style: AppTypography.body1.copyWith(
+                                            color: Colors.white,
                                           ),
                                         ),
                                         Text(
                                           user.email,
-                                          style: const TextStyle(
-                                            color: AppColors.textTertiary,
-                                            fontSize: 12,
+                                          style: AppTypography.caption.copyWith(
+                                            color: DarkColors.textTertiary,
                                           ),
                                         ),
                                       ],
@@ -243,7 +269,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                               DataCell(
                                 Text(
                                   'Active',
-                                  style: TextStyle(color: AppColors.success),
+                                  style: TextStyle(color: DarkColors.success),
                                 ),
                               ), // Placeholder for active/blocked status
                               DataCell(
@@ -264,7 +290,12 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                     ),
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: 8,
+                  separatorBuilder: (_, i) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) => const SkeletonCard(),
+                ),
                 error: (e, s) => Center(
                   child: Text(
                     'Error: $e',
@@ -282,13 +313,13 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
   Color _getRoleColor(String role) {
     switch (role) {
       case 'admin':
-        return AppColors.error;
+        return DarkColors.error;
       case 'company':
-        return AppColors.accent;
+        return DarkColors.accent;
       case 'team_leader':
-        return AppColors.warning;
+        return DarkColors.warning;
       default:
-        return AppColors.success;
+        return DarkColors.success;
     }
   }
 
@@ -299,29 +330,26 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          backgroundColor: AppColors.surface,
-          title: const Text(
-            'Edit User',
-            style: TextStyle(color: AppColors.textPrimary),
-          ),
+          backgroundColor: DarkColors.surface,
+          title: const Text('Edit User', style: TextStyle(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 'Change role for ${user.email}',
-                style: const TextStyle(color: AppColors.textSecondary),
+                style: const TextStyle(color: DarkColors.textSecondary),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: selectedRole,
-                dropdownColor: AppColors.surface,
+                value: selectedRole,
+                dropdownColor: DarkColors.surface,
                 items: ['normal', 'team_leader', 'company', 'admin']
                     .map(
                       (r) => DropdownMenuItem(
                         value: r,
                         child: Text(
                           r.toUpperCase(),
-                          style: const TextStyle(color: AppColors.textPrimary),
+                          style: const TextStyle(color: Colors.white),
                         ),
                       ),
                     )
@@ -331,9 +359,10 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                 },
                 decoration: InputDecoration(
                   labelText: 'Role',
-                  labelStyle: const TextStyle(color: AppColors.textTertiary),
+                  labelStyle: const TextStyle(color: DarkColors.textTertiary),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: DarkColors.borderColor),
                   ),
                 ),
               ),

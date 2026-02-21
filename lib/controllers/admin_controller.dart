@@ -5,6 +5,7 @@ import '../models/user_model.dart';
 import '../models/team_leader_model.dart';
 import '../models/audit_log_model.dart';
 import '../models/event_model.dart';
+import '../models/application_model.dart';
 import '../core/utils/result.dart';
 
 /// Admin controller provider
@@ -39,6 +40,14 @@ final auditLogsProvider = FutureProvider.autoDispose
       final controller = ref.watch(adminControllerProvider);
       final result = await controller.fetchAuditLogs(page: page);
       return result.when(success: (logs) => logs, error: (e) => throw e);
+    });
+
+/// All applications admin provider
+final allApplicationsAdminProvider = FutureProvider.autoDispose
+    .family<List<ApplicationModel>, int>((ref, page) async {
+      final controller = ref.watch(adminControllerProvider);
+      final result = await controller.fetchAllApplications(page: page);
+      return result.when(success: (apps) => apps, error: (e) => throw e);
     });
 
 class AdminController {
@@ -484,6 +493,46 @@ class AdminController {
       return Error(
         AppException(
           message: 'Failed to get event statistics: $e',
+          originalError: e,
+          stackTrace: st,
+        ),
+      );
+    }
+  }
+
+  /// Fetch all applications for admin view
+  Future<Result<List<ApplicationModel>>> fetchAllApplications({
+    int page = 0,
+    String? statusFilter,
+  }) async {
+    try {
+      int offset = page * pageSize;
+
+      var query = _supabase.from(SupabaseTables.applications).select();
+
+      if (statusFilter != null && statusFilter != 'all') {
+        query = query.eq('status', statusFilter);
+      }
+
+      final response = await query
+          .order('applied_at', ascending: false)
+          .range(offset, offset + pageSize - 1);
+
+      final apps = (response as List)
+          .map(
+            (json) => ApplicationModel.fromJson(json as Map<String, dynamic>),
+          )
+          .toList();
+
+      return Success(apps);
+    } on PostgrestException catch (e) {
+      return Error(
+        DatabaseException(message: e.message, code: e.code, originalError: e),
+      );
+    } catch (e, st) {
+      return Error(
+        AppException(
+          message: 'Failed to fetch all applications: $e',
           originalError: e,
           stackTrace: st,
         ),
