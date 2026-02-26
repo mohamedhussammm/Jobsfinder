@@ -1,35 +1,13 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'audit_log_model.g.dart';
-
 /// Audit Log model - tracks admin actions
-@JsonSerializable()
 class AuditLogModel {
-  @JsonKey(name: 'id')
   final String id;
-
-  @JsonKey(name: 'admin_user_id')
   final String? adminUserId;
-
-  @JsonKey(name: 'action')
   final String action;
-
-  @JsonKey(name: 'target_table')
   final String? targetTable;
-
-  @JsonKey(name: 'target_id')
   final String? targetId;
-
-  @JsonKey(name: 'old_values')
   final Map<String, dynamic>? oldValues;
-
-  @JsonKey(name: 'new_values')
   final Map<String, dynamic>? newValues;
-
-  @JsonKey(name: 'ip_address')
   final String? ipAddress;
-
-  @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
   AuditLogModel({
@@ -49,6 +27,49 @@ class AuditLogModel {
   bool get isEventRejection => action.contains('event_reject');
   bool get isUserManagement => action.contains('user_');
   bool get isTeamLeaderAssignment => action.contains('team_leader_assign');
+
+  factory AuditLogModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic v) {
+      if (v == null) return DateTime.now();
+      return DateTime.tryParse(v.toString()) ?? DateTime.now();
+    }
+
+    String? idFrom(dynamic v) {
+      if (v == null) return null;
+      if (v is Map) return (v['_id'] ?? v['id'])?.toString();
+      return v.toString();
+    }
+
+    return AuditLogModel(
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      adminUserId: idFrom(json['adminUserId'] ?? json['admin_user_id']),
+      action: (json['action'] ?? '').toString(),
+      targetTable:
+          json['targetTable']?.toString() ?? json['target_table']?.toString(),
+      targetId: idFrom(json['targetId'] ?? json['target_id']),
+      oldValues:
+          json['oldValues'] as Map<String, dynamic>? ??
+          json['old_values'] as Map<String, dynamic>?,
+      newValues:
+          json['newValues'] as Map<String, dynamic>? ??
+          json['new_values'] as Map<String, dynamic>?,
+      ipAddress:
+          json['ipAddress']?.toString() ?? json['ip_address']?.toString(),
+      createdAt: parseDate(json['createdAt'] ?? json['created_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'adminUserId': adminUserId,
+    'action': action,
+    'targetTable': targetTable,
+    'targetId': targetId,
+    'oldValues': oldValues,
+    'newValues': newValues,
+    'ipAddress': ipAddress,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   AuditLogModel copyWith({
     String? id,
@@ -73,10 +94,6 @@ class AuditLogModel {
       createdAt: createdAt ?? this.createdAt,
     );
   }
-
-  factory AuditLogModel.fromJson(Map<String, dynamic> json) =>
-      _$AuditLogModelFromJson(json);
-  Map<String, dynamic> toJson() => _$AuditLogModelToJson(this);
 
   @override
   String toString() => 'AuditLogModel($id, action: $action)';

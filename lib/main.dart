@@ -2,29 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shiftsphere/core/supabase/supabase_client.dart';
 import 'package:shiftsphere/controllers/auth_controller.dart';
+import 'package:shiftsphere/core/api/token_storage.dart';
 import 'package:shiftsphere/core/theme/colors.dart';
 import 'package:shiftsphere/core/theme/dark_colors.dart';
 import 'package:shiftsphere/core/theme/typography.dart';
 import 'package:shiftsphere/core/theme/theme_provider.dart';
 import 'package:shiftsphere/routes/app_router.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:shiftsphere/l10n/app_localizations.dart';
-import 'package:shiftsphere/core/providers/locale_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Hive for local storage (theme, etc.)
+  // Initialize Hive for local storage (theme, tokens, etc.)
   await Hive.initFlutter();
 
   // Load environment variables
   await dotenv.load(fileName: '.env').catchError((_) {});
 
-  // Initialize Supabase
-  await initializeSupabase();
+  // Initialize token storage
+  final tokenStorage = TokenStorage();
+  await tokenStorage.init();
 
   // Global error handler for uncaught widget errors
   ErrorWidget.builder = (FlutterErrorDetails details) {
@@ -68,29 +65,27 @@ void main() async {
   runApp(const ProviderScope(child: ShiftSphereApp()));
 }
 
-class ShiftSphereApp extends ConsumerWidget {
+class ShiftSphereApp extends ConsumerStatefulWidget {
   const ShiftSphereApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ShiftSphereApp> createState() => _ShiftSphereAppState();
+}
+
+class _ShiftSphereAppState extends ConsumerState<ShiftSphereApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Only call once on startup — not on every rebuild
+    Future.microtask(() {
+      ref.read(authControllerProvider).tryAutoLogin();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
-    final locale = ref.watch(localeProvider);
-
-    // Listen for auth state changes globally
-    ref.listen(authStateProvider, (previous, next) {
-      if (next is AsyncData<AuthState>) {
-        final data = next.value;
-        final event = data.event;
-        if (event == AuthChangeEvent.signedIn ||
-            event == AuthChangeEvent.tokenRefreshed ||
-            event == AuthChangeEvent.initialSession) {
-          ref.read(authControllerProvider).syncUser();
-        } else if (event == AuthChangeEvent.signedOut) {
-          ref.read(currentUserProvider.notifier).state = null;
-        }
-      }
-    });
 
     return MaterialApp.router(
       title: 'ShiftSphere',
@@ -99,17 +94,6 @@ class ShiftSphereApp extends ConsumerWidget {
       themeMode: themeMode,
       theme: _buildLightTheme(),
       darkTheme: _buildDarkTheme(),
-      locale: locale,
-      localizationsDelegates: [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('en'), // English
-        Locale('ar'), // Arabic
-      ],
     );
   }
 

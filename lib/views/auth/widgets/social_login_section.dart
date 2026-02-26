@@ -1,97 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../widgets/social_button.dart';
-import '../../../services/social_auth_service.dart';
 import '../../../core/theme/colors.dart';
+import '../../../controllers/auth_controller.dart';
 
-class SocialLoginSection extends ConsumerWidget {
+/// Social login section with Google Sign-In
+class SocialLoginSection extends ConsumerStatefulWidget {
   const SocialLoginSection({super.key});
 
-  Future<void> _handleGoogleSignIn(BuildContext context, WidgetRef ref) async {
-    try {
-      final socialAuth = ref.read(socialAuthServiceProvider);
-      final result = await socialAuth.signInWithGoogle();
+  @override
+  ConsumerState<SocialLoginSection> createState() => _SocialLoginSectionState();
+}
 
-      result.when(
-        success: (_) {
-          // OAuth flow initiated - user will be redirected to Google
-          // The actual callback will be handled by deep linking
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Redirecting to Google...'),
-                backgroundColor: AppColors.success,
-              ),
-            );
-          }
-        },
-        error: (e) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Google sign in failed: ${e.message}'),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          }
-        },
-      );
-    } catch (e) {
-      if (context.mounted) {
+class _SocialLoginSectionState extends ConsumerState<SocialLoginSection> {
+  bool _isGoogleLoading = false;
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isGoogleLoading = true);
+
+    try {
+      final result = await ref.read(authControllerProvider).signInWithGoogle();
+
+      if (!mounted) return;
+
+      if (result.success && result.role != null) {
+        // Navigate based on role
+        switch (result.role) {
+          case 'admin':
+            context.go('/admin/dashboard');
+            break;
+          case 'team_leader':
+            context.go('/team-leader/events');
+            break;
+          default:
+            context.go('/');
+            break;
+        }
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text(result.errorMessage ?? 'Google sign-in failed'),
             backgroundColor: AppColors.error,
           ),
         );
       }
-    }
-  }
-
-  Future<void> _handleFacebookSignIn(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    try {
-      final socialAuth = ref.read(socialAuthServiceProvider);
-      final result = await socialAuth.signInWithFacebook();
-
-      result.when(
-        success: (_) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Redirecting to Facebook...'),
-                backgroundColor: AppColors.success,
-              ),
-            );
-          }
-        },
-        error: (e) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Facebook sign in failed: ${e.message}'),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          }
-        },
-      );
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('Error: ${e.toString()}'),
             backgroundColor: AppColors.error,
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGoogleLoading = false);
       }
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Column(
       children: [
         const SizedBox(height: 32),
@@ -124,16 +95,9 @@ class SocialLoginSection extends ConsumerWidget {
         ),
         const SizedBox(height: 24),
         SocialButton(
-          label: 'Google',
+          label: _isGoogleLoading ? 'Signing in...' : 'Google',
           iconPath: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png',
-          onTap: () => _handleGoogleSignIn(context, ref),
-        ),
-        const SizedBox(height: 16),
-        SocialButton(
-          label: 'Facebook',
-          iconPath: 'https://cdn-icons-png.flaticon.com/512/5968/5968764.png',
-          isOutlined: true,
-          onTap: () => _handleFacebookSignIn(context, ref),
+          onTap: _isGoogleLoading ? () {} : () => _handleGoogleSignIn(),
         ),
       ],
     );

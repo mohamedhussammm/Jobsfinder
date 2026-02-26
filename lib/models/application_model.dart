@@ -1,36 +1,19 @@
-import 'package:json_annotation/json_annotation.dart';
 import 'user_model.dart';
 
-part 'application_model.g.dart';
-
 /// Application model - user's application to an event
-@JsonSerializable()
 class ApplicationModel {
-  @JsonKey(name: 'id')
   final String id;
-
-  @JsonKey(name: 'user_id')
   final String userId;
-
-  @JsonKey(name: 'event_id')
   final String eventId;
-
-  @JsonKey(name: 'status')
-  final String status; // 'applied', 'shortlisted', 'invited', 'accepted', 'declined', 'rejected'
-
-  @JsonKey(name: 'cv_path')
+  final String
+  status; // 'applied', 'shortlisted', 'invited', 'accepted', 'declined', 'rejected'
   final String? cvPath;
-
-  @JsonKey(name: 'cover_letter')
   final String? coverLetter;
-
-  @JsonKey(name: 'applied_at')
   final DateTime appliedAt;
-
-  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
-
-  @JsonKey(includeFromJson: true, includeToJson: false)
+  final String? experience;
+  final bool isAvailable;
+  final bool openToOtherOptions;
   final UserModel? user;
 
   ApplicationModel({
@@ -42,6 +25,9 @@ class ApplicationModel {
     this.coverLetter,
     required this.appliedAt,
     required this.updatedAt,
+    this.experience,
+    this.isAvailable = false,
+    this.openToOtherOptions = false,
     this.user,
   });
 
@@ -57,6 +43,69 @@ class ApplicationModel {
   bool get isPending => isApplied || isShortlisted || isInvited;
   bool get isFinal => isAccepted || isDeclined || isRejected;
 
+  factory ApplicationModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic v) {
+      if (v == null) return DateTime.now();
+      return DateTime.tryParse(v.toString()) ?? DateTime.now();
+    }
+
+    // Backend uses MongoDB _id / camelCase fields
+    final userId = (json['userId'] ?? json['user_id'])?.toString();
+    final eventId = (json['eventId'] ?? json['event_id'])?.toString();
+
+    // userId / eventId may be nested objects if populated
+    final userIdStr =
+        userId ??
+        (json['userId'] is Map ? json['userId']['_id'] : null)?.toString() ??
+        '';
+    final eventIdStr =
+        eventId ??
+        (json['eventId'] is Map ? json['eventId']['_id'] : null)?.toString() ??
+        '';
+
+    // Nested user object if populated
+    UserModel? user;
+    final userJson =
+        json['user'] ?? (json['userId'] is Map ? json['userId'] : null);
+    if (userJson is Map<String, dynamic>) {
+      user = UserModel.fromJson(userJson);
+    }
+
+    return ApplicationModel(
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      userId: userIdStr,
+      eventId: eventIdStr,
+      status: (json['status'] ?? 'applied').toString(),
+      cvPath: json['cvPath']?.toString() ?? json['cv_path']?.toString(),
+      coverLetter:
+          json['coverLetter']?.toString() ?? json['cover_letter']?.toString(),
+      appliedAt: parseDate(
+        json['appliedAt'] ?? json['applied_at'] ?? json['createdAt'],
+      ),
+      updatedAt: parseDate(json['updatedAt'] ?? json['updated_at']),
+      experience: json['experience']?.toString(),
+      isAvailable: json['isAvailable'] == true || json['is_available'] == true,
+      openToOtherOptions:
+          json['openToOtherOptions'] == true ||
+          json['open_to_other_options'] == true,
+      user: user,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'userId': userId,
+    'eventId': eventId,
+    'status': status,
+    'cvPath': cvPath,
+    'coverLetter': coverLetter,
+    'appliedAt': appliedAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'experience': experience,
+    'isAvailable': isAvailable,
+    'openToOtherOptions': openToOtherOptions,
+  };
+
   ApplicationModel copyWith({
     String? id,
     String? userId,
@@ -66,6 +115,9 @@ class ApplicationModel {
     String? coverLetter,
     DateTime? appliedAt,
     DateTime? updatedAt,
+    String? experience,
+    bool? isAvailable,
+    bool? openToOtherOptions,
     UserModel? user,
   }) {
     return ApplicationModel(
@@ -77,13 +129,12 @@ class ApplicationModel {
       coverLetter: coverLetter ?? this.coverLetter,
       appliedAt: appliedAt ?? this.appliedAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      experience: experience ?? this.experience,
+      isAvailable: isAvailable ?? this.isAvailable,
+      openToOtherOptions: openToOtherOptions ?? this.openToOtherOptions,
       user: user ?? this.user,
     );
   }
-
-  factory ApplicationModel.fromJson(Map<String, dynamic> json) =>
-      _$ApplicationModelFromJson(json);
-  Map<String, dynamic> toJson() => _$ApplicationModelToJson(this);
 
   @override
   String toString() =>

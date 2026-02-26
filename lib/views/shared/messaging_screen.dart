@@ -5,7 +5,6 @@ import '../../controllers/auth_controller.dart';
 import '../../core/theme/colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../models/message_model.dart';
-import '../../services/realtime_service.dart';
 
 /// Conversations list screen
 class ConversationsScreen extends ConsumerWidget {
@@ -54,11 +53,20 @@ class ConversationsScreen extends ConsumerWidget {
             separatorBuilder: (_, i) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final conv = conversations[index];
+              final otherUserName = conv['otherUserName'] as String? ?? 'User';
+              final otherUserId = conv['otherUserId'] as String? ?? '';
+              final unreadCount = (conv['unreadCount'] as num?)?.toInt() ?? 0;
+              final lastMessage = conv['lastMessage'] as String? ?? '';
+              final lastMessageAtStr = conv['lastMessageAt'] as String?;
+              final lastMessageAt = lastMessageAtStr != null
+                  ? DateTime.tryParse(lastMessageAtStr)
+                  : null;
+
               return ListTile(
                 leading: CircleAvatar(
                   backgroundColor: AppColors.primaryLight,
                   child: Text(
-                    (conv.otherUserName ?? '?')[0].toUpperCase(),
+                    otherUserName[0].toUpperCase(),
                     style: const TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w700,
@@ -66,21 +74,21 @@ class ConversationsScreen extends ConsumerWidget {
                   ),
                 ),
                 title: Text(
-                  conv.otherUserName ?? 'User',
+                  otherUserName,
                   style: TextStyle(
-                    fontWeight: conv.unreadCount > 0
+                    fontWeight: unreadCount > 0
                         ? FontWeight.w700
                         : FontWeight.w500,
                     fontSize: ResponsiveHelper.sp(context, 15),
                   ),
                 ),
                 subtitle: Text(
-                  conv.lastMessage ?? '',
+                  lastMessage,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: ResponsiveHelper.sp(context, 13),
-                    color: conv.unreadCount > 0
+                    color: unreadCount > 0
                         ? AppColors.textPrimary
                         : AppColors.textTertiary,
                   ),
@@ -88,15 +96,15 @@ class ConversationsScreen extends ConsumerWidget {
                 trailing: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (conv.lastMessageAt != null)
+                    if (lastMessageAt != null)
                       Text(
-                        _formatTime(conv.lastMessageAt!),
+                        _formatTime(lastMessageAt),
                         style: TextStyle(
                           fontSize: ResponsiveHelper.sp(context, 11),
                           color: AppColors.textTertiary,
                         ),
                       ),
-                    if (conv.unreadCount > 0)
+                    if (unreadCount > 0)
                       Container(
                         margin: const EdgeInsets.only(top: 4),
                         padding: const EdgeInsets.symmetric(
@@ -108,7 +116,7 @@ class ConversationsScreen extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          '${conv.unreadCount}',
+                          '$unreadCount',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: ResponsiveHelper.sp(context, 10),
@@ -122,8 +130,8 @@ class ConversationsScreen extends ConsumerWidget {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => MessagingScreen(
-                        otherUserId: conv.otherUserId,
-                        otherUserName: conv.otherUserName ?? 'User',
+                        otherUserId: otherUserId,
+                        otherUserName: otherUserName,
                       ),
                     ),
                   );
@@ -183,10 +191,9 @@ class _MessagingScreenState extends ConsumerState<MessagingScreen> {
     }
 
     final messagesAsync = ref.watch(
-      conversationMessagesProvider((
-        userId: currentUser.id,
-        otherUserId: widget.otherUserId,
-      )),
+      messagesProvider(
+        MessageParams(userId: currentUser.id, otherUserId: widget.otherUserId),
+      ),
     );
 
     // Mark conversation as read
@@ -196,21 +203,6 @@ class _MessagingScreenState extends ConsumerState<MessagingScreen> {
           currentUserId: currentUser.id,
           otherUserId: widget.otherUserId,
         );
-
-    // Listen for realtime messages
-    ref.listen(realtimeMessagesProvider(currentUser.id), (prev, next) {
-      next.whenData((data) {
-        final senderId = data['sender_id'] as String?;
-        if (senderId == widget.otherUserId) {
-          ref.invalidate(
-            conversationMessagesProvider((
-              userId: currentUser.id,
-              otherUserId: widget.otherUserId,
-            )),
-          );
-        }
-      });
-    });
 
     return Scaffold(
       appBar: AppBar(
@@ -385,10 +377,9 @@ class _MessagingScreenState extends ConsumerState<MessagingScreen> {
     setState(() => _isSending = false);
 
     ref.invalidate(
-      conversationMessagesProvider((
-        userId: userId,
-        otherUserId: widget.otherUserId,
-      )),
+      messagesProvider(
+        MessageParams(userId: userId, otherUserId: widget.otherUserId),
+      ),
     );
   }
 }

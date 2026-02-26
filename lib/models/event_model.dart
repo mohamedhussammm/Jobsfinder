@@ -1,74 +1,51 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'event_model.g.dart';
-
-/// Location data stored as JSONB in Supabase
-@JsonSerializable()
+/// Location data stored as JSON in the backend
 class LocationData {
-  @JsonKey(name: 'address')
   final String? address;
-
-  @JsonKey(name: 'lat')
   final double? lat;
-
-  @JsonKey(name: 'lng')
   final double? lng;
 
   LocationData({this.address, this.lat, this.lng});
 
-  factory LocationData.fromJson(Map<String, dynamic> json) =>
-      _$LocationDataFromJson(json);
-  Map<String, dynamic> toJson() => _$LocationDataToJson(this);
+  factory LocationData.fromJson(Map<String, dynamic> json) {
+    return LocationData(
+      address: json['address']?.toString(),
+      lat: json['lat'] != null ? (json['lat'] as num).toDouble() : null,
+      lng: json['lng'] != null ? (json['lng'] as num).toDouble() : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {'address': address, 'lat': lat, 'lng': lng};
 }
 
 /// Event model - represents job/shift events created by companies
-@JsonSerializable()
 class EventModel {
-  @JsonKey(name: 'id')
   final String id;
-
-  @JsonKey(name: 'company_id')
   final String companyId;
-
-  @JsonKey(name: 'title')
   final String title;
-
-  @JsonKey(name: 'description')
   final String? description;
-
-  @JsonKey(name: 'location')
   final LocationData? location;
-
-  @JsonKey(name: 'start_time')
   final DateTime startTime;
-
-  @JsonKey(name: 'end_time')
   final DateTime endTime;
-
-  @JsonKey(name: 'capacity')
   final int? capacity;
-
-  @JsonKey(name: 'image_path')
   final String? imagePath;
-
-  @JsonKey(name: 'status')
-  final String status; // 'draft', 'pending', 'published', 'completed', 'cancelled'
-
-  @JsonKey(name: 'created_at')
+  final String
+  status; // 'draft', 'pending', 'published', 'completed', 'cancelled'
   final DateTime createdAt;
-
-  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
-
-  // Category fields — populated via JOIN (categories!category_id)
-  @JsonKey(includeFromJson: false, includeToJson: false)
   final String? categoryId;
-
-  @JsonKey(includeFromJson: false, includeToJson: false)
   final String? categoryName;
-
-  @JsonKey(includeFromJson: false, includeToJson: false)
   final String? categoryIcon;
+
+  // ─── New fields ─────────────────────────────
+  final double? salary;
+  final String? requirements;
+  final String? benefits;
+  final String? contactEmail;
+  final String? contactPhone;
+  final List<String> tags;
+  final bool isUrgent;
+  final String? companyName;
+  final String? companyLogo;
 
   EventModel({
     required this.id,
@@ -86,6 +63,15 @@ class EventModel {
     this.categoryId,
     this.categoryName,
     this.categoryIcon,
+    this.salary,
+    this.requirements,
+    this.benefits,
+    this.contactEmail,
+    this.contactPhone,
+    this.tags = const [],
+    this.isUrgent = false,
+    this.companyName,
+    this.companyLogo,
   });
 
   // Status helpers
@@ -100,6 +86,112 @@ class EventModel {
   bool get isOngoing =>
       startTime.isBefore(DateTime.now()) && endTime.isAfter(DateTime.now());
   bool get isPast => endTime.isBefore(DateTime.now());
+
+  factory EventModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic v) {
+      if (v == null) return DateTime.now();
+      return DateTime.tryParse(v.toString()) ?? DateTime.now();
+    }
+
+    // companyId may be a populated object
+    final companyRaw = json['companyId'] ?? json['company_id'];
+    final String companyId;
+    String? companyName;
+    String? companyLogo;
+    if (companyRaw is Map) {
+      companyId = (companyRaw['_id'] ?? companyRaw['id'] ?? '').toString();
+      companyName = companyRaw['name']?.toString();
+      companyLogo = companyRaw['logoPath']?.toString();
+    } else {
+      companyId = (companyRaw ?? '').toString();
+    }
+
+    // location may be null or an object
+    LocationData? location;
+    final locRaw = json['location'];
+    if (locRaw is Map<String, dynamic>) {
+      location = LocationData.fromJson(locRaw);
+    }
+
+    // categoryId may be a populated object
+    final catRaw = json['categoryId'] ?? json['category_id'];
+    String? categoryId;
+    String? categoryName;
+    String? categoryIcon;
+    if (catRaw is Map) {
+      categoryId = (catRaw['_id'] ?? catRaw['id'])?.toString();
+      categoryName = catRaw['name']?.toString();
+      categoryIcon = catRaw['icon']?.toString();
+    } else {
+      categoryId = catRaw?.toString();
+    }
+
+    // tags
+    final tagsRaw = json['tags'];
+    final List<String> tags = [];
+    if (tagsRaw is List) {
+      for (final t in tagsRaw) {
+        if (t != null) tags.add(t.toString());
+      }
+    }
+
+    return EventModel(
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      companyId: companyId,
+      title: (json['title'] ?? '').toString(),
+      description: json['description']?.toString(),
+      location: location,
+      startTime: parseDate(json['startTime'] ?? json['start_time']),
+      endTime: parseDate(json['endTime'] ?? json['end_time']),
+      capacity: json['capacity'] != null
+          ? (json['capacity'] as num).toInt()
+          : null,
+      imagePath:
+          json['imagePath']?.toString() ?? json['image_path']?.toString(),
+      status: (json['status'] ?? 'pending').toString(),
+      createdAt: parseDate(json['createdAt'] ?? json['created_at']),
+      updatedAt: parseDate(json['updatedAt'] ?? json['updated_at']),
+      categoryId: categoryId,
+      categoryName: categoryName,
+      categoryIcon: categoryIcon,
+      salary: json['salary'] != null
+          ? (json['salary'] as num).toDouble()
+          : null,
+      requirements: json['requirements']?.toString(),
+      benefits: json['benefits']?.toString(),
+      contactEmail:
+          json['contactEmail']?.toString() ?? json['contact_email']?.toString(),
+      contactPhone:
+          json['contactPhone']?.toString() ?? json['contact_phone']?.toString(),
+      tags: tags,
+      isUrgent: (json['isUrgent'] ?? json['is_urgent'] ?? false) == true,
+      companyName: companyName,
+      companyLogo: companyLogo,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'companyId': companyId,
+    'title': title,
+    'description': description,
+    'location': location?.toJson(),
+    'startTime': startTime.toIso8601String(),
+    'endTime': endTime.toIso8601String(),
+    'capacity': capacity,
+    'imagePath': imagePath,
+    'status': status,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'categoryId': categoryId,
+    'salary': salary,
+    'requirements': requirements,
+    'benefits': benefits,
+    'contactEmail': contactEmail,
+    'contactPhone': contactPhone,
+    'tags': tags,
+    'isUrgent': isUrgent,
+  };
 
   EventModel copyWith({
     String? id,
@@ -117,6 +209,15 @@ class EventModel {
     String? categoryId,
     String? categoryName,
     String? categoryIcon,
+    double? salary,
+    String? requirements,
+    String? benefits,
+    String? contactEmail,
+    String? contactPhone,
+    List<String>? tags,
+    bool? isUrgent,
+    String? companyName,
+    String? companyLogo,
   }) {
     return EventModel(
       id: id ?? this.id,
@@ -134,12 +235,17 @@ class EventModel {
       categoryId: categoryId ?? this.categoryId,
       categoryName: categoryName ?? this.categoryName,
       categoryIcon: categoryIcon ?? this.categoryIcon,
+      salary: salary ?? this.salary,
+      requirements: requirements ?? this.requirements,
+      benefits: benefits ?? this.benefits,
+      contactEmail: contactEmail ?? this.contactEmail,
+      contactPhone: contactPhone ?? this.contactPhone,
+      tags: tags ?? this.tags,
+      isUrgent: isUrgent ?? this.isUrgent,
+      companyName: companyName ?? this.companyName,
+      companyLogo: companyLogo ?? this.companyLogo,
     );
   }
-
-  factory EventModel.fromJson(Map<String, dynamic> json) =>
-      _$EventModelFromJson(json);
-  Map<String, dynamic> toJson() => _$EventModelToJson(this);
 
   @override
   String toString() => 'EventModel($id, $title, $status)';
@@ -147,28 +253,16 @@ class EventModel {
 
 /// Extension to provide UI-expected properties
 extension EventModelExtensions on EventModel {
-  // Company name - placeholder until we implement proper company joins
-  String get company =>
-      'Company'; // Placeholder — populated via company join when available
-
-  // Event date - simplified date field (uses startTime)
+  String get company => companyName ?? 'Company';
   DateTime get eventDate => startTime;
-
-  // Number of applicants - placeholder until we implement counting
-  int get applicants =>
-      0; // Placeholder — counted from applications table when available
-
-  // Rating - placeholder until we implement rating system
-  double get rating =>
-      0.0; // Placeholder — averaged from ratings table when available
+  int get applicants => 0;
+  double get rating => 0.0;
 }
 
 /// Extension for LocationData
 extension LocationDataExtensions on LocationData {
-  // City extracted from address or placeholder
   String get city {
     if (address != null && address!.isNotEmpty) {
-      // Try to extract city from address (simple approach)
       final parts = address!.split(',');
       if (parts.length > 1) {
         return parts[parts.length - 2].trim();

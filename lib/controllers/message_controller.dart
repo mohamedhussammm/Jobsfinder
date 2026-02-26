@@ -1,26 +1,27 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../core/supabase/supabase_client.dart';
+import 'package:dio/dio.dart';
+import '../core/api/api_client.dart';
 import '../models/message_model.dart';
 import '../core/utils/result.dart';
 
-/// Messages table name
-const String _messagesTable = 'messages';
+/// Helper class for message params
+class MessageParams {
+  final String userId;
+  final String otherUserId;
+  MessageParams({required this.userId, required this.otherUserId});
+}
 
-/// Conversations provider for a user
+/// Conversations provider
 final conversationsProvider = FutureProvider.autoDispose
-    .family<List<ConversationModel>, String>((ref, userId) async {
+    .family<List<Map<String, dynamic>>, String>((ref, userId) async {
       final controller = ref.watch(messageControllerProvider);
       final result = await controller.fetchConversations(userId);
       return result.when(success: (c) => c, error: (e) => throw e);
     });
 
-/// Messages for a specific conversation
-final conversationMessagesProvider = FutureProvider.autoDispose
-    .family<List<MessageModel>, ({String userId, String otherUserId})>((
-      ref,
-      params,
-    ) async {
+/// Messages between two users provider
+final messagesProvider = FutureProvider.autoDispose
+    .family<List<MessageModel>, MessageParams>((ref, params) async {
       final controller = ref.watch(messageControllerProvider);
       final result = await controller.fetchMessages(
         userId: params.userId,
@@ -34,9 +35,10 @@ final messageControllerProvider = Provider((ref) => MessageController(ref));
 
 class MessageController {
   final Ref ref;
-  final SupabaseClient _supabase = Supabase.instance.client;
 
   MessageController(this.ref);
+
+  ApiClient get _api => ref.read(apiClientProvider);
 
   /// Send a message
   Future<Result<MessageModel>> sendMessage({
@@ -46,25 +48,28 @@ class MessageController {
     String? eventId,
   }) async {
     try {
-      final data = {
-        'sender_id': senderId,
-        'receiver_id': receiverId,
-        'content': content,
-        'event_id': eventId,
-        'is_read': false,
-        'created_at': DateTime.now().toIso8601String(),
-      };
+      final response = await _api.post(
+        '/messages',
+        data: {
+          'receiverId': receiverId,
+          'content': content,
+          'eventId': eventId,
+        },
+      );
 
-      final response = await _supabase
-          .from(_messagesTable)
-          .insert(data)
-          .select()
-          .single();
+      if (response.statusCode == 201 && response.data['success'] == true) {
+        return Success(
+          MessageModel.fromJson(response.data['data'] as Map<String, dynamic>),
+        );
+      }
 
-      return Success(MessageModel.fromJson(response));
-    } on PostgrestException catch (e) {
+      return Error(AppException(message: 'Failed to send message'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to send message',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -85,26 +90,30 @@ class MessageController {
     int pageSize = 50,
   }) async {
     try {
-      final from = page * pageSize;
-      final to = from + pageSize - 1;
+      final response = await _api.get(
+        '/messages',
+        queryParameters: {
+          'otherUserId': otherUserId,
+          'page': page + 1,
+          'limit': pageSize,
+        },
+      );
 
-      final response = await _supabase
-          .from(_messagesTable)
-          .select()
-          .or(
-            'and(sender_id.eq.$userId,receiver_id.eq.$otherUserId),and(sender_id.eq.$otherUserId,receiver_id.eq.$userId)',
-          )
-          .order('created_at', ascending: false)
-          .range(from, to);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final list = response.data['data'] as List;
+        final messages = list
+            .map((json) => MessageModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+        return Success(messages);
+      }
 
-      final messages = (response as List)
-          .map((json) => MessageModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-
-      return Success(messages);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to fetch messages',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -118,105 +127,25 @@ class MessageController {
   }
 
   /// Fetch conversation list for a user
-  Future<Result<List<ConversationModel>>> fetchConversations(
+  Future<Result<List<Map<String, dynamic>>>> fetchConversations(
     String userId,
   ) async {
     try {
-      // Get all messages involving this user, grouped by the other party
-      final sentMessages = await _supabase
-          .from(_messagesTable)
-          .select('receiver_id, content, created_at, is_read')
-          .eq('sender_id', userId)
-          .order('created_at', ascending: false);
+      final response = await _api.get('/messages/conversations');
 
-      final receivedMessages = await _supabase
-          .from(_messagesTable)
-          .select('sender_id, content, created_at, is_read')
-          .eq('receiver_id', userId)
-          .order('created_at', ascending: false);
-
-      // Build conversation map
-      final Map<String, ConversationModel> conversations = {};
-
-      for (final msg in sentMessages) {
-        final otherId = msg['receiver_id'] as String;
-        if (!conversations.containsKey(otherId)) {
-          conversations[otherId] = ConversationModel(
-            otherUserId: otherId,
-            lastMessage: msg['content'] as String?,
-            lastMessageAt: msg['created_at'] != null
-                ? DateTime.parse(msg['created_at'] as String)
-                : null,
-            unreadCount: 0,
-          );
-        }
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final list = response.data['data'] as List;
+        return Success(list.map((e) => e as Map<String, dynamic>).toList());
       }
 
-      for (final msg in receivedMessages) {
-        final otherId = msg['sender_id'] as String;
-        final isRead = msg['is_read'] as bool? ?? false;
-        final msgTime = msg['created_at'] != null
-            ? DateTime.parse(msg['created_at'] as String)
-            : null;
-
-        if (!conversations.containsKey(otherId)) {
-          conversations[otherId] = ConversationModel(
-            otherUserId: otherId,
-            lastMessage: msg['content'] as String?,
-            lastMessageAt: msgTime,
-            unreadCount: isRead ? 0 : 1,
-          );
-        } else {
-          final existing = conversations[otherId]!;
-          // Update if this message is newer
-          if (msgTime != null &&
-              (existing.lastMessageAt == null ||
-                  msgTime.isAfter(existing.lastMessageAt!))) {
-            conversations[otherId] = ConversationModel(
-              otherUserId: otherId,
-              lastMessage: msg['content'] as String?,
-              lastMessageAt: msgTime,
-              unreadCount: existing.unreadCount + (isRead ? 0 : 1),
-            );
-          }
-        }
-      }
-
-      // Fetch user names for conversations
-      final otherUserIds = conversations.keys.toList();
-      if (otherUserIds.isNotEmpty) {
-        final users = await _supabase
-            .from(SupabaseTables.users)
-            .select('id, name, avatar_path')
-            .inFilter('id', otherUserIds);
-
-        for (final user in users) {
-          final uid = user['id'] as String;
-          if (conversations.containsKey(uid)) {
-            final conv = conversations[uid]!;
-            conversations[uid] = ConversationModel(
-              otherUserId: uid,
-              otherUserName: user['name'] as String?,
-              otherUserAvatar: user['avatar_path'] as String?,
-              lastMessage: conv.lastMessage,
-              lastMessageAt: conv.lastMessageAt,
-              unreadCount: conv.unreadCount,
-            );
-          }
-        }
-      }
-
-      final result = conversations.values.toList()
-        ..sort((a, b) {
-          if (a.lastMessageAt == null) return 1;
-          if (b.lastMessageAt == null) return -1;
-          return b.lastMessageAt!.compareTo(a.lastMessageAt!);
-        });
-
-      return Success(result);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to fetch conversations',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -235,17 +164,16 @@ class MessageController {
     required String otherUserId,
   }) async {
     try {
-      await _supabase
-          .from(_messagesTable)
-          .update({'is_read': true})
-          .eq('sender_id', otherUserId)
-          .eq('receiver_id', currentUserId)
-          .eq('is_read', false);
-
+      await _api.patch('/messages/read', data: {'otherUserId': otherUserId});
       return Success(null);
-    } on PostgrestException catch (e) {
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ??
+              'Failed to mark conversation as read',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(

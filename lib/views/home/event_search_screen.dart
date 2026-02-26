@@ -1,15 +1,14 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../l10n/app_localizations.dart';
 import '../../core/theme/dark_colors.dart';
 import '../../core/theme/typography.dart';
 import '../../models/event_model.dart';
 import '../../controllers/event_controller.dart';
 import '../common/skeleton_loader.dart';
+import '../../services/file_upload_service.dart';
 
 class EventSearchScreen extends ConsumerStatefulWidget {
   const EventSearchScreen({super.key});
@@ -65,7 +64,7 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        AppLocalizations.of(context)!.location,
+                        'Location',
                         style: AppTypography.labelLarge.copyWith(
                           color: DarkColors.primary,
                           fontWeight: FontWeight.w800,
@@ -161,14 +160,14 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            AppLocalizations.of(context)!.noEventsFound,
+                            'No events found',
                             style: AppTypography.titleLarge.copyWith(
                               color: Colors.white,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            AppLocalizations.of(context)!.tryAdjustingSearch,
+                            'Try adjusting your search to find what you\'re looking for.',
                             style: AppTypography.bodyMedium.copyWith(
                               color: DarkColors.textSecondary,
                             ),
@@ -232,9 +231,9 @@ class _SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
   });
 
   @override
-  double get minExtent => 88;
+  double get minExtent => 80;
   @override
-  double get maxExtent => 88;
+  double get maxExtent => 80;
 
   @override
   Widget build(
@@ -242,66 +241,61 @@ class _SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          color: DarkColors.background.withValues(alpha: 0.8),
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: DarkColors.gray100,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: DarkColors.borderColor),
-                  ),
-                  child: TextField(
-                    controller: controller,
-                    onChanged: onChanged,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context)!.searchHint,
-                      hintStyle: const TextStyle(
-                        color: DarkColors.textSecondary,
-                        fontSize: 14,
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        color: DarkColors.textSecondary,
-                        size: 20,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
+    return Container(
+      color: DarkColors.background,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: DarkColors.gray100,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: DarkColors.borderColor),
               ),
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: onToggleFilters,
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: showFilters
-                        ? DarkColors.primary
-                        : DarkColors.gray100,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: DarkColors.borderColor),
+              child: TextField(
+                controller: controller,
+                autofocus: true,
+                onChanged: onChanged,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Search events, venues, or roles',
+                  hintStyle: const TextStyle(
+                    color: DarkColors.textSecondary,
+                    fontSize: 14,
                   ),
-                  child: Icon(
-                    Icons.tune,
-                    color: showFilters ? Colors.white : DarkColors.textPrimary,
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: DarkColors.textSecondary,
                     size: 20,
                   ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+          const SizedBox(width: 12),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onToggleFilters,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: showFilters ? DarkColors.primary : DarkColors.gray100,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: DarkColors.borderColor),
+              ),
+              child: Icon(
+                Icons.tune,
+                color: showFilters ? Colors.white : DarkColors.textPrimary,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -312,17 +306,18 @@ class _SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
       oldDelegate.controller != controller;
 }
 
-class _EventSearchCard extends StatelessWidget {
+class _EventSearchCard extends ConsumerWidget {
   final EventModel event;
 
   const _EventSearchCard({required this.event});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final timeStr =
         '${DateFormat('h:mm a').format(event.startTime)} - ${DateFormat('h:mm a').format(event.endTime)}';
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => context.push('/event/${event.id}', extra: event),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -341,7 +336,9 @@ class _EventSearchCard extends StatelessWidget {
                 height: 80,
                 child: event.imagePath != null
                     ? CachedNetworkImage(
-                        imageUrl: event.imagePath!,
+                        imageUrl: ref
+                            .read(fileUploadServiceProvider)
+                            .getPublicUrl(event.imagePath!),
                         fit: BoxFit.cover,
                         errorWidget: (_, __, ___) =>
                             _ImagePlaceholder(event.categoryName ?? 'EVENT'),
@@ -366,9 +363,7 @@ class _EventSearchCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        AppLocalizations.of(
-                          context,
-                        )!.spots(event.capacity ?? 0),
+                        'Open',
                         style: AppTypography.bodySmall.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

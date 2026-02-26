@@ -1,22 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../core/supabase/supabase_client.dart';
+import 'package:dio/dio.dart';
+import '../core/api/api_client.dart';
+import '../core/api/api_config.dart';
 import '../models/user_model.dart';
 import '../models/team_leader_model.dart';
-import '../models/audit_log_model.dart';
 import '../models/event_model.dart';
 import '../models/application_model.dart';
 import '../core/utils/result.dart';
-
-/// Admin controller provider
-final adminControllerProvider = Provider((ref) => AdminController(ref));
-
-/// Pending events admin view provider
-final pendingEventsAdminProvider = FutureProvider.autoDispose((ref) async {
-  final controller = ref.watch(adminControllerProvider);
-  final result = await controller.fetchPendingEventRequests();
-  return result.when(success: (events) => events, error: (e) => throw e);
-});
 
 /// All users provider
 final allUsersProvider = FutureProvider.autoDispose
@@ -31,18 +21,10 @@ final teamLeadersForEventProvider = FutureProvider.autoDispose
     .family<List<TeamLeaderModel>, String>((ref, eventId) async {
       final controller = ref.watch(adminControllerProvider);
       final result = await controller.fetchTeamLeadersForEvent(eventId);
-      return result.when(success: (leaders) => leaders, error: (e) => throw e);
+      return result.when(success: (tl) => tl, error: (e) => throw e);
     });
 
-/// Audit logs provider
-final auditLogsProvider = FutureProvider.autoDispose
-    .family<List<AuditLogModel>, int>((ref, page) async {
-      final controller = ref.watch(adminControllerProvider);
-      final result = await controller.fetchAuditLogs(page: page);
-      return result.when(success: (logs) => logs, error: (e) => throw e);
-    });
-
-/// All applications admin provider
+/// All applications provider (admin view)
 final allApplicationsAdminProvider = FutureProvider.autoDispose
     .family<List<ApplicationModel>, int>((ref, page) async {
       final controller = ref.watch(adminControllerProvider);
@@ -50,35 +32,56 @@ final allApplicationsAdminProvider = FutureProvider.autoDispose
       return result.when(success: (apps) => apps, error: (e) => throw e);
     });
 
+/// All companies provider
+final allCompaniesProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+      final api = ref.watch(apiClientProvider);
+      final response = await api.get(ApiEndpoints.companies);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final list = response.data['data']['companies'] as List;
+        return list.map((e) => e as Map<String, dynamic>).toList();
+      }
+      return [];
+    });
+
+/// Admin controller provider
+final adminControllerProvider = Provider((ref) => AdminController(ref));
+
 class AdminController {
   final Ref ref;
-  final SupabaseClient _supabase = Supabase.instance.client;
   static const int pageSize = 10;
 
   AdminController(this.ref);
+
+  ApiClient get _api => ref.read(apiClientProvider);
 
   /// Fetch pending event requests
   Future<Result<List<EventModel>>> fetchPendingEventRequests({
     int page = 0,
   }) async {
     try {
-      int offset = page * pageSize;
+      final response = await _api.get(
+        ApiEndpoints.eventsPending,
+        queryParameters: {'page': page + 1, 'limit': pageSize},
+      );
 
-      final response = await _supabase
-          .from(SupabaseTables.events)
-          .select()
-          .eq('status', 'pending')
-          .order('created_at', ascending: true)
-          .range(offset, offset + pageSize - 1);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['events'] ?? []) as List;
+        final events = list
+            .map((json) => EventModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+        return Success(events);
+      }
 
-      final events = (response as List)
-          .map((json) => EventModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-
-      return Success(events);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to fetch pending events',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -98,40 +101,36 @@ class AdminController {
     String? searchQuery,
   }) async {
     try {
-      int offset = page * pageSize;
-
-      var query = _supabase.from(SupabaseTables.users).select();
-
-      if (roleFilter != null) {
-        query = query.eq('role', roleFilter);
-      }
-
-      // Client-side search filtering since Supabase doesn't have full-text search on free tier
-      final response = await query.order('created_at', ascending: false);
-
-      List users = response;
-
+      final queryParams = <String, dynamic>{
+        'page': page + 1,
+        'limit': pageSize,
+      };
+      if (roleFilter != null) queryParams['role'] = roleFilter;
       if (searchQuery != null && searchQuery.isNotEmpty) {
-        final lowerSearch = searchQuery.toLowerCase();
-        users = users.where((u) {
-          final json = u as Map<String, dynamic>;
-          final name = (json['name'] ?? '').toString().toLowerCase();
-          final email = (json['email'] ?? '').toString().toLowerCase();
-          return name.contains(lowerSearch) || email.contains(lowerSearch);
-        }).toList();
+        queryParams['search'] = searchQuery;
       }
 
-      // Manual pagination
-      final paginatedUsers = users.skip(offset).take(pageSize).toList();
+      final response = await _api.get(
+        ApiEndpoints.users,
+        queryParameters: queryParams,
+      );
 
-      final mapped = (paginatedUsers)
-          .map((json) => UserModel.fromJson(json as Map<String, dynamic>))
-          .toList();
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['users'] ?? []) as List;
+        final users = list
+            .map((json) => UserModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+        return Success(users);
+      }
 
-      return Success(mapped);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to fetch users',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -147,29 +146,27 @@ class AdminController {
   /// Block/Unblock user
   Future<Result<UserModel>> toggleUserStatus(String userId, bool block) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.users)
-          .update({
-            'deleted_at': block ? DateTime.now().toIso8601String() : null,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', userId)
-          .select()
-          .single();
+      final endpoint = block
+          ? ApiEndpoints.blockUser(userId)
+          : ApiEndpoints.unblockUser(userId);
 
-      final user = UserModel.fromJson(response);
+      final response = await _api.patch(endpoint);
 
-      // Log audit
-      await _logAuditAction(
-        action: block ? 'user_blocked' : 'user_unblocked',
-        targetTable: SupabaseTables.users,
-        targetId: userId,
-      );
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final user = UserModel.fromJson(
+          response.data['data']['user'] as Map<String, dynamic>,
+        );
+        return Success(user);
+      }
 
-      return Success(user);
-    } on PostgrestException catch (e) {
+      return Error(AppException(message: 'Failed to update user status'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to update user status',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -188,30 +185,25 @@ class AdminController {
     String newRole,
   ) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.users)
-          .update({
-            'role': newRole,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', userId)
-          .select()
-          .single();
-
-      final user = UserModel.fromJson(response);
-
-      // Log audit
-      await _logAuditAction(
-        action: 'user_role_update',
-        targetTable: SupabaseTables.users,
-        targetId: userId,
-        newValues: {'role': newRole},
+      final response = await _api.patch(
+        ApiEndpoints.changeRole(userId),
+        data: {'role': newRole},
       );
 
-      return Success(user);
-    } on PostgrestException catch (e) {
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final user = UserModel.fromJson(
+          response.data['data']['user'] as Map<String, dynamic>,
+        );
+        return Success(user);
+      }
+
+      return Error(AppException(message: 'Failed to update role'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to update role',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -230,51 +222,26 @@ class AdminController {
     required String eventId,
   }) async {
     try {
-      // Check if already assigned
-      final existing = await _supabase
-          .from(SupabaseTables.teamLeaders)
-          .select()
-          .eq('user_id', userId)
-          .eq('event_id', eventId);
-
-      if (existing.isNotEmpty) {
-        throw ValidationException(
-          message: 'This team leader is already assigned to this event',
-          code: 'DUPLICATE_ASSIGNMENT',
-        );
-      }
-
-      final adminId = _supabase.auth.currentUser?.id;
-
-      final leaderData = {
-        'user_id': userId,
-        'event_id': eventId,
-        'assigned_by': adminId,
-        'status': 'assigned',
-        'assigned_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      };
-
-      final response = await _supabase
-          .from(SupabaseTables.teamLeaders)
-          .insert(leaderData)
-          .select()
-          .single();
-
-      final leader = TeamLeaderModel.fromJson(response);
-
-      // Log audit
-      await _logAuditAction(
-        action: 'team_leader_assigned',
-        targetTable: SupabaseTables.teamLeaders,
-        targetId: leader.id,
-        newValues: leader.toJson(),
+      final response = await _api.post(
+        ApiEndpoints.teamLeaders,
+        data: {'userId': userId, 'eventId': eventId},
       );
 
-      return Success(leader);
-    } on PostgrestException catch (e) {
+      if (response.statusCode == 201 && response.data['success'] == true) {
+        final tl = TeamLeaderModel.fromJson(
+          response.data['data']['assignment'] as Map<String, dynamic>,
+        );
+        return Success(tl);
+      }
+
+      return Error(AppException(message: 'Failed to assign team leader'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to assign team leader',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -292,20 +259,27 @@ class AdminController {
     String eventId,
   ) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.teamLeaders)
-          .select()
-          .eq('event_id', eventId)
-          .neq('status', 'removed');
+      final response = await _api.get(ApiEndpoints.teamLeadersByEvent(eventId));
 
-      final leaders = (response as List)
-          .map((json) => TeamLeaderModel.fromJson(json as Map<String, dynamic>))
-          .toList();
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['leaders'] ?? []) as List;
+        final tls = list
+            .map(
+              (json) => TeamLeaderModel.fromJson(json as Map<String, dynamic>),
+            )
+            .toList();
+        return Success(tls);
+      }
 
-      return Success(leaders);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to fetch team leaders',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -321,25 +295,15 @@ class AdminController {
   /// Remove team leader from event
   Future<Result<void>> removeTeamLeaderFromEvent(String teamLeaderId) async {
     try {
-      await _supabase
-          .from(SupabaseTables.teamLeaders)
-          .update({
-            'status': 'removed',
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', teamLeaderId);
-
-      // Log audit
-      await _logAuditAction(
-        action: 'team_leader_removed',
-        targetTable: SupabaseTables.teamLeaders,
-        targetId: teamLeaderId,
-      );
-
+      await _api.delete(ApiEndpoints.teamLeaderById(teamLeaderId));
       return Success(null);
-    } on PostgrestException catch (e) {
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to remove team leader',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -353,48 +317,37 @@ class AdminController {
   }
 
   /// Fetch audit logs
-  Future<Result<List<AuditLogModel>>> fetchAuditLogs({
+  Future<Result<List<Map<String, dynamic>>>> fetchAuditLogs({
     int page = 0,
     String? adminUserId,
     String? targetTable,
   }) async {
     try {
-      int offset = page * pageSize;
+      final queryParams = <String, dynamic>{
+        'page': page + 1,
+        'limit': pageSize,
+      };
+      if (adminUserId != null) queryParams['adminId'] = adminUserId;
+      if (targetTable != null) queryParams['targetTable'] = targetTable;
 
-      var query = _supabase.from(SupabaseTables.auditLogs).select();
+      final response = await _api.get(
+        ApiEndpoints.auditLogs,
+        queryParameters: queryParams,
+      );
 
-      final response = await query.order('created_at', ascending: false);
-
-      List filteredResponse = response;
-
-      if (adminUserId != null) {
-        filteredResponse = filteredResponse.where((log) {
-          final json = log as Map<String, dynamic>;
-          return json['admin_user_id'] == adminUserId;
-        }).toList();
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final list = response.data['data'] as List;
+        final logs = list.map((json) => json as Map<String, dynamic>).toList();
+        return Success(logs);
       }
 
-      if (targetTable != null) {
-        filteredResponse = filteredResponse.where((log) {
-          final json = log as Map<String, dynamic>;
-          return json['target_table'] == targetTable;
-        }).toList();
-      }
-
-      // Manual pagination
-      final paginatedLogs = filteredResponse
-          .skip(offset)
-          .take(pageSize)
-          .toList();
-
-      final logs = (paginatedLogs)
-          .map((json) => AuditLogModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-
-      return Success(logs);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to fetch audit logs',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -407,55 +360,29 @@ class AdminController {
     }
   }
 
-  /// Log admin action to audit_logs
-  Future<void> _logAuditAction({
-    required String action,
-    String? targetTable,
-    String? targetId,
-    Map<String, dynamic>? oldValues,
-    Map<String, dynamic>? newValues,
-  }) async {
-    try {
-      final adminId = _supabase.auth.currentUser?.id;
-
-      await _supabase.from(SupabaseTables.auditLogs).insert({
-        'admin_user_id': adminId,
-        'action': action,
-        'target_table': targetTable,
-        'target_id': targetId,
-        'old_values': oldValues,
-        'new_values': newValues,
-        'created_at': DateTime.now().toIso8601String(),
-      });
-    } catch (_) {
-      // Audit failure is non-critical; ignore silently
-    }
-  }
-
   /// Get user count by role
   Future<Result<Map<String, int>>> getUserCountByRole() async {
     try {
-      final roles = ['normal', 'team_leader', 'admin'];
-      final counts = <String, int>{};
+      final response = await _api.get(ApiEndpoints.analyticsRoles);
 
-      for (final role in roles) {
-        final response = await _supabase
-            .from(SupabaseTables.users)
-            .select('id')
-            .eq('role', role);
-
-        counts[role] = response.length;
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final counts = data.map((k, v) => MapEntry(k, (v as num).toInt()));
+        return Success(counts);
       }
 
-      return Success(counts);
-    } on PostgrestException catch (e) {
+      return Success({});
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to get user counts',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
         AppException(
-          message: 'Failed to count users by role: $e',
+          message: 'Failed to get user count by role: $e',
           originalError: e,
           stackTrace: st,
         ),
@@ -466,28 +393,21 @@ class AdminController {
   /// Get event statistics
   Future<Result<Map<String, int>>> getEventStatistics() async {
     try {
-      final statuses = [
-        'draft',
-        'pending',
-        'published',
-        'completed',
-        'cancelled',
-      ];
-      final counts = <String, int>{};
+      final response = await _api.get(ApiEndpoints.analyticsEventStatus);
 
-      for (final status in statuses) {
-        final response = await _supabase
-            .from(SupabaseTables.events)
-            .select('id')
-            .eq('status', status);
-
-        counts[status] = response.length;
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final stats = data.map((k, v) => MapEntry(k, (v as num).toInt()));
+        return Success(stats);
       }
 
-      return Success(counts);
-    } on PostgrestException catch (e) {
+      return Success({});
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to get event stats',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -506,28 +426,36 @@ class AdminController {
     String? statusFilter,
   }) async {
     try {
-      int offset = page * pageSize;
+      final queryParams = <String, dynamic>{
+        'page': page + 1,
+        'limit': pageSize,
+      };
+      if (statusFilter != null) queryParams['status'] = statusFilter;
 
-      var query = _supabase.from(SupabaseTables.applications).select();
+      final response = await _api.get(
+        ApiEndpoints.applications,
+        queryParameters: queryParams,
+      );
 
-      if (statusFilter != null && statusFilter != 'all') {
-        query = query.eq('status', statusFilter);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['applications'] ?? []) as List;
+        final apps = list
+            .map(
+              (json) => ApplicationModel.fromJson(json as Map<String, dynamic>),
+            )
+            .toList();
+        return Success(apps);
       }
 
-      final response = await query
-          .order('applied_at', ascending: false)
-          .range(offset, offset + pageSize - 1);
-
-      final apps = (response as List)
-          .map(
-            (json) => ApplicationModel.fromJson(json as Map<String, dynamic>),
-          )
-          .toList();
-
-      return Success(apps);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to fetch applications',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(

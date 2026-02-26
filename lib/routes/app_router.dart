@@ -16,6 +16,7 @@ import '../views/user/edit_profile_screen.dart';
 import '../views/team_leader/team_leader_events_screen.dart';
 import '../views/team_leader/rating_form_screen.dart';
 import '../views/team_leader/attendance_screen.dart';
+import '../views/team_leader/event_applicants_screen.dart';
 import '../views/auth/new_auth_screen.dart';
 import '../views/auth/registration_screen.dart';
 import '../views/shared/notifications_screen.dart';
@@ -28,7 +29,7 @@ import '../controllers/auth_controller.dart';
 /// Provider for GoRouter with auth guard, splash screen, and ShellRoute
 final appRouterProvider = Provider<GoRouter>((ref) {
   final currentUser = ref.watch(currentUserProvider);
-  final authState = ref.watch(authStateProvider);
+  final isAuthenticated = ref.watch(isAuthenticatedProvider);
 
   return GoRouter(
     initialLocation: '/splash',
@@ -37,15 +38,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isAuthPage = path == '/auth' || path == '/register';
       final isSplash = path == '/splash';
 
-      // Show splash while auth state is loading
-      if (authState.isLoading && isSplash) return null;
-      if (authState.isLoading) return '/splash';
-
       // If not logged in
-      if (currentUser == null) {
+      if (currentUser == null && !isAuthenticated) {
         if (isSplash || isAuthPage) return isAuthPage ? null : '/auth';
         return '/auth';
       }
+
+      // If currentUser is still loading, stay on current page
+      if (currentUser == null) return null;
 
       // If logged in and on splash/auth, redirect to role dashboard
       if (isSplash || isAuthPage) {
@@ -72,7 +72,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (role == 'team_leader') {
         final allowedPaths = [
           '/team-leader',
-          '/rate/',
+          '/rate',
           '/profile',
           '/notifications',
           '/settings',
@@ -129,6 +129,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/profile',
             builder: (context, state) => const UserProfileScreen(),
+          ),
+          GoRoute(
+            path: '/profile/:userId',
+            builder: (context, state) {
+              final userId = state.pathParameters['userId'];
+              return UserProfileScreen(userId: userId);
+            },
           ),
         ],
       ),
@@ -206,6 +213,33 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final eventId = state.pathParameters['eventId']!;
           final eventTitle = state.uri.queryParameters['title'] ?? 'Event';
           return AttendanceScreen(eventId: eventId, eventTitle: eventTitle);
+        },
+      ),
+      GoRoute(
+        path: '/team-leader/applicants/:eventId',
+        builder: (context, state) {
+          final eventId = state.pathParameters['eventId']!;
+          final eventTitle = state.uri.queryParameters['title'] ?? 'Event';
+          return EventApplicantsScreen(
+            eventId: eventId,
+            eventTitle: eventTitle,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/team-leader/rate',
+        builder: (context, state) {
+          final applicantId = state.uri.queryParameters['applicantId'] ?? '';
+          final applicantName =
+              state.uri.queryParameters['applicantName'] ?? 'Applicant';
+          final eventTitle = state.uri.queryParameters['eventTitle'] ?? 'Event';
+          final eventId = state.uri.queryParameters['eventId'] ?? '';
+          return RatingFormScreen(
+            applicantId: applicantId,
+            applicantName: applicantName,
+            eventTitle: eventTitle,
+            eventId: eventId,
+          );
         },
       ),
       GoRoute(

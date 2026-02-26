@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/analytics_model.dart';
 import '../../controllers/analytics_controller.dart';
-import '../../controllers/admin_controller.dart';
+import '../../controllers/event_controller.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/theme/shadows.dart';
@@ -14,6 +14,8 @@ import '../../core/theme/dark_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../common/skeleton_loader.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../services/file_upload_service.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -177,7 +179,7 @@ class _AdminOverviewTab extends ConsumerWidget {
                     itemCount: events.length,
                     itemBuilder: (context, index) {
                       final event = events[index];
-                      return _buildPendingEventCard(context, event);
+                      return _buildPendingEventCard(context, ref, event);
                     },
                   ),
             loading: () => const _LoadingEventList(),
@@ -267,7 +269,11 @@ class _AdminOverviewTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildPendingEventCard(BuildContext context, dynamic event) {
+  Widget _buildPendingEventCard(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic event,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -281,8 +287,36 @@ class _AdminOverviewTab extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (event.imagePath != null)
+                Container(
+                  width: 50,
+                  height: 50,
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    image: DecorationImage(
+                      image: CachedNetworkImageProvider(
+                        ref
+                            .read(fileUploadServiceProvider)
+                            .getPublicUrl(event.imagePath!),
+                      ),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  width: 50,
+                  height: 50,
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(
+                    color: DarkColors.surface,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.event, color: AppColors.gray400),
+                ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

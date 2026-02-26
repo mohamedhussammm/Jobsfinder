@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -12,6 +11,7 @@ import '../../models/event_model.dart';
 import '../../core/utils/responsive.dart';
 import '../../models/category_model.dart';
 import '../common/skeleton_loader.dart';
+import '../../services/file_upload_service.dart';
 
 // ─── Colors matching the reference design exactly ───────────────────────────
 const _kBg = Color(0xFF111117);
@@ -70,7 +70,7 @@ class _EventBrowseScreenState extends ConsumerState<EventBrowseScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                AppLocalizations.of(context)!.curatedListings,
+                                'CURATED LISTINGS',
                                 style: AppTypography.labelLarge.copyWith(
                                   fontSize: ResponsiveHelper.sp(context, 10),
                                   fontWeight: FontWeight.w800,
@@ -80,7 +80,7 @@ class _EventBrowseScreenState extends ConsumerState<EventBrowseScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                AppLocalizations.of(context)!.trendingNearYou,
+                                'Trending Near You',
                                 style: AppTypography.headlineMedium.copyWith(
                                   fontSize: ResponsiveHelper.sp(context, 22),
                                   fontWeight: FontWeight.w900,
@@ -94,7 +94,7 @@ class _EventBrowseScreenState extends ConsumerState<EventBrowseScreen> {
                         TextButton(
                           onPressed: () => context.push('/search'),
                           child: Text(
-                            AppLocalizations.of(context)!.seeAll,
+                            'See all',
                             style: AppTypography.bodySmall.copyWith(
                               color: _kPrimary,
                               fontWeight: FontWeight.w700,
@@ -122,11 +122,13 @@ class _EventBrowseScreenState extends ConsumerState<EventBrowseScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           itemCount: displayEvents.length,
                           itemBuilder: (context, i) {
-                            return _HeroEventCard(
-                              event: displayEvents[i],
-                              onTap: () => context.push(
-                                '/event/${displayEvents[i].id}',
-                                extra: displayEvents[i],
+                            return RepaintBoundary(
+                              child: _HeroEventCard(
+                                event: displayEvents[i],
+                                onTap: () => context.push(
+                                  '/event/${displayEvents[i].id}',
+                                  extra: displayEvents[i],
+                                ),
                               ),
                             );
                           },
@@ -176,7 +178,7 @@ class _EventBrowseScreenState extends ConsumerState<EventBrowseScreen> {
                     Icon(Icons.bolt, color: _kPrimary, size: 22),
                     const SizedBox(width: 6),
                     Text(
-                      AppLocalizations.of(context)!.availableShifts,
+                      'Available Shifts',
                       style: AppTypography.headlineMedium.copyWith(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
@@ -205,7 +207,7 @@ class _EventBrowseScreenState extends ConsumerState<EventBrowseScreen> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              AppLocalizations.of(context)!.noShiftsAvailable,
+                              'No shifts available',
                               style: TextStyle(
                                 color: _kTextSecondary,
                                 fontSize: 15,
@@ -221,11 +223,13 @@ class _EventBrowseScreenState extends ConsumerState<EventBrowseScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, i) => _ShiftCard(
-                        event: events[i],
-                        onTap: () => context.push(
-                          '/event/${events[i].id}',
-                          extra: events[i],
+                      (context, i) => RepaintBoundary(
+                        child: _ShiftCard(
+                          event: events[i],
+                          onTap: () => context.push(
+                            '/event/${events[i].id}',
+                            extra: events[i],
+                          ),
                         ),
                       ),
                       childCount: events.length,
@@ -271,57 +275,53 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          color: const Color(0xCC111117),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E1E2A),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _kGlassBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 14),
-                      Icon(Icons.search, color: _kTextSecondary, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => context.push('/search'),
-                          child: Text(
-                            AppLocalizations.of(context)!.searchHint,
-                            style: TextStyle(
-                              color: _kTextSecondary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Container(
-                width: 48,
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => context.push('/search'),
+      child: Container(
+        color: const Color(0xEE111117),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
                 height: 48,
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E1E2A),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: _kGlassBorder),
                 ),
-                child: Icon(Icons.tune, color: _kTextPrimary, size: 20),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 14),
+                    Icon(Icons.search, color: _kTextSecondary, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Search events, venues, or roles',
+                        style: TextStyle(
+                          color: _kTextSecondary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 10),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E2A),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _kGlassBorder),
+              ),
+              child: Icon(Icons.tune, color: _kTextPrimary, size: 20),
+            ),
+          ],
         ),
       ),
     );
@@ -332,18 +332,19 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
 }
 
 // ─── Hero Event Card (Trending Carousel) ─────────────────────────────────────
-class _HeroEventCard extends StatelessWidget {
+class _HeroEventCard extends ConsumerWidget {
   final EventModel event;
   final VoidCallback? onTap;
 
   const _HeroEventCard({required this.event, this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final w = MediaQuery.of(context).size.width * 0.82;
     final dateStr = _formatDateRange(event.startTime, event.endTime);
 
     return GestureDetector(
+      behavior: HitTestBehavior.translucent,
       onTap: onTap,
       child: Container(
         width: w,
@@ -359,7 +360,9 @@ class _HeroEventCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               child: event.imagePath != null
                   ? Image.network(
-                      event.imagePath!,
+                      ref
+                          .read(fileUploadServiceProvider)
+                          .getPublicUrl(event.imagePath!),
                       width: double.infinity,
                       height: double.infinity,
                       fit: BoxFit.cover,
@@ -412,9 +415,7 @@ class _HeroEventCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  event.capacity != null
-                      ? '${event.capacity} spots'
-                      : AppLocalizations.of(context)!.open,
+                  event.capacity != null ? '${event.capacity} spots' : 'Open',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
@@ -541,7 +542,7 @@ class _CategoryChips extends StatelessWidget {
           children: [
             // "All" chip
             _Chip(
-              label: AppLocalizations.of(context)!.allCategories,
+              label: 'All Categories',
               isSelected: selectedCategoryId == null,
               onTap: () => onSelected(null),
             ),
@@ -576,6 +577,7 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      behavior: HitTestBehavior.translucent,
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
@@ -609,19 +611,20 @@ class _Chip extends StatelessWidget {
 }
 
 // ─── Shift Card ──────────────────────────────────────────────────────────────
-class _ShiftCard extends StatelessWidget {
+class _ShiftCard extends ConsumerWidget {
   final EventModel event;
   final VoidCallback? onTap;
 
   const _ShiftCard({required this.event, this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final timeStr =
         '${DateFormat('h:mm a').format(event.startTime)} - ${DateFormat('h:mm a').format(event.endTime)}';
     final categoryLabel = event.categoryName ?? event.status.toUpperCase();
 
     return GestureDetector(
+      behavior: HitTestBehavior.translucent,
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -641,7 +644,9 @@ class _ShiftCard extends StatelessWidget {
                 height: 76,
                 child: event.imagePath != null
                     ? CachedNetworkImage(
-                        imageUrl: event.imagePath!,
+                        imageUrl: ref
+                            .read(fileUploadServiceProvider)
+                            .getPublicUrl(event.imagePath!),
                         fit: BoxFit.cover,
                         placeholder: (context, url) => const SkeletonCard(),
                         errorWidget: (context, url, error) =>
@@ -673,14 +678,18 @@ class _ShiftCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        event.capacity != null
-                            ? '${event.capacity} spots'
-                            : AppLocalizations.of(context)!.open,
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.sp(context, 13),
-                          fontWeight: FontWeight.w800,
-                          color: _kTextPrimary,
+                      Flexible(
+                        child: Text(
+                          event.capacity != null
+                              ? '${event.capacity} spots'
+                              : 'Open',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.sp(context, 13),
+                            fontWeight: FontWeight.w800,
+                            color: _kTextPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -699,11 +708,15 @@ class _ShiftCard extends StatelessWidget {
                   const SizedBox(height: 5),
                   Row(
                     children: [
-                      Text(
-                        timeStr,
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.sp(context, 11),
-                          color: _kTextSecondary,
+                      Flexible(
+                        child: Text(
+                          timeStr,
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.sp(context, 11),
+                            color: _kTextSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if (event.location?.address != null) ...[

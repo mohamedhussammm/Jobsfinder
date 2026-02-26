@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../services/file_upload_service.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/glass.dart';
 import '../../core/theme/typography.dart';
 import '../../models/event_model.dart';
 import '../../core/utils/extensions.dart';
 
-class EventCard extends StatelessWidget {
+class EventCard extends ConsumerWidget {
   final EventModel event;
   final VoidCallback? onTap;
 
   const EventCard({super.key, required this.event, this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
@@ -39,7 +41,9 @@ class EventCard extends StatelessWidget {
                 ),
                 child: event.imagePath != null
                     ? Image.network(
-                        event.imagePath!,
+                        ref
+                            .read(fileUploadServiceProvider)
+                            .getPublicUrl(event.imagePath!),
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Icon(

@@ -1,12 +1,17 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../controllers/event_controller.dart';
 import '../../../controllers/admin_controller.dart';
+import '../../../controllers/analytics_controller.dart';
+import '../../../services/file_upload_service.dart';
 import '../../../models/event_model.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../core/theme/dark_colors.dart';
 import '../../../core/utils/responsive.dart';
+import '../../../core/utils/result.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../common/skeleton_loader.dart';
 
@@ -110,103 +115,255 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
                         const Divider(color: AppColors.borderColor),
                     itemBuilder: (context, index) {
                       final event = events[index];
-                      return ListTile(
-                        leading: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            borderRadius: BorderRadius.circular(8),
-                            image: event.imagePath != null
-                                ? DecorationImage(
-                                    image: CachedNetworkImageProvider(
-                                      event.imagePath!,
+                      final isMobile = ResponsiveHelper.isPhone(context);
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        child: Row(
+                          children: [
+                            // Leading Image
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).scaffoldBackgroundColor,
+                                borderRadius: BorderRadius.circular(8),
+                                image: event.imagePath != null
+                                    ? DecorationImage(
+                                        image: CachedNetworkImageProvider(
+                                          ref
+                                              .read(fileUploadServiceProvider)
+                                              .getPublicUrl(event.imagePath!),
+                                        ),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                              ),
+                              child: event.imagePath == null
+                                  ? const Icon(
+                                      Icons.event,
+                                      color: AppColors.textSecondary,
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 12),
+
+                            // Event Info
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    event.title,
+                                    style: AppTypography.body1.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
-                          ),
-                          child: event.imagePath == null
-                              ? const Icon(
-                                  Icons.event,
-                                  color: AppColors.textSecondary,
-                                )
-                              : null,
-                        ),
-                        title: Text(
-                          event.title,
-                          style: AppTypography.body1.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
-                        subtitle: Text(
-                          '${event.companyId} • ${event.startTime.toString().split(' ')[0]}',
-                          style: TextStyle(color: DarkColors.textTertiary),
-                        ),
-                        trailing: IntrinsicWidth(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              _buildStatusBadge(event.status),
-                              const SizedBox(width: 4),
-                              if (event.status == 'pending') ...[
-                                IconButton(
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  icon: const Icon(
-                                    Icons.check_circle,
-                                    color: DarkColors.success,
-                                    size: 20,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  onPressed: () => _approveEvent(event.id),
-                                  tooltip: 'Approve',
-                                ),
-                                IconButton(
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  icon: const Icon(
-                                    Icons.cancel,
-                                    color: DarkColors.error,
-                                    size: 20,
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${event.companyId} • ${event.startTime.toString().split(' ')[0]}',
+                                    style: TextStyle(
+                                      color: DarkColors.textTertiary,
+                                      fontSize: 12,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  onPressed: () => _rejectEvent(event.id),
-                                  tooltip: 'Reject',
-                                ),
-                              ],
-                              IconButton(
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: DarkColors.error,
-                                  size: 20,
-                                ),
-                                onPressed: () => _deleteEvent(event.id),
+                                ],
                               ),
-                              IconButton(
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
+                            ),
+
+                            const SizedBox(width: 8),
+
+                            // Actions
+                            if (isMobile)
+                              PopupMenuButton<String>(
                                 icon: const Icon(
-                                  Icons.person_add_alt_1,
-                                  color: DarkColors.accent,
-                                  size: 20,
+                                  Icons.more_vert,
+                                  color: Colors.white70,
                                 ),
-                                tooltip: 'Assign Team Leader',
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) =>
-                                        _AssignTeamLeaderDialog(event: event),
-                                  );
+                                color: DarkColors.surface,
+                                onSelected: (value) {
+                                  switch (value) {
+                                    case 'approve':
+                                      _approveEvent(event.id);
+                                      break;
+                                    case 'reject':
+                                      _rejectEvent(event.id);
+                                      break;
+                                    case 'edit':
+                                      _showEditEventDialog(context, event);
+                                      break;
+                                    case 'delete':
+                                      _deleteEvent(event.id);
+                                      break;
+                                    case 'assign':
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) =>
+                                            _AssignTeamLeaderDialog(
+                                              event: event,
+                                            ),
+                                      );
+                                      break;
+                                  }
                                 },
+                                itemBuilder: (context) => [
+                                  if (event.status == 'pending') ...[
+                                    const PopupMenuItem(
+                                      value: 'approve',
+                                      child: ListTile(
+                                        leading: Icon(
+                                          Icons.check_circle,
+                                          color: DarkColors.success,
+                                          size: 20,
+                                        ),
+                                        title: Text(
+                                          'Approve',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                        dense: true,
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'reject',
+                                      child: ListTile(
+                                        leading: Icon(
+                                          Icons.cancel,
+                                          color: DarkColors.error,
+                                          size: 20,
+                                        ),
+                                        title: Text(
+                                          'Reject',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                        dense: true,
+                                      ),
+                                    ),
+                                  ],
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: ListTile(
+                                      leading: Icon(
+                                        Icons.edit_outlined,
+                                        color: DarkColors.accent,
+                                        size: 20,
+                                      ),
+                                      title: Text(
+                                        'Edit',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      dense: true,
+                                    ),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'assign',
+                                    child: ListTile(
+                                      leading: Icon(
+                                        Icons.person_add_alt_1,
+                                        color: DarkColors.accent,
+                                        size: 20,
+                                      ),
+                                      title: Text(
+                                        'Assign TL',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      dense: true,
+                                    ),
+                                  ),
+                                  const PopupMenuDivider(),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: ListTile(
+                                      leading: Icon(
+                                        Icons.delete_outline,
+                                        color: DarkColors.error,
+                                        size: 20,
+                                      ),
+                                      title: Text(
+                                        'Delete',
+                                        style: TextStyle(color: Colors.white70),
+                                      ),
+                                      dense: true,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            else
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildStatusBadge(event.status),
+                                  const SizedBox(width: 8),
+                                  if (event.status == 'pending') ...[
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.check_circle,
+                                        color: DarkColors.success,
+                                        size: 20,
+                                      ),
+                                      onPressed: () => _approveEvent(event.id),
+                                      tooltip: 'Approve',
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.cancel,
+                                        color: DarkColors.error,
+                                        size: 20,
+                                      ),
+                                      onPressed: () => _rejectEvent(event.id),
+                                      tooltip: 'Reject',
+                                    ),
+                                  ],
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.edit_outlined,
+                                      color: DarkColors.accent,
+                                      size: 20,
+                                    ),
+                                    onPressed: () =>
+                                        _showEditEventDialog(context, event),
+                                    tooltip: 'Edit',
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.person_add_alt_1,
+                                      color: DarkColors.accent,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) =>
+                                            _AssignTeamLeaderDialog(
+                                              event: event,
+                                            ),
+                                      );
+                                    },
+                                    tooltip: 'Assign TL',
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      color: DarkColors.error,
+                                      size: 20,
+                                    ),
+                                    onPressed: () => _deleteEvent(event.id),
+                                    tooltip: 'Delete',
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                          ],
                         ),
-                        onTap: () {
-                          // Show details dialog
-                        },
                       );
                     },
                   );
@@ -328,188 +485,843 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
   }
 
   void _showCreateEventDialog(BuildContext context) {
-    showDialog(context: context, builder: (context) => _CreateEventDialog());
+    showDialog(
+      context: context,
+      builder: (context) => const _EventFormDialog(),
+    );
+  }
+
+  void _showEditEventDialog(BuildContext context, EventModel event) {
+    showDialog(
+      context: context,
+      builder: (context) => _EventFormDialog(initialEvent: event),
+    );
   }
 }
 
-class _CreateEventDialog extends ConsumerStatefulWidget {
+class _EventFormDialog extends ConsumerStatefulWidget {
+  final EventModel? initialEvent;
+  const _EventFormDialog({this.initialEvent});
+
   @override
-  ConsumerState<_CreateEventDialog> createState() => _CreateEventDialogState();
+  ConsumerState<_EventFormDialog> createState() => _EventFormDialogState();
 }
 
-class _CreateEventDialogState extends ConsumerState<_CreateEventDialog> {
+class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   final _capacityController = TextEditingController();
+  final _salaryController = TextEditingController();
+  final _requirementsController = TextEditingController();
+  final _benefitsController = TextEditingController();
+  final _contactEmailController = TextEditingController();
+  final _contactPhoneController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _tagController = TextEditingController();
 
   String _selectedCompanyId = '';
   String? _selectedCategoryId;
-  final _organizerController = TextEditingController();
   DateTime _startDate = DateTime.now().add(const Duration(days: 1));
-  DateTime _endDate = DateTime.now().add(const Duration(days: 1, hours: 4));
+  TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
+  DateTime _endDate = DateTime.now().add(const Duration(days: 1));
+  TimeOfDay _endTime = const TimeOfDay(hour: 17, minute: 0);
+  bool _isUrgent = false;
+  final List<String> _tags = [];
+  Uint8List? _selectedImageBytes;
+  String? _selectedImageName;
 
   @override
   void initState() {
     super.initState();
+    if (widget.initialEvent != null) {
+      final e = widget.initialEvent!;
+      _titleController.text = e.title;
+      _descController.text = e.description ?? '';
+      _locationController.text = e.location?.address ?? '';
+      _capacityController.text = e.capacity?.toString() ?? '';
+      _salaryController.text = e.salary?.toString() ?? '';
+      _requirementsController.text = e.requirements ?? '';
+      _benefitsController.text = e.benefits ?? '';
+      _contactEmailController.text = e.contactEmail ?? '';
+      _contactPhoneController.text = e.contactPhone ?? '';
+      _selectedCompanyId = e.companyId;
+      _selectedCategoryId = e.categoryId;
+      _startDate = e.startTime;
+      _startTime = TimeOfDay.fromDateTime(e.startTime);
+      _endDate = e.endTime;
+      _endTime = TimeOfDay.fromDateTime(e.endTime);
+      _isUrgent = e.isUrgent;
+      _tags.addAll(e.tags);
+    }
+  }
+
+  DateTime get _fullStartTime => DateTime(
+    _startDate.year,
+    _startDate.month,
+    _startDate.day,
+    _startTime.hour,
+    _startTime.minute,
+  );
+
+  DateTime get _fullEndTime => DateTime(
+    _endDate.year,
+    _endDate.month,
+    _endDate.day,
+    _endTime.hour,
+    _endTime.minute,
+  );
+
+  void _addTag() {
+    final tag = _tagController.text.trim();
+    if (tag.isNotEmpty && !_tags.contains(tag) && _tags.length < 10) {
+      setState(() {
+        _tags.add(tag);
+        _tagController.clear();
+      });
+    }
+  }
+
+  Widget _sectionHeader(String title, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: DarkColors.accent),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return Dialog(
       backgroundColor: DarkColors.surface,
-      title: const Text(
-        'Create New Event',
-        style: TextStyle(color: Colors.white),
-      ),
-      content: SingleChildScrollView(
-        child: SizedBox(
-          width: 400,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: _organizerController,
-                  decoration: const InputDecoration(
-                    labelText: 'Organizer / Company Name',
-                  ),
-                  onChanged: (val) => _selectedCompanyId = val,
-                  validator: (v) => v == null || v.isEmpty
-                      ? 'Please enter organizer name'
-                      : null,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520, maxHeight: 700),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ─── Header ────────────────────────
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              decoration: BoxDecoration(
+                color: DarkColors.accent.withOpacity(0.15),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(labelText: 'Event Title *'),
-                  validator: (v) => v?.isEmpty == true ? 'Required' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _descController,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 12),
-                // Date Pickers simplified
-                ListTile(
-                  title: Text('Start: ${_startDate.toString().split('.')[0]}'),
-                  trailing: const Icon(Icons.calendar_today),
-                  onTap: () async {
-                    final d = await showDatePicker(
-                      context: context,
-                      initialDate: _startDate,
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime(2030),
-                    );
-                    if (d != null) setState(() => _startDate = d);
-                  },
-                ),
-                ListTile(
-                  title: Text('End: ${_endDate.toString().split('.')[0]}'),
-                  trailing: const Icon(Icons.calendar_today),
-                  onTap: () async {
-                    final d = await showDatePicker(
-                      context: context,
-                      initialDate: _endDate,
-                      firstDate: _startDate,
-                      lastDate: DateTime(2030),
-                    );
-                    if (d != null) setState(() => _endDate = d);
-                  },
-                ),
-                TextFormField(
-                  controller: _capacityController,
-                  decoration: const InputDecoration(labelText: 'Capacity'),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 12),
-                // Category dropdown
-                _CategoryDropdown(
-                  selectedId: _selectedCategoryId,
-                  onChanged: (id) => setState(() => _selectedCategoryId = id),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            if (_formKey.currentState!.validate()) {
-              // Show loading
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (c) =>
-                    const Center(child: CircularProgressIndicator()),
-              );
-
-              final result = await ref
-                  .read(eventControllerProvider)
-                  .adminCreateEvent(
-                    companyId: _selectedCompanyId,
-                    title: _titleController.text,
-                    description: _descController.text,
-                    location: null,
-                    startTime: _startDate,
-                    endTime: _endDate,
-                    capacity: int.tryParse(_capacityController.text),
-                    imagePath: null,
-                    categoryId: _selectedCategoryId,
-                  );
-
-              // Capture navigator before async gap for loading dialog
-              final loadingNav = Navigator.of(context);
-              if (mounted) loadingNav.pop();
-
-              if (!mounted) return;
-              final messenger = ScaffoldMessenger.of(context);
-              final nav = Navigator.of(context);
-
-              result.when(
-                success: (event) {
-                  // Close create dialog
-                  nav.pop();
-
-                  // Refresh both providers
-                  // ignore: unused_result
-                  ref.refresh(publishedEventsProvider(0));
-                  // ignore: unused_result
-                  ref.refresh(pendingEventsAdminProvider);
-
-                  // Show success message
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Event "${event.title}" created and published!',
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.event_available, color: DarkColors.accent),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Create & Publish Event',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                      backgroundColor: DarkColors.success,
                     ),
-                  );
-                },
-                error: (error) {
-                  // Show error using pre-captured messenger (no async gap)
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to create event: $error'),
-                      backgroundColor: DarkColors.error,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white54),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+
+            // ─── Form Body ─────────────────────
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 8,
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ── Basic Info ──
+                      _sectionHeader('Basic Information', Icons.info_outline),
+                      _CompanyDropdown(
+                        selectedId: _selectedCompanyId.isEmpty
+                            ? null
+                            : _selectedCompanyId,
+                        onChanged: (val) =>
+                            setState(() => _selectedCompanyId = val ?? ''),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _titleController,
+                        decoration: const InputDecoration(
+                          labelText: 'Event Title *',
+                          hintText: 'e.g. Warehouse Logistics Sprint',
+                          prefixIcon: Icon(Icons.title),
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Title is required'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _descController,
+                        decoration: const InputDecoration(
+                          labelText: 'Description *',
+                          hintText:
+                              'Describe the event, responsibilities, etc.',
+                          prefixIcon: Icon(Icons.description),
+                          alignLabelWithHint: true,
+                        ),
+                        maxLines: 3,
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Description is required'
+                            : null,
+                      ),
+
+                      // ── Schedule ──
+                      _sectionHeader('Schedule', Icons.schedule),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final d = await showDatePicker(
+                                  context: context,
+                                  initialDate: _startDate,
+                                  firstDate: DateTime.now(),
+                                  lastDate: DateTime(2030),
+                                );
+                                if (d != null) setState(() => _startDate = d);
+                              },
+                              child: InputDecorator(
+                                decoration: const InputDecoration(
+                                  labelText: 'Start Date *',
+                                  prefixIcon: Icon(Icons.calendar_today),
+                                ),
+                                child: Text(
+                                  '${_startDate.day}/${_startDate.month}/${_startDate.year}',
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final t = await showTimePicker(
+                                  context: context,
+                                  initialTime: _startTime,
+                                );
+                                if (t != null) setState(() => _startTime = t);
+                              },
+                              child: InputDecorator(
+                                decoration: const InputDecoration(
+                                  labelText: 'Start Time *',
+                                  prefixIcon: Icon(Icons.access_time),
+                                ),
+                                child: Text(
+                                  _startTime.format(context),
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final d = await showDatePicker(
+                                  context: context,
+                                  initialDate: _endDate,
+                                  firstDate: _startDate,
+                                  lastDate: DateTime(2030),
+                                );
+                                if (d != null) setState(() => _endDate = d);
+                              },
+                              child: InputDecorator(
+                                decoration: const InputDecoration(
+                                  labelText: 'End Date *',
+                                  prefixIcon: Icon(Icons.calendar_today),
+                                ),
+                                child: Text(
+                                  '${_endDate.day}/${_endDate.month}/${_endDate.year}',
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final t = await showTimePicker(
+                                  context: context,
+                                  initialTime: _endTime,
+                                );
+                                if (t != null) setState(() => _endTime = t);
+                              },
+                              child: InputDecorator(
+                                decoration: const InputDecoration(
+                                  labelText: 'End Time *',
+                                  prefixIcon: Icon(Icons.access_time),
+                                ),
+                                child: Text(
+                                  _endTime.format(context),
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // ── Location ──
+                      _sectionHeader('Location', Icons.location_on),
+                      TextFormField(
+                        controller: _locationController,
+                        decoration: const InputDecoration(
+                          labelText: 'Event Address',
+                          hintText: 'e.g. Riyadh, Saudi Arabia',
+                          prefixIcon: Icon(Icons.place),
+                        ),
+                      ),
+
+                      // ── Event Image ──
+                      _sectionHeader('Event Image', Icons.image),
+                      GestureDetector(
+                        onTap: () async {
+                          final picker = ImagePicker();
+                          final picked = await picker.pickImage(
+                            source: ImageSource.gallery,
+                            maxWidth: 1200,
+                            imageQuality: 85,
+                          );
+                          if (picked != null) {
+                            final bytes = await picked.readAsBytes();
+                            setState(() {
+                              _selectedImageBytes = bytes;
+                              _selectedImageName = picked.name;
+                            });
+                          }
+                        },
+                        child: Container(
+                          height: 140,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: DarkColors.accent.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: DarkColors.accent.withOpacity(0.3),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: _selectedImageBytes != null
+                              ? Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(11),
+                                      child: Image.memory(
+                                        _selectedImageBytes!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (c, e, s) => Center(
+                                          child: Text(
+                                            'Error loading image',
+                                            style: TextStyle(
+                                              color: DarkColors.error,
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 6,
+                                      right: 6,
+                                      child: GestureDetector(
+                                        onTap: () => setState(() {
+                                          _selectedImageBytes = null;
+                                          _selectedImageName = null;
+                                        }),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: const BoxDecoration(
+                                            color: Colors.black54,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.close,
+                                            color: Colors.white,
+                                            size: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : (widget.initialEvent?.imagePath != null
+                                    ? Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              11,
+                                            ),
+                                            child: CachedNetworkImage(
+                                              imageUrl: ref
+                                                  .read(
+                                                    fileUploadServiceProvider,
+                                                  )
+                                                  .getPublicUrl(
+                                                    widget
+                                                        .initialEvent!
+                                                        .imagePath!,
+                                                  ),
+                                              fit: BoxFit.cover,
+                                              placeholder: (context, url) =>
+                                                  const Center(
+                                                    child:
+                                                        CircularProgressIndicator(),
+                                                  ),
+                                              errorWidget:
+                                                  (context, url, error) =>
+                                                      const Icon(Icons.error),
+                                            ),
+                                          ),
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.black26,
+                                              borderRadius:
+                                                  BorderRadius.circular(11),
+                                            ),
+                                            child: const Center(
+                                              child: Text(
+                                                'Tap to change image',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                  shadows: [
+                                                    Shadow(
+                                                      blurRadius: 2,
+                                                      color: Colors.black,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.cloud_upload_outlined,
+                                            size: 36,
+                                            color: DarkColors.accent,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Tap to upload event image',
+                                            style: TextStyle(
+                                              color: DarkColors.accent,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'JPG, PNG up to 10MB',
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(
+                                                0.4,
+                                              ),
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
+                                      )),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // ── Job Details ──
+                      _sectionHeader('Job Details', Icons.work_outline),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _capacityController,
+                              decoration: const InputDecoration(
+                                labelText: 'Capacity (seats)',
+                                prefixIcon: Icon(Icons.people),
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (v) {
+                                if (v != null && v.isNotEmpty) {
+                                  final n = int.tryParse(v);
+                                  if (n == null || n < 1) return 'Must be ≥ 1';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _salaryController,
+                              decoration: const InputDecoration(
+                                labelText: 'Salary (SAR)',
+                                prefixIcon: Icon(Icons.attach_money),
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (v) {
+                                if (v != null && v.isNotEmpty) {
+                                  final n = double.tryParse(v);
+                                  if (n == null || n < 0) return 'Must be ≥ 0';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _requirementsController,
+                        decoration: const InputDecoration(
+                          labelText: 'Requirements',
+                          hintText: 'e.g. Must have valid ID, age 18+...',
+                          prefixIcon: Icon(Icons.checklist),
+                          alignLabelWithHint: true,
+                        ),
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _benefitsController,
+                        decoration: const InputDecoration(
+                          labelText: 'Benefits',
+                          hintText: 'e.g. Transportation provided, meals...',
+                          prefixIcon: Icon(Icons.card_giftcard),
+                          alignLabelWithHint: true,
+                        ),
+                        maxLines: 2,
+                      ),
+
+                      // ── Contact ──
+                      _sectionHeader('Contact Information', Icons.contact_mail),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _contactEmailController,
+                              decoration: const InputDecoration(
+                                labelText: 'Contact Email',
+                                prefixIcon: Icon(Icons.email),
+                              ),
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (v) {
+                                if (v != null &&
+                                    v.isNotEmpty &&
+                                    !v.contains('@')) {
+                                  return 'Invalid email';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _contactPhoneController,
+                              decoration: const InputDecoration(
+                                labelText: 'Contact Phone',
+                                prefixIcon: Icon(Icons.phone),
+                              ),
+                              keyboardType: TextInputType.phone,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // ── Tags & Options ──
+                      _sectionHeader('Tags & Options', Icons.label_outline),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _tagController,
+                              decoration: InputDecoration(
+                                labelText: 'Add Tag',
+                                hintText: 'e.g. logistics, part-time',
+                                prefixIcon: const Icon(Icons.tag),
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.add_circle_outline),
+                                  onPressed: _addTag,
+                                ),
+                              ),
+                              onFieldSubmitted: (_) => _addTag(),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_tags.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: _tags
+                              .map(
+                                (tag) => Chip(
+                                  label: Text(
+                                    tag,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                  deleteIcon: const Icon(Icons.close, size: 16),
+                                  onDeleted: () =>
+                                      setState(() => _tags.remove(tag)),
+                                  backgroundColor: DarkColors.accent
+                                      .withOpacity(0.2),
+                                  labelStyle: TextStyle(
+                                    color: DarkColors.accent,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      SwitchListTile(
+                        title: const Text('🔥 Urgent Hiring'),
+                        subtitle: const Text('Mark this event as urgent'),
+                        value: _isUrgent,
+                        activeThumbColor: DarkColors.accent,
+                        contentPadding: EdgeInsets.zero,
+                        onChanged: (v) => setState(() => _isUrgent = v),
+                      ),
+
+                      // ── Category ──
+                      _sectionHeader('Category', Icons.category),
+                      _CategoryDropdown(
+                        selectedId: _selectedCategoryId,
+                        onChanged: (id) =>
+                            setState(() => _selectedCategoryId = id),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // ─── Actions ───────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.initialEvent == null
+                          ? 'Create & Publish Event'
+                          : 'Edit ${widget.initialEvent!.title}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  );
-                },
-              );
-            }
-          },
-          child: const Text('Create & Publish'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    icon: Icon(
+                      widget.initialEvent == null ? Icons.publish : Icons.save,
+                    ),
+                    label: Text(
+                      widget.initialEvent == null
+                          ? 'Create & Publish'
+                          : 'Update Event',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                    onPressed: () async {
+                      if (!_formKey.currentState!.validate()) return;
+
+                      if (_selectedCompanyId.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please select a company organizer'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (_fullEndTime.isBefore(_fullStartTime)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'End date/time must be after start date/time',
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      // Show loading
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (c) =>
+                            const Center(child: CircularProgressIndicator()),
+                      );
+
+                      // Upload image first if selected
+                      String? uploadedImagePath =
+                          widget.initialEvent?.imagePath;
+                      if (_selectedImageBytes != null &&
+                          _selectedImageName != null) {
+                        final uploadResult = await ref
+                            .read(fileUploadServiceProvider)
+                            .uploadEventImage(
+                              fileName: _selectedImageName!,
+                              bytes: _selectedImageBytes!,
+                            );
+                        uploadResult.when(
+                          success: (path) => uploadedImagePath = path,
+                          error: (_) {},
+                        );
+                      }
+
+                      final loc = _locationController.text.trim().isNotEmpty
+                          ? LocationData(
+                              address: _locationController.text.trim(),
+                            )
+                          : null;
+
+                      final Result<EventModel> result;
+                      if (widget.initialEvent == null) {
+                        result = await ref
+                            .read(eventControllerProvider)
+                            .adminCreateEvent(
+                              companyId: _selectedCompanyId,
+                              title: _titleController.text.trim(),
+                              description: _descController.text.trim(),
+                              location: loc,
+                              startTime: _fullStartTime,
+                              endTime: _fullEndTime,
+                              capacity: int.tryParse(_capacityController.text),
+                              imagePath: uploadedImagePath,
+                              categoryId: _selectedCategoryId,
+                              salary: double.tryParse(_salaryController.text),
+                              requirements: _requirementsController.text.trim(),
+                              benefits: _benefitsController.text.trim(),
+                              contactEmail: _contactEmailController.text.trim(),
+                              contactPhone: _contactPhoneController.text.trim(),
+                              tags: _tags.isNotEmpty ? _tags : null,
+                              isUrgent: _isUrgent,
+                            );
+                      } else {
+                        result = await ref
+                            .read(eventControllerProvider)
+                            .updateEvent(
+                              eventId: widget.initialEvent!.id,
+                              title: _titleController.text.trim(),
+                              description: _descController.text.trim(),
+                              location: loc,
+                              startTime: _fullStartTime,
+                              endTime: _fullEndTime,
+                              capacity: int.tryParse(_capacityController.text),
+                              imagePath: uploadedImagePath,
+                              status: widget.initialEvent!.status,
+                              categoryId: _selectedCategoryId,
+                              salary: double.tryParse(_salaryController.text),
+                              requirements: _requirementsController.text.trim(),
+                              benefits: _benefitsController.text.trim(),
+                              contactEmail: _contactEmailController.text.trim(),
+                              contactPhone: _contactPhoneController.text.trim(),
+                              tags: _tags.isNotEmpty ? _tags : null,
+                              isUrgent: _isUrgent,
+                            );
+                      }
+
+                      if (mounted) Navigator.of(context).pop(); // pop loading
+
+                      if (!mounted) return;
+                      final messenger = ScaffoldMessenger.of(context);
+                      final nav = Navigator.of(context);
+
+                      result.when(
+                        success: (event) {
+                          nav.pop(); // close form dialog
+
+                          // Refresh both providers
+                          // ignore: unused_result
+                          ref.refresh(publishedEventsProvider(0));
+                          // ignore: unused_result
+                          ref.refresh(pendingEventsAdminProvider);
+                          // ignore: unused_result
+                          ref.refresh(analyticsKPIProvider);
+
+                          // Show success message
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                widget.initialEvent == null
+                                    ? 'Event "${event.title}" created!'
+                                    : 'Event "${event.title}" updated!',
+                              ),
+                              backgroundColor: DarkColors.success,
+                            ),
+                          );
+                        },
+                        error: (error) {
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text('Failed: $error'),
+                              backgroundColor: DarkColors.error,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -531,7 +1343,7 @@ class _CategoryDropdown extends ConsumerWidget {
           return const SizedBox.shrink();
         }
         return DropdownButtonFormField<String>(
-          value: selectedId,
+          initialValue: selectedId,
           hint: const Text('Category (optional)'),
           isExpanded: true,
           decoration: const InputDecoration(
@@ -552,6 +1364,54 @@ class _CategoryDropdown extends ConsumerWidget {
       },
       loading: () => const LinearProgressIndicator(),
       error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// Company dropdown for the Create Event form
+class _CompanyDropdown extends ConsumerWidget {
+  final String? selectedId;
+  final ValueChanged<String?> onChanged;
+
+  const _CompanyDropdown({required this.selectedId, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final companiesAsync = ref.watch(allCompaniesProvider);
+
+    return companiesAsync.when(
+      data: (companies) {
+        if (companies.isEmpty) {
+          return const Text(
+            'No companies found. Create one first.',
+            style: TextStyle(color: Colors.red),
+          );
+        }
+        return DropdownButtonFormField<String>(
+          initialValue: selectedId,
+          hint: const Text('Select Company Organizer'),
+          isExpanded: true,
+          decoration: const InputDecoration(
+            labelText: 'Company Organizer *',
+            border: OutlineInputBorder(),
+          ),
+          items: companies
+              .map(
+                (c) => DropdownMenuItem<String>(
+                  value: (c['id'] ?? c['_id']).toString(),
+                  child: Text(c['name']?.toString() ?? 'Unknown'),
+                ),
+              )
+              .toList(),
+          onChanged: onChanged,
+          validator: (v) => v == null ? 'Please select an organizer' : null,
+        );
+      },
+      loading: () => const LinearProgressIndicator(),
+      error: (_, __) => const Text(
+        'Error loading companies',
+        style: TextStyle(color: Colors.red),
+      ),
     );
   }
 }
@@ -746,7 +1606,7 @@ class _UserDropdown extends ConsumerWidget {
         }
 
         return DropdownButtonFormField<String>(
-          value: selectedId,
+          initialValue: selectedId,
           hint: const Text('Select Team Leader'),
           isExpanded: true,
           decoration: const InputDecoration(

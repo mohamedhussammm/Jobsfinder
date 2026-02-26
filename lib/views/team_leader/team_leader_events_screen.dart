@@ -378,8 +378,7 @@ class EventAssignmentCard extends ConsumerWidget {
                       OutlinedButton.icon(
                         onPressed: () {
                           context.push(
-                            '/team-leader/attendance/${event.id}'
-                            '?title=${Uri.encodeComponent(event.title)}',
+                            '/team-leader/applicants/${event.id}?title=${Uri.encodeComponent(event.title)}',
                           );
                         },
                         icon: const Icon(Icons.people, size: 16),

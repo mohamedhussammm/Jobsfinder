@@ -62,17 +62,10 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     return Scaffold(
       body: widget.child,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
+      bottomNavigationBar: Material(
+        color: Theme.of(context).cardColor,
+        elevation: 8,
+        shadowColor: Colors.black.withValues(alpha: 0.3),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
@@ -111,14 +104,12 @@ class _MainShellState extends ConsumerState<MainShell> {
     int index,
     String? userId,
   ) {
-    return InkWell(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
-        if (index != _currentIndex) {
-          setState(() => _currentIndex = index);
-          context.go(item.path);
-        }
+        setState(() => _currentIndex = index);
+        context.go(item.path);
       },
-      borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.symmetric(
@@ -167,9 +158,9 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   Widget _buildLogoutButton(BuildContext context, WidgetRef ref) {
-    return InkWell(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => _confirmLogout(context, ref),
-      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Icon(

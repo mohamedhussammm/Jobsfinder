@@ -13,7 +13,8 @@ class AppException implements Exception {
   });
 
   @override
-  String toString() => 'AppException: $message${code != null ? ' ($code)' : ''}';
+  String toString() =>
+      'AppException: $message${code != null ? ' ($code)' : ''}';
 }
 
 /// Authentication-specific exception
@@ -23,9 +24,7 @@ class AuthException extends AppException {
     String? code,
     super.originalError,
     super.stackTrace,
-  }) : super(
-    code: code ?? 'AUTH_ERROR',
-  );
+  }) : super(code: code ?? 'AUTH_ERROR');
 }
 
 /// Network-related exception
@@ -35,21 +34,17 @@ class NetworkException extends AppException {
     String? code,
     super.originalError,
     super.stackTrace,
-  }) : super(
-    code: code ?? 'NETWORK_ERROR',
-  );
+  }) : super(code: code ?? 'NETWORK_ERROR');
 }
 
-/// Supabase/Database exception
+/// Database exception
 class DatabaseException extends AppException {
   DatabaseException({
     required super.message,
     String? code,
     super.originalError,
     super.stackTrace,
-  }) : super(
-    code: code ?? 'DATABASE_ERROR',
-  );
+  }) : super(code: code ?? 'DATABASE_ERROR');
 }
 
 /// Permission/Authorization exception
@@ -59,9 +54,7 @@ class PermissionException extends AppException {
     String? code,
     super.originalError,
     super.stackTrace,
-  }) : super(
-    code: code ?? 'PERMISSION_DENIED',
-  );
+  }) : super(code: code ?? 'PERMISSION_DENIED');
 }
 
 /// Validation exception
@@ -74,9 +67,7 @@ class ValidationException extends AppException {
     String? code,
     super.originalError,
     super.stackTrace,
-  }) : super(
-    code: code ?? 'VALIDATION_ERROR',
-  );
+  }) : super(code: code ?? 'VALIDATION_ERROR');
 }
 
 /// Not found exception
@@ -86,9 +77,7 @@ class NotFoundException extends AppException {
     String? code,
     super.originalError,
     super.stackTrace,
-  }) : super(
-    code: code ?? 'NOT_FOUND',
-  );
+  }) : super(code: code ?? 'NOT_FOUND');
 }
 
 /// Generic result class for success/failure handling
@@ -103,16 +92,18 @@ sealed class Result<T> {
     error: (error) => Error(error),
   );
 
-  Future<Result<U>> asyncMap<U>(Future<U> Function(T) mapper) async => when(
-    success: (data) async {
-      try {
-        return Success(await mapper(data));
-      } on AppException catch (e) {
-        return Error(e);
-      }
-    },
-    error: (error) async => Error(error),
-  ) as Result<U>;
+  Future<Result<U>> asyncMap<U>(Future<U> Function(T) mapper) async =>
+      when(
+            success: (data) async {
+              try {
+                return Success(await mapper(data));
+              } on AppException catch (e) {
+                return Error(e);
+              }
+            },
+            error: (error) async => Error(error),
+          )
+          as Result<U>;
 }
 
 final class Success<T> extends Result<T> {
@@ -124,8 +115,7 @@ final class Success<T> extends Result<T> {
   R when<R>({
     required R Function(T data) success,
     required R Function(AppException error) error,
-  }) =>
-    success(data);
+  }) => success(data);
 }
 
 final class Error<T> extends Result<T> {
@@ -137,21 +127,15 @@ final class Error<T> extends Result<T> {
   R when<R>({
     required R Function(T data) success,
     required R Function(AppException error) error,
-  }) =>
-    error(this.error);
+  }) => error(this.error);
 }
 
 /// Extension to unwrap Result
 extension ResultX<T> on Result<T> {
-  T? getOrNull() => when(
-    success: (data) => data,
-    error: (_) => null,
-  );
+  T? getOrNull() => when(success: (data) => data, error: (_) => null);
 
-  AppException? getErrorOrNull() => when(
-    success: (_) => null,
-    error: (error) => error,
-  );
+  AppException? getErrorOrNull() =>
+      when(success: (_) => null, error: (error) => error);
 
   bool get isSuccess => this is Success;
   bool get isError => this is Error;

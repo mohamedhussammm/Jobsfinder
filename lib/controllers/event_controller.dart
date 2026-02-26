@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../core/supabase/supabase_client.dart';
+import 'package:dio/dio.dart';
+import '../core/api/api_client.dart';
+import '../core/api/api_config.dart';
 import '../models/event_model.dart';
 import '../models/category_model.dart';
 import '../core/utils/result.dart';
+import 'admin_controller.dart';
 
 /// Published events provider (for homepage)
 final publishedEventsProvider = FutureProvider.autoDispose
@@ -12,6 +14,15 @@ final publishedEventsProvider = FutureProvider.autoDispose
       final result = await controller.fetchPublishedEvents(page: page);
       return result.when(success: (events) => events, error: (e) => throw e);
     });
+
+/// Pending events provider (for admin dashboard)
+final pendingEventsAdminProvider = FutureProvider.autoDispose<List<EventModel>>(
+  (ref) async {
+    final adminController = ref.watch(adminControllerProvider);
+    final result = await adminController.fetchPendingEventRequests();
+    return result.when(success: (events) => events, error: (e) => throw e);
+  },
+);
 
 /// Published events filtered by category
 final publishedEventsByCategoryProvider = FutureProvider.autoDispose
@@ -45,10 +56,11 @@ final eventControllerProvider = Provider((ref) => EventController(ref));
 
 class EventController {
   final Ref ref;
-  final SupabaseClient _supabase = Supabase.instance.client;
   static const int pageSize = 10;
 
   EventController(this.ref);
+
+  ApiClient get _api => ref.read(apiClientProvider);
 
   /// Fetch published events (with pagination and optional category filter)
   Future<Result<List<EventModel>>> fetchPublishedEvents({
@@ -58,29 +70,46 @@ class EventController {
     String? categoryId,
   }) async {
     try {
-      int offset = page * pageSize;
+      final queryParams = <String, dynamic>{
+        'status': 'published',
+        'page': page + 1, // Backend uses 1-based pages
+        'limit': pageSize,
+      };
 
-      var queryBase = _supabase
-          .from(SupabaseTables.events)
-          .select('*, categories(id, name, icon)')
-          .eq('status', 'published');
-
-      if (categoryId != null) {
-        queryBase = queryBase.eq('category_id', categoryId);
+      if (categoryId != null) queryParams['category'] = categoryId;
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        queryParams['search'] = searchQuery;
       }
 
-      final response = await queryBase
-          .order('start_time', ascending: true)
-          .range(offset, offset + pageSize - 1);
+      final response = await _api.get(
+        ApiEndpoints.events,
+        queryParameters: queryParams,
+      );
 
-      final events = (response as List)
-          .map((json) => EventModel.fromJson(json as Map<String, dynamic>))
-          .toList();
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final responseData = response.data['data'];
+        // Backend returns { events: [...], pagination: {...} }
+        final List list;
+        if (responseData is List) {
+          list = responseData;
+        } else if (responseData is Map && responseData['events'] != null) {
+          list = responseData['events'] as List;
+        } else {
+          list = [];
+        }
+        final events = list
+            .map((json) => EventModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+        return Success(events);
+      }
 
-      return Success(events);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to fetch events',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -96,19 +125,24 @@ class EventController {
   /// Fetch all categories
   Future<Result<List<CategoryModel>>> fetchCategories() async {
     try {
-      final response = await _supabase
-          .from('categories')
-          .select()
-          .order('name', ascending: true);
+      final response = await _api.get(ApiEndpoints.categories);
 
-      final categories = (response as List)
-          .map((json) => CategoryModel.fromJson(json as Map<String, dynamic>))
-          .toList();
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['categories'] ?? []) as List;
+        final categories = list
+            .map((json) => CategoryModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+        return Success(categories);
+      }
 
-      return Success(categories);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to fetch categories',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -132,6 +166,13 @@ class EventController {
     int? capacity,
     String? imagePath,
     String? categoryId,
+    double? salary,
+    String? requirements,
+    String? benefits,
+    String? contactEmail,
+    String? contactPhone,
+    List<String>? tags,
+    bool isUrgent = false,
   }) async {
     try {
       if (title.isEmpty) {
@@ -142,36 +183,59 @@ class EventController {
           ValidationException(message: 'End time must be after start time'),
         );
       }
+      if (companyId.isEmpty) {
+        return Error(ValidationException(message: 'Company is required'));
+      }
 
       final eventData = <String, dynamic>{
-        'company_id': companyId.isEmpty ? 'admin' : companyId,
+        'companyId': companyId,
         'title': title,
         'description': description,
         'location': location?.toJson(),
-        'start_time': startTime.toIso8601String(),
-        'end_time': endTime.toIso8601String(),
+        'startTime': startTime.toIso8601String(),
+        'endTime': endTime.toIso8601String(),
         'capacity': capacity,
-        'image_path': imagePath,
+        'imagePath': imagePath,
         'status': 'published',
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
+        'isUrgent': isUrgent,
       };
 
       if (categoryId != null && categoryId.isNotEmpty) {
-        eventData['category_id'] = categoryId;
+        eventData['categoryId'] = categoryId;
+      }
+      if (salary != null) eventData['salary'] = salary;
+      if (requirements != null && requirements.isNotEmpty) {
+        eventData['requirements'] = requirements;
+      }
+      if (benefits != null && benefits.isNotEmpty) {
+        eventData['benefits'] = benefits;
+      }
+      if (contactEmail != null && contactEmail.isNotEmpty) {
+        eventData['contactEmail'] = contactEmail;
+      }
+      if (contactPhone != null && contactPhone.isNotEmpty) {
+        eventData['contactPhone'] = contactPhone;
+      }
+      if (tags != null && tags.isNotEmpty) {
+        eventData['tags'] = tags;
       }
 
-      final response = await _supabase
-          .from(SupabaseTables.events)
-          .insert(eventData)
-          .select()
-          .single();
+      final response = await _api.post(ApiEndpoints.events, data: eventData);
 
-      final event = EventModel.fromJson(response);
-      return Success(event);
-    } on PostgrestException catch (e) {
+      if (response.statusCode == 201 && response.data['success'] == true) {
+        final event = EventModel.fromJson(
+          response.data['data']['event'] as Map<String, dynamic>,
+        );
+        return Success(event);
+      }
+
+      return Error(AppException(message: 'Failed to create event'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to create event',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -187,16 +251,20 @@ class EventController {
   /// Get event by ID
   Future<Result<EventModel>> getEventById(String eventId) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.events)
-          .select()
-          .eq('id', eventId)
-          .single();
+      final response = await _api.get(ApiEndpoints.eventById(eventId));
 
-      final event = EventModel.fromJson(response);
-      return Success(event);
-    } on PostgrestException catch (e) {
-      if (e.code == 'PGRST116') {
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final event = EventModel.fromJson(
+          response.data['data']['event'] as Map<String, dynamic>,
+        );
+        return Success(event);
+      }
+
+      return Error(
+        NotFoundException(message: 'Event not found', code: 'EVENT_NOT_FOUND'),
+      );
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
         return Error(
           NotFoundException(
             message: 'Event not found',
@@ -206,7 +274,10 @@ class EventController {
         );
       }
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to fetch event',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -231,7 +302,6 @@ class EventController {
     required String? imagePath,
   }) async {
     try {
-      // Validate
       if (title.isEmpty) {
         return Error(ValidationException(message: 'Event title is required'));
       }
@@ -243,30 +313,33 @@ class EventController {
       }
 
       final eventData = {
-        'company_id': companyId,
+        'companyId': companyId,
         'title': title,
         'description': description,
         'location': location?.toJson(),
-        'start_time': startTime.toIso8601String(),
-        'end_time': endTime.toIso8601String(),
+        'startTime': startTime.toIso8601String(),
+        'endTime': endTime.toIso8601String(),
         'capacity': capacity,
-        'image_path': imagePath,
-        'status': 'pending', // Always pending initially
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
+        'imagePath': imagePath,
+        'status': 'pending',
       };
 
-      final response = await _supabase
-          .from(SupabaseTables.events)
-          .insert(eventData)
-          .select()
-          .single();
+      final response = await _api.post(ApiEndpoints.events, data: eventData);
 
-      final event = EventModel.fromJson(response);
-      return Success(event);
-    } on PostgrestException catch (e) {
+      if (response.statusCode == 201 && response.data['success'] == true) {
+        final event = EventModel.fromJson(
+          response.data['data']['event'] as Map<String, dynamic>,
+        );
+        return Success(event);
+      }
+
+      return Error(AppException(message: 'Failed to create event'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to create event',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -285,23 +358,39 @@ class EventController {
     int page = 0,
   }) async {
     try {
-      int offset = page * pageSize;
+      final response = await _api.get(
+        ApiEndpoints.events,
+        queryParameters: {
+          'companyId': companyId,
+          'page': page + 1,
+          'limit': pageSize,
+        },
+      );
 
-      final response = await _supabase
-          .from(SupabaseTables.events)
-          .select()
-          .eq('company_id', companyId)
-          .order('created_at', ascending: false)
-          .range(offset, offset + pageSize - 1);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final responseData = response.data['data'];
+        final List list;
+        if (responseData is List) {
+          list = responseData;
+        } else if (responseData is Map && responseData['events'] != null) {
+          list = responseData['events'] as List;
+        } else {
+          list = [];
+        }
+        final events = list
+            .map((json) => EventModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+        return Success(events);
+      }
 
-      final events = (response as List)
-          .map((json) => EventModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-
-      return Success(events);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to fetch company events',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -319,23 +408,39 @@ class EventController {
     int page = 0,
   }) async {
     try {
-      int offset = page * pageSize;
+      final response = await _api.get(
+        ApiEndpoints.events,
+        queryParameters: {
+          'status': 'pending',
+          'page': page + 1,
+          'limit': pageSize,
+        },
+      );
 
-      final response = await _supabase
-          .from(SupabaseTables.events)
-          .select()
-          .eq('status', 'pending')
-          .order('created_at', ascending: true)
-          .range(offset, offset + pageSize - 1);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final responseData = response.data['data'];
+        final List list;
+        if (responseData is List) {
+          list = responseData;
+        } else if (responseData is Map && responseData['events'] != null) {
+          list = responseData['events'] as List;
+        } else {
+          list = [];
+        }
+        final events = list
+            .map((json) => EventModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+        return Success(events);
+      }
 
-      final events = (response as List)
-          .map((json) => EventModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-
-      return Success(events);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to fetch pending events',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -351,21 +456,22 @@ class EventController {
   /// Admin approves/publishes event
   Future<Result<EventModel>> approveEvent(String eventId) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.events)
-          .update({
-            'status': 'published',
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', eventId)
-          .select()
-          .single();
+      final response = await _api.patch(ApiEndpoints.approveEvent(eventId));
 
-      final event = EventModel.fromJson(response);
-      return Success(event);
-    } on PostgrestException catch (e) {
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final event = EventModel.fromJson(
+          response.data['data']['event'] as Map<String, dynamic>,
+        );
+        return Success(event);
+      }
+
+      return Error(AppException(message: 'Failed to approve event'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to approve event',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -384,21 +490,25 @@ class EventController {
     String? reason,
   }) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.events)
-          .update({
-            'status': 'cancelled',
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', eventId)
-          .select()
-          .single();
+      final response = await _api.patch(
+        ApiEndpoints.rejectEvent(eventId),
+        data: {'rejectionReason': reason},
+      );
 
-      final event = EventModel.fromJson(response);
-      return Success(event);
-    } on PostgrestException catch (e) {
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final event = EventModel.fromJson(
+          response.data['data']['event'] as Map<String, dynamic>,
+        );
+        return Success(event);
+      }
+
+      return Error(AppException(message: 'Failed to reject event'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to reject event',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -422,32 +532,54 @@ class EventController {
     int? capacity,
     String? imagePath,
     String? status,
+    String? categoryId,
+    double? salary,
+    String? requirements,
+    String? benefits,
+    String? contactEmail,
+    String? contactPhone,
+    List<String>? tags,
+    bool? isUrgent,
   }) async {
     try {
       final updateData = <String, dynamic>{
         if (title != null) 'title': title,
         if (description != null) 'description': description,
         if (location != null) 'location': location.toJson(),
-        if (startTime != null) 'start_time': startTime.toIso8601String(),
-        if (endTime != null) 'end_time': endTime.toIso8601String(),
+        if (startTime != null) 'startTime': startTime.toIso8601String(),
+        if (endTime != null) 'endTime': endTime.toIso8601String(),
         if (capacity != null) 'capacity': capacity,
-        if (imagePath != null) 'image_path': imagePath,
+        if (imagePath != null) 'imagePath': imagePath,
         if (status != null) 'status': status,
-        'updated_at': DateTime.now().toIso8601String(),
+        if (categoryId != null) 'categoryId': categoryId,
+        if (salary != null) 'salary': salary,
+        if (requirements != null) 'requirements': requirements,
+        if (benefits != null) 'benefits': benefits,
+        if (contactEmail != null) 'contactEmail': contactEmail,
+        if (contactPhone != null) 'contactPhone': contactPhone,
+        if (tags != null) 'tags': tags,
+        if (isUrgent != null) 'isUrgent': isUrgent,
       };
 
-      final response = await _supabase
-          .from(SupabaseTables.events)
-          .update(updateData)
-          .eq('id', eventId)
-          .select()
-          .single();
+      final response = await _api.put(
+        ApiEndpoints.eventById(eventId),
+        data: updateData,
+      );
 
-      final event = EventModel.fromJson(response);
-      return Success(event);
-    } on PostgrestException catch (e) {
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final event = EventModel.fromJson(
+          response.data['data']['event'] as Map<String, dynamic>,
+        );
+        return Success(event);
+      }
+
+      return Error(AppException(message: 'Failed to update event'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to update event',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -463,24 +595,34 @@ class EventController {
   /// Search events
   Future<Result<List<EventModel>>> searchEvents(String query) async {
     try {
-      // Client-side filtering since Supabase doesn't support full-text search on free tier
-      final response = await _supabase
-          .from(SupabaseTables.events)
-          .select()
-          .eq('status', 'published')
-          .order('start_time', ascending: true);
+      final response = await _api.get(
+        ApiEndpoints.events,
+        queryParameters: {'search': query, 'status': 'published'},
+      );
 
-      final events = (response as List)
-          .map((json) => EventModel.fromJson(json as Map<String, dynamic>))
-          .where(
-            (event) => event.title.toLowerCase().contains(query.toLowerCase()),
-          )
-          .toList();
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final responseData = response.data['data'];
+        final List list;
+        if (responseData is List) {
+          list = responseData;
+        } else if (responseData is Map && responseData['events'] != null) {
+          list = responseData['events'] as List;
+        } else {
+          list = [];
+        }
+        final events = list
+            .map((json) => EventModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+        return Success(events);
+      }
 
-      return Success(events);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Search failed',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -496,12 +638,14 @@ class EventController {
   /// Admin deletes event
   Future<Result<void>> deleteEvent(String eventId) async {
     try {
-      await _supabase.from(SupabaseTables.events).delete().eq('id', eventId);
-
+      await _api.delete(ApiEndpoints.eventById(eventId));
       return Success(null);
-    } on PostgrestException catch (e) {
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to delete event',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(

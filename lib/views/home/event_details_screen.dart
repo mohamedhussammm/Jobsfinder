@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../l10n/app_localizations.dart';
 import '../../core/theme/dark_colors.dart';
 import '../../models/event_model.dart';
 import '../../controllers/event_controller.dart';
+import '../../services/file_upload_service.dart';
 
 class EventDetailsScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -98,23 +98,38 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Wrap(
                           spacing: 8,
+                          runSpacing: 6,
                           children: [
+                            if (event.isUrgent)
+                              _chip(
+                                '🔥 URGENT',
+                                const Color(0xFF3A1A1A),
+                                const Color(0xFFF87171),
+                              ),
+                            if (event.salary != null && event.salary! > 0)
+                              _chip(
+                                'SAR ${event.salary!.toStringAsFixed(0)}',
+                                const Color(0xFF1A3A2A),
+                                const Color(0xFF4ADE80),
+                              ),
                             _chip(
-                              AppLocalizations.of(context)!.highPay,
-                              const Color(0xFF1A3A2A),
-                              const Color(0xFF4ADE80),
-                            ),
-                            _chip(
-                              AppLocalizations.of(context)!.instantBook,
+                              'Instant Book',
                               const Color(0xFF1A2A3A),
                               const Color(0xFF60A5FA),
                             ),
                             if (event.isUpcoming)
                               _chip(
-                                AppLocalizations.of(context)!.upcoming,
+                                'Upcoming',
                                 const Color(0xFF2A1A3A),
                                 const Color(0xFFA78BFA),
                               ),
+                            ...event.tags.map(
+                              (tag) => _chip(
+                                tag.toUpperCase(),
+                                const Color(0xFF1A2A2A),
+                                const Color(0xFF67E8F9),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -165,14 +180,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                               children: [
                                 _infoCell(
                                   icon: Icons.calendar_today_rounded,
-                                  label: AppLocalizations.of(context)!.date,
+                                  label: 'Date',
                                   value: _formatDate(event.startTime),
                                   color: const Color(0xFF60A5FA),
                                 ),
                                 _verticalDivider(),
                                 _infoCell(
                                   icon: Icons.schedule_rounded,
-                                  label: AppLocalizations.of(context)!.shift,
+                                  label: 'Shift',
                                   value:
                                       '${_formatTime(event.startTime)} - ${_formatTime(event.endTime)}',
                                   color: const Color(0xFF34D399),
@@ -180,9 +195,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                 _verticalDivider(),
                                 _infoCell(
                                   icon: Icons.people_rounded,
-                                  label: AppLocalizations.of(
-                                    context,
-                                  )!.capacity.toUpperCase(),
+                                  label: 'CAPACITY',
                                   value: event.capacity != null
                                       ? '${event.capacity}'
                                       : '∞',
@@ -196,9 +209,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       const SizedBox(height: 28),
 
                       // ── About the Role ──────────────────────────────────
-                      _sectionHeader(
-                        AppLocalizations.of(context)!.aboutTheRole,
-                      ),
+                      _sectionHeader('About the Role'),
                       const SizedBox(height: 12),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -234,11 +245,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                     () => _descExpanded = !_descExpanded,
                                   ),
                                   child: Text(
-                                    _descExpanded
-                                        ? AppLocalizations.of(context)!.showLess
-                                        : AppLocalizations.of(
-                                            context,
-                                          )!.readMore,
+                                    _descExpanded ? 'Show Less' : 'Read More',
                                     style: const TextStyle(
                                       color: Color(0xFF60A5FA),
                                       fontWeight: FontWeight.w600,
@@ -253,45 +260,147 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       ),
                       const SizedBox(height: 28),
 
-                      // ── Requirements ────────────────────────────────────
-                      _sectionHeader(
-                        AppLocalizations.of(context)!.requirements,
-                      ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          children: [
-                            _requirementItem(
-                              icon: Icons.verified_user_rounded,
-                              title: AppLocalizations.of(
-                                context,
-                              )!.validIdRequired,
-                              subtitle: 'Government-issued identification',
-                              color: const Color(0xFF60A5FA),
+                      // ── Requirements (dynamic from DB) ───────────────────
+                      if (event.requirements != null &&
+                          event.requirements!.isNotEmpty) ...[
+                        _sectionHeader('Requirements'),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.07),
+                              ),
                             ),
-                            const SizedBox(height: 10),
-                            _requirementItem(
-                              icon: Icons.work_outline_rounded,
-                              title: AppLocalizations.of(
-                                context,
-                              )!.professionalAttire,
-                              subtitle: 'Smart casual or as specified',
-                              color: const Color(0xFF34D399),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.checklist_rounded,
+                                  color: const Color(0xFF60A5FA),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    event.requirements!,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.72,
+                                      ),
+                                      height: 1.6,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 10),
-                            _requirementItem(
-                              icon: Icons.star_outline_rounded,
-                              title: AppLocalizations.of(
-                                context,
-                              )!.experiencePreferred,
-                              subtitle: 'Relevant background is a plus',
-                              color: const Color(0xFFFBBF24),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 28),
+                        const SizedBox(height: 28),
+                      ],
+
+                      // ── Benefits ─────────────────────────────────────────
+                      if (event.benefits != null &&
+                          event.benefits!.isNotEmpty) ...[
+                        _sectionHeader('Benefits'),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.07),
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.card_giftcard_rounded,
+                                  color: const Color(0xFF4ADE80),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    event.benefits!,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.72,
+                                      ),
+                                      height: 1.6,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                      ],
+
+                      // ── Contact Information ─────────────────────────────
+                      if ((event.contactEmail != null &&
+                              event.contactEmail!.isNotEmpty) ||
+                          (event.contactPhone != null &&
+                              event.contactPhone!.isNotEmpty)) ...[
+                        _sectionHeader('Contact'),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.07),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                if (event.contactEmail != null &&
+                                    event.contactEmail!.isNotEmpty)
+                                  _contactRow(
+                                    Icons.email_outlined,
+                                    event.contactEmail!,
+                                    const Color(0xFF60A5FA),
+                                    () => launchUrl(
+                                      Uri.parse('mailto:${event.contactEmail}'),
+                                    ),
+                                  ),
+                                if (event.contactEmail != null &&
+                                    event.contactEmail!.isNotEmpty &&
+                                    event.contactPhone != null &&
+                                    event.contactPhone!.isNotEmpty)
+                                  const SizedBox(height: 10),
+                                if (event.contactPhone != null &&
+                                    event.contactPhone!.isNotEmpty)
+                                  _contactRow(
+                                    Icons.phone_outlined,
+                                    event.contactPhone!,
+                                    const Color(0xFF4ADE80),
+                                    () => launchUrl(
+                                      Uri.parse('tel:${event.contactPhone}'),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                      ],
 
                       // ── Location ────────────────────────────────────────
                       if (event.location != null) ...[
@@ -300,9 +409,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _sectionTitle(
-                                AppLocalizations.of(context)!.location,
-                              ),
+                              _sectionTitle('Location'),
                               if (event.location?.city != 'Unknown')
                                 Text(
                                   event.location!.city,
@@ -353,7 +460,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         // Background image or gradient
         if (event.imagePath != null)
           CachedNetworkImage(
-            imageUrl: event.imagePath!,
+            imageUrl: ref
+                .read(fileUploadServiceProvider)
+                .getPublicUrl(event.imagePath!),
             fit: BoxFit.cover,
             placeholder: (context, url) => _gradientHero(event),
             errorWidget: (context, url, error) => _gradientHero(event),
@@ -725,6 +834,50 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _contactRow(
+    IconData icon,
+    String text,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.open_in_new_rounded,
+              color: color.withValues(alpha: 0.5),
+              size: 16,
+            ),
+          ],
+        ),
+      ),
     );
   }
 

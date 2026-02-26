@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../controllers/admin_controller.dart';
-import '../../../models/application_model.dart';
 import '../../../core/theme/typography.dart';
 import '../../../core/theme/dark_colors.dart';
 import '../../../core/utils/responsive.dart';

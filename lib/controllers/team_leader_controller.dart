@@ -1,15 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../core/supabase/supabase_client.dart';
+import 'package:dio/dio.dart';
+import '../core/api/api_client.dart';
+import '../core/api/api_config.dart';
 import '../models/team_leader_model.dart';
 import '../models/event_model.dart';
 import '../core/utils/result.dart';
 
-/// Team leader's events provider
+/// Team leader events provider
 final teamLeaderEventsProvider = FutureProvider.autoDispose
-    .family<List<EventModel>, String>((ref, teamLeaderId) async {
+    .family<List<EventModel>, String>((ref, userId) async {
       final controller = ref.watch(teamLeaderControllerProvider);
-      final result = await controller.getTeamLeaderEvents(teamLeaderId);
+      final result = await controller.getTeamLeaderEvents(userId);
       return result.when(success: (events) => events, error: (e) => throw e);
     });
 
@@ -20,44 +21,39 @@ final teamLeaderControllerProvider = Provider(
 
 class TeamLeaderController {
   final Ref ref;
-  final SupabaseClient _supabase = Supabase.instance.client;
 
   TeamLeaderController(this.ref);
+
+  ApiClient get _api => ref.read(apiClientProvider);
 
   /// Get events assigned to team leader
   Future<Result<List<EventModel>>> getTeamLeaderEvents(String userId) async {
     try {
-      // Get team leader assignments
-      final assignments = await _supabase
-          .from(SupabaseTables.teamLeaders)
-          .select('event_id')
-          .eq('user_id', userId)
-          .neq('status', 'removed');
+      final response = await _api.get(ApiEndpoints.teamLeadersMyEvents);
 
-      if (assignments.isEmpty) {
-        return Success([]);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['assignments'] ?? []) as List;
+        // Extract events from team leader assignments
+        final events = <EventModel>[];
+        for (final item in list) {
+          final eventData = (item as Map<String, dynamic>)['eventId'];
+          if (eventData is Map<String, dynamic>) {
+            events.add(EventModel.fromJson(eventData));
+          }
+        }
+        return Success(events);
       }
 
-      // Get event details for each assignment
-      final eventIds = (assignments as List)
-          .map((a) => a['event_id'] as String)
-          .toList();
-
-      final events = <EventModel>[];
-      for (final eventId in eventIds) {
-        final eventResponse = await _supabase
-            .from(SupabaseTables.events)
-            .select()
-            .eq('id', eventId)
-            .single();
-
-        events.add(EventModel.fromJson(eventResponse));
-      }
-
-      return Success(events);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ??
+              'Failed to fetch team leader events',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -76,27 +72,27 @@ class TeamLeaderController {
     String eventId,
   ) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.teamLeaders)
-          .select()
-          .eq('user_id', userId)
-          .eq('event_id', eventId)
-          .single();
+      final response = await _api.get(ApiEndpoints.teamLeadersByEvent(eventId));
 
-      final assignment = TeamLeaderModel.fromJson(response);
-      return Success(assignment);
-    } on PostgrestException catch (e) {
-      if (e.code == 'PGRST116') {
-        return Error(
-          NotFoundException(
-            message: 'Team leader assignment not found',
-            code: 'ASSIGNMENT_NOT_FOUND',
-            originalError: e,
-          ),
-        );
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['leaders'] ?? []) as List;
+        if (list.isNotEmpty) {
+          final tl = TeamLeaderModel.fromJson(
+            list.first as Map<String, dynamic>,
+          );
+          return Success(tl);
+        }
+        return Error(NotFoundException(message: 'Assignment not found'));
       }
+
+      return Error(AppException(message: 'Failed to fetch assignment'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to fetch assignment',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -115,26 +111,25 @@ class TeamLeaderController {
     required String newStatus,
   }) async {
     try {
-      final validStatuses = ['assigned', 'active', 'completed', 'removed'];
-      if (!validStatuses.contains(newStatus)) {
-        throw ValidationException(message: 'Invalid status');
+      final response = await _api.patch(
+        ApiEndpoints.teamLeaderById(assignmentId),
+        data: {'status': newStatus},
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final tl = TeamLeaderModel.fromJson(
+          response.data['data']['assignment'] as Map<String, dynamic>,
+        );
+        return Success(tl);
       }
 
-      final response = await _supabase
-          .from(SupabaseTables.teamLeaders)
-          .update({
-            'status': newStatus,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', assignmentId)
-          .select()
-          .single();
-
-      final assignment = TeamLeaderModel.fromJson(response);
-      return Success(assignment);
-    } on PostgrestException catch (e) {
+      return Error(AppException(message: 'Failed to update status'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to update status',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -150,95 +145,67 @@ class TeamLeaderController {
   /// Get active assignments count
   Future<Result<int>> getActiveAssignmentsCount(String userId) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.teamLeaders)
-          .select('id')
-          .eq('user_id', userId)
-          .eq('status', 'active');
+      final response = await _api.get(ApiEndpoints.teamLeadersMyEvents);
 
-      return Success(response.length);
-    } on PostgrestException catch (e) {
-      return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
-      );
-    } catch (e, st) {
-      return Error(
-        AppException(
-          message: 'Failed to count active assignments: $e',
-          originalError: e,
-          stackTrace: st,
-        ),
-      );
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['assignments'] ?? []) as List;
+        return Success(list.length);
+      }
+
+      return Success(0);
+    } catch (_) {
+      return Success(0);
     }
   }
 
   /// Get completed assignments count
   Future<Result<int>> getCompletedAssignmentsCount(String userId) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.teamLeaders)
-          .select('id')
-          .eq('user_id', userId)
-          .eq('status', 'completed');
+      final response = await _api.get(ApiEndpoints.teamLeadersMyEvents);
 
-      return Success(response.length);
-    } on PostgrestException catch (e) {
-      return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
-      );
-    } catch (e, st) {
-      return Error(
-        AppException(
-          message: 'Failed to count completed assignments: $e',
-          originalError: e,
-          stackTrace: st,
-        ),
-      );
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['assignments'] ?? []) as List;
+        return Success(list.where((a) => a['status'] == 'completed').length);
+      }
+
+      return Success(0);
+    } catch (_) {
+      return Success(0);
     }
   }
 
   /// Mark user attendance for event
-  Future<Result<void>> markAttendance({
+  Future<Result<Map<String, dynamic>>> markAttendance({
     required String userId,
     required String eventId,
     required bool present,
     String? notes,
   }) async {
     try {
-      // Check if attendance record exists
-      final existing = await _supabase
-          .from('attendance') // Assuming attendance table exists
-          .select()
-          .eq('user_id', userId)
-          .eq('event_id', eventId);
-
-      if (existing.isNotEmpty) {
-        // Update existing
-        await _supabase
-            .from('attendance')
-            .update({
-              'present': present,
-              'notes': notes,
-              'updated_at': DateTime.now().toIso8601String(),
-            })
-            .eq('user_id', userId)
-            .eq('event_id', eventId);
-      } else {
-        // Create new
-        await _supabase.from('attendance').insert({
-          'user_id': userId,
-          'event_id': eventId,
+      // This uses a custom endpoint — may need backend extension
+      final response = await _api.post(
+        '${ApiEndpoints.teamLeaders}/attendance',
+        data: {
+          'userId': userId,
+          'eventId': eventId,
           'present': present,
           'notes': notes,
-          'created_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        });
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return Success(response.data['data'] as Map<String, dynamic>);
       }
 
-      return Success(null);
-    } on PostgrestException catch (e) {
+      return Error(AppException(message: 'Failed to mark attendance'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to mark attendance',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -256,21 +223,28 @@ class TeamLeaderController {
     String eventId,
   ) async {
     try {
-      final response = await _supabase
-          .from('attendance')
-          .select()
-          .eq('event_id', eventId)
-          .order('created_at', ascending: false);
+      final response = await _api.get(
+        '${ApiEndpoints.teamLeaders}/attendance',
+        queryParameters: {'eventId': eventId},
+      );
 
-      return Success(response);
-    } on PostgrestException catch (e) {
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final list = response.data['data'] as List;
+        return Success(list.map((e) => e as Map<String, dynamic>).toList());
+      }
+
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to fetch attendance',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
         AppException(
-          message: 'Failed to fetch attendance: $e',
+          message: 'Failed to fetch event attendance: $e',
           originalError: e,
           stackTrace: st,
         ),
@@ -283,16 +257,23 @@ class TeamLeaderController {
     String userId,
   ) async {
     try {
-      final response = await _supabase
-          .from('attendance')
-          .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: false);
+      final response = await _api.get(
+        '${ApiEndpoints.teamLeaders}/attendance',
+        queryParameters: {'userId': userId},
+      );
 
-      return Success(response);
-    } on PostgrestException catch (e) {
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final list = response.data['data'] as List;
+        return Success(list.map((e) => e as Map<String, dynamic>).toList());
+      }
+
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to fetch attendance',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(

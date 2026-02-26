@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../core/supabase/supabase_client.dart';
+import 'package:dio/dio.dart';
+import '../core/api/api_client.dart';
+import '../core/api/api_config.dart';
 import '../models/rating_model.dart';
 import '../core/utils/result.dart';
 
@@ -17,65 +18,50 @@ final ratingControllerProvider = Provider((ref) => RatingController(ref));
 
 class RatingController {
   final Ref ref;
-  final SupabaseClient _supabase = Supabase.instance.client;
 
   RatingController(this.ref);
 
+  ApiClient get _api => ref.read(apiClientProvider);
+
   /// Rate an applicant (by team leader or company)
   Future<Result<RatingModel>> rateApplicant({
-    required String raterUserId, // Team leader or company user
-    required String ratedUserId, // Applicant
+    required String raterUserId,
+    required String ratedUserId,
     required String eventId,
     required int score,
     String? textReview,
   }) async {
     try {
-      // Validate score
       if (score < 1 || score > 5) {
         throw ValidationException(
           message: 'Rating score must be between 1 and 5',
         );
       }
 
-      // Check if rating already exists (immutable)
-      final existing = await _supabase
-          .from(SupabaseTables.ratings)
-          .select()
-          .eq('rater_user_id', raterUserId)
-          .eq('rated_user_id', ratedUserId)
-          .eq('event_id', eventId);
+      final response = await _api.post(
+        ApiEndpoints.ratings,
+        data: {
+          'ratedUserId': ratedUserId,
+          'eventId': eventId,
+          'score': score,
+          'textReview': textReview,
+        },
+      );
 
-      if (existing.isNotEmpty) {
-        throw ValidationException(
-          message: 'You have already rated this applicant for this event',
-          code: 'DUPLICATE_RATING',
+      if (response.statusCode == 201 && response.data['success'] == true) {
+        final rating = RatingModel.fromJson(
+          response.data['data']['rating'] as Map<String, dynamic>,
         );
+        return Success(rating);
       }
 
-      final ratingData = {
-        'rater_user_id': raterUserId,
-        'rated_user_id': ratedUserId,
-        'event_id': eventId,
-        'score': score,
-        'text_review': textReview,
-        'created_at': DateTime.now().toIso8601String(),
-      };
-
-      final response = await _supabase
-          .from(SupabaseTables.ratings)
-          .insert(ratingData)
-          .select()
-          .single();
-
-      final rating = RatingModel.fromJson(response);
-
-      // Update user's average rating
-      await _updateUserAverageRating(ratedUserId);
-
-      return Success(rating);
-    } on PostgrestException catch (e) {
+      return Error(AppException(message: 'Failed to save rating'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to save rating',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -91,20 +77,24 @@ class RatingController {
   /// Get ratings for a user
   Future<Result<List<RatingModel>>> getUserRatings(String userId) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.ratings)
-          .select()
-          .eq('rated_user_id', userId)
-          .order('created_at', ascending: false);
+      final response = await _api.get(ApiEndpoints.ratingsByUser(userId));
 
-      final ratings = (response as List)
-          .map((json) => RatingModel.fromJson(json as Map<String, dynamic>))
-          .toList();
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['ratings'] ?? []) as List;
+        final ratings = list
+            .map((json) => RatingModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+        return Success(ratings);
+      }
 
-      return Success(ratings);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to fetch ratings',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -120,20 +110,25 @@ class RatingController {
   /// Get ratings given by a user (team leader)
   Future<Result<List<RatingModel>>> getRatingsGivenByUser(String userId) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.ratings)
-          .select()
-          .eq('rater_user_id', userId)
-          .order('created_at', ascending: false);
+      final response = await _api.get(ApiEndpoints.ratingsGiven);
 
-      final ratings = (response as List)
-          .map((json) => RatingModel.fromJson(json as Map<String, dynamic>))
-          .toList();
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['ratings'] ?? []) as List;
+        final ratings = list
+            .map((json) => RatingModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+        return Success(ratings);
+      }
 
-      return Success(ratings);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to fetch ratings given',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -149,20 +144,25 @@ class RatingController {
   /// Get event ratings
   Future<Result<List<RatingModel>>> getEventRatings(String eventId) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.ratings)
-          .select()
-          .eq('event_id', eventId)
-          .order('created_at', ascending: false);
+      final response = await _api.get(ApiEndpoints.ratingsByEvent(eventId));
 
-      final ratings = (response as List)
-          .map((json) => RatingModel.fromJson(json as Map<String, dynamic>))
-          .toList();
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['ratings'] ?? []) as List;
+        final ratings = list
+            .map((json) => RatingModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+        return Success(ratings);
+      }
 
-      return Success(ratings);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to fetch event ratings',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -182,45 +182,24 @@ class RatingController {
     required String eventId,
   }) async {
     try {
-      final existing = await _supabase
-          .from(SupabaseTables.ratings)
-          .select('id')
-          .eq('rater_user_id', raterUserId)
-          .eq('rated_user_id', ratedUserId)
-          .eq('event_id', eventId);
-      return existing.isNotEmpty;
-    } catch (_) {
-      return false;
-    }
-  }
+      final response = await _api.get(
+        ApiEndpoints.ratings,
+        queryParameters: {
+          'raterId': raterUserId,
+          'ratedUserId': ratedUserId,
+          'eventId': eventId,
+        },
+      );
 
-  /// Update user's average rating
-  Future<void> _updateUserAverageRating(String userId) async {
-    try {
-      // Get all ratings for user
-      final ratings = await _supabase
-          .from(SupabaseTables.ratings)
-          .select('score')
-          .eq('rated_user_id', userId);
-
-      if (ratings.isEmpty) {
-        return;
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['ratings'] ?? []) as List;
+        return list.isNotEmpty;
       }
 
-      final total = ratings.fold<int>(0, (sum, r) => sum + (r['score'] as int));
-      final average = total / ratings.length;
-
-      // Update user record
-      await _supabase
-          .from(SupabaseTables.users)
-          .update({
-            'rating_avg': average,
-            'rating_count': ratings.length,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', userId);
+      return false;
     } catch (_) {
-      // Non-critical: average rating update failure is ignored
+      return false;
     }
   }
 }

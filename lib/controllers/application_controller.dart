@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../core/supabase/supabase_client.dart';
+import 'package:dio/dio.dart';
+import '../core/api/api_client.dart';
+import '../core/api/api_config.dart';
 import '../models/application_model.dart';
 import '../core/utils/result.dart';
 
@@ -12,7 +13,7 @@ final userApplicationsProvider = FutureProvider.autoDispose
       return result.when(success: (apps) => apps, error: (e) => throw e);
     });
 
-/// Event applications provider (for team leaders)
+/// Event applications provider
 final eventApplicationsProvider = FutureProvider.autoDispose
     .family<List<ApplicationModel>, String>((ref, eventId) async {
       final controller = ref.watch(applicationControllerProvider);
@@ -27,9 +28,9 @@ final applicationControllerProvider = Provider(
 
 class ApplicationController {
   final Ref ref;
-  final SupabaseClient _supabase = Supabase.instance.client;
-
   ApplicationController(this.ref);
+
+  ApiClient get _api => ref.read(apiClientProvider);
 
   /// User applies to an event
   Future<Result<ApplicationModel>> applyToEvent({
@@ -37,43 +38,37 @@ class ApplicationController {
     required String eventId,
     String? cvPath,
     String? coverLetter,
+    String? experience,
+    bool isAvailable = false,
+    bool openToOtherOptions = false,
   }) async {
     try {
-      // Check if user already applied
-      final existing = await _supabase
-          .from(SupabaseTables.applications)
-          .select()
-          .eq('user_id', userId)
-          .eq('event_id', eventId);
+      final response = await _api.post(
+        ApiEndpoints.applications,
+        data: {
+          'eventId': eventId,
+          'cvPath': cvPath,
+          'coverLetter': coverLetter,
+          'experience': experience,
+          'isAvailable': isAvailable,
+          'openToOtherOptions': openToOtherOptions,
+        },
+      );
 
-      if (existing.isNotEmpty) {
-        throw ValidationException(
-          message: 'You have already applied to this event',
-          code: 'DUPLICATE_APPLICATION',
+      if (response.statusCode == 201 && response.data['success'] == true) {
+        final app = ApplicationModel.fromJson(
+          response.data['data']['application'] as Map<String, dynamic>,
         );
+        return Success(app);
       }
 
-      final applicationData = {
-        'user_id': userId,
-        'event_id': eventId,
-        'status': 'applied',
-        'cv_path': cvPath,
-        'cover_letter': coverLetter,
-        'applied_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      };
-
-      final response = await _supabase
-          .from(SupabaseTables.applications)
-          .insert(applicationData)
-          .select()
-          .single();
-
-      final application = ApplicationModel.fromJson(response);
-      return Success(application);
-    } on PostgrestException catch (e) {
+      return Error(AppException(message: 'Failed to apply'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to apply to event',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -89,20 +84,20 @@ class ApplicationController {
   /// Withdraw application
   Future<Result<void>> withdrawApplication(String applicationId) async {
     try {
-      await _supabase
-          .from(SupabaseTables.applications)
-          .delete()
-          .eq('id', applicationId);
-
+      await _api.delete(ApiEndpoints.applicationById(applicationId));
       return Success(null);
-    } on PostgrestException catch (e) {
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to withdraw application',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
         AppException(
-          message: 'Failed to withdraw application: $e',
+          message: 'Failed to withdraw: $e',
           originalError: e,
           stackTrace: st,
         ),
@@ -115,22 +110,27 @@ class ApplicationController {
     String userId,
   ) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.applications)
-          .select()
-          .eq('user_id', userId)
-          .order('applied_at', ascending: false);
+      final response = await _api.get(ApiEndpoints.myApplications);
 
-      final applications = (response as List)
-          .map(
-            (json) => ApplicationModel.fromJson(json as Map<String, dynamic>),
-          )
-          .toList();
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['applications'] ?? []) as List;
+        final apps = list
+            .map(
+              (json) => ApplicationModel.fromJson(json as Map<String, dynamic>),
+            )
+            .toList();
+        return Success(apps);
+      }
 
-      return Success(applications);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to fetch applications',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -149,27 +149,31 @@ class ApplicationController {
     String? filterStatus,
   }) async {
     try {
-      var query = _supabase
-          .from(SupabaseTables.applications)
-          .select('*, user:users(*)')
-          .eq('event_id', eventId);
+      final response = await _api.get(
+        ApiEndpoints.eventApplications(eventId),
+        queryParameters: filterStatus != null ? {'status': filterStatus} : null,
+      );
 
-      if (filterStatus != null) {
-        query = query.eq('status', filterStatus);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['applications'] ?? []) as List;
+        final apps = list
+            .map(
+              (json) => ApplicationModel.fromJson(json as Map<String, dynamic>),
+            )
+            .toList();
+        return Success(apps);
       }
 
-      final response = await query.order('applied_at', ascending: false);
-
-      final applications = (response as List)
-          .map(
-            (json) => ApplicationModel.fromJson(json as Map<String, dynamic>),
-          )
-          .toList();
-
-      return Success(applications);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ??
+              'Failed to fetch event applications',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -188,38 +192,31 @@ class ApplicationController {
     required String newStatus,
   }) async {
     try {
-      final validStatuses = [
-        'applied',
-        'shortlisted',
-        'invited',
-        'accepted',
-        'declined',
-        'rejected',
-      ];
-      if (!validStatuses.contains(newStatus)) {
-        throw ValidationException(message: 'Invalid status');
+      final response = await _api.patch(
+        ApiEndpoints.applicationStatus(applicationId),
+        data: {'status': newStatus},
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final app = ApplicationModel.fromJson(
+          response.data['data']['application'] as Map<String, dynamic>,
+        );
+        return Success(app);
       }
 
-      final response = await _supabase
-          .from(SupabaseTables.applications)
-          .update({
-            'status': newStatus,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', applicationId)
-          .select()
-          .single();
-
-      final application = ApplicationModel.fromJson(response);
-      return Success(application);
-    } on PostgrestException catch (e) {
+      return Error(AppException(message: 'Failed to update application'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to update application',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
         AppException(
-          message: 'Failed to update application status: $e',
+          message: 'Failed to update application: $e',
           originalError: e,
           stackTrace: st,
         ),
@@ -232,26 +229,25 @@ class ApplicationController {
     String applicationId,
   ) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.applications)
-          .select()
-          .eq('id', applicationId)
-          .single();
+      final response = await _api.get(
+        ApiEndpoints.applicationById(applicationId),
+      );
 
-      final application = ApplicationModel.fromJson(response);
-      return Success(application);
-    } on PostgrestException catch (e) {
-      if (e.code == 'PGRST116') {
-        return Error(
-          NotFoundException(
-            message: 'Application not found',
-            code: 'APPLICATION_NOT_FOUND',
-            originalError: e,
-          ),
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final app = ApplicationModel.fromJson(
+          response.data['data']['application'] as Map<String, dynamic>,
         );
+        return Success(app);
       }
+
+      return Error(AppException(message: 'Application not found'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to fetch application',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -271,30 +267,39 @@ class ApplicationController {
     int pageSize = 10,
   }) async {
     try {
-      int offset = page * pageSize;
+      final response = await _api.get(
+        ApiEndpoints.applications,
+        queryParameters: {
+          'status': status,
+          'page': page + 1,
+          'limit': pageSize,
+        },
+      );
 
-      final response = await _supabase
-          .from(SupabaseTables.applications)
-          .select()
-          .eq('status', status)
-          .order('applied_at', ascending: false)
-          .range(offset, offset + pageSize - 1);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['applications'] ?? []) as List;
+        final apps = list
+            .map(
+              (json) => ApplicationModel.fromJson(json as Map<String, dynamic>),
+            )
+            .toList();
+        return Success(apps);
+      }
 
-      final applications = (response as List)
-          .map(
-            (json) => ApplicationModel.fromJson(json as Map<String, dynamic>),
-          )
-          .toList();
-
-      return Success(applications);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to fetch applications',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
         AppException(
-          message: 'Failed to fetch applications: $e',
+          message: 'Failed to fetch applications by status: $e',
           originalError: e,
           stackTrace: st,
         ),
@@ -305,29 +310,24 @@ class ApplicationController {
   /// Count applications per status
   Future<Result<Map<String, int>>> countApplicationsByStatus() async {
     try {
-      final statuses = [
-        'applied',
-        'shortlisted',
-        'invited',
-        'accepted',
-        'declined',
-        'rejected',
-      ];
-      final counts = <String, int>{};
+      final response = await _api.get(
+        ApiEndpoints.applications,
+        queryParameters: {'countByStatus': true},
+      );
 
-      for (final status in statuses) {
-        final response = await _supabase
-            .from(SupabaseTables.applications)
-            .select('id')
-            .eq('status', status);
-
-        counts[status] = response.length;
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final counts = data.map((k, v) => MapEntry(k, (v as num).toInt()));
+        return Success(counts);
       }
 
-      return Success(counts);
-    } on PostgrestException catch (e) {
+      return Success({});
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to count',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(

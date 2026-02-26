@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../core/supabase/supabase_client.dart';
+import 'package:dio/dio.dart';
+import '../core/api/api_client.dart';
+import '../core/api/api_config.dart';
 import '../models/notification_model.dart';
 import '../core/utils/result.dart';
 
@@ -29,9 +30,10 @@ final notificationControllerProvider = Provider(
 
 class NotificationController {
   final Ref ref;
-  final SupabaseClient _supabase = Supabase.instance.client;
 
   NotificationController(this.ref);
+
+  ApiClient get _api => ref.read(apiClientProvider);
 
   /// Fetch user notifications with pagination
   Future<Result<List<NotificationModel>>> fetchUserNotifications(
@@ -40,26 +42,31 @@ class NotificationController {
     int pageSize = 20,
   }) async {
     try {
-      final from = page * pageSize;
-      final to = from + pageSize - 1;
+      final response = await _api.get(
+        ApiEndpoints.notifications,
+        queryParameters: {'page': page + 1, 'limit': pageSize},
+      );
 
-      final response = await _supabase
-          .from(SupabaseTables.notifications)
-          .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: false)
-          .range(from, to);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final list = (data['notifications'] ?? []) as List;
+        final notifications = list
+            .map(
+              (json) =>
+                  NotificationModel.fromJson(json as Map<String, dynamic>),
+            )
+            .toList();
+        return Success(notifications);
+      }
 
-      final notifications = (response as List)
-          .map(
-            (json) => NotificationModel.fromJson(json as Map<String, dynamic>),
-          )
-          .toList();
-
-      return Success(notifications);
-    } on PostgrestException catch (e) {
+      return Success([]);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to fetch notifications',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -75,16 +82,21 @@ class NotificationController {
   /// Get unread notification count
   Future<Result<int>> getUnreadCount(String userId) async {
     try {
-      final response = await _supabase
-          .from(SupabaseTables.notifications)
-          .select()
-          .eq('user_id', userId)
-          .eq('is_read', false);
+      final response = await _api.get(ApiEndpoints.notificationsUnreadCount);
 
-      return Success((response as List).length);
-    } on PostgrestException catch (e) {
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final count = (data['count'] as num?)?.toInt() ?? 0;
+        return Success(count);
+      }
+
+      return Success(0);
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to get unread count',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -100,15 +112,16 @@ class NotificationController {
   /// Mark a single notification as read
   Future<Result<void>> markAsRead(String notificationId) async {
     try {
-      await _supabase
-          .from(SupabaseTables.notifications)
-          .update({'is_read': true})
-          .eq('id', notificationId);
-
+      await _api.patch(ApiEndpoints.notificationById(notificationId));
       return Success(null);
-    } on PostgrestException catch (e) {
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ??
+              'Failed to mark notification as read',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -124,16 +137,14 @@ class NotificationController {
   /// Mark all notifications as read for a user
   Future<Result<void>> markAllAsRead(String userId) async {
     try {
-      await _supabase
-          .from(SupabaseTables.notifications)
-          .update({'is_read': true})
-          .eq('user_id', userId)
-          .eq('is_read', false);
-
+      await _api.patch(ApiEndpoints.notificationsReadAll);
       return Success(null);
-    } on PostgrestException catch (e) {
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to mark all as read',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -149,15 +160,15 @@ class NotificationController {
   /// Delete a notification
   Future<Result<void>> deleteNotification(String notificationId) async {
     try {
-      await _supabase
-          .from(SupabaseTables.notifications)
-          .delete()
-          .eq('id', notificationId);
-
+      await _api.delete(ApiEndpoints.notificationById(notificationId));
       return Success(null);
-    } on PostgrestException catch (e) {
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to delete notification',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(
@@ -179,26 +190,33 @@ class NotificationController {
     String? relatedId,
   }) async {
     try {
-      final data = {
-        'user_id': userId,
-        'type': type,
-        'title': title,
-        'message': message,
-        'related_id': relatedId,
-        'is_read': false,
-        'created_at': DateTime.now().toIso8601String(),
-      };
+      final response = await _api.post(
+        ApiEndpoints.notifications,
+        data: {
+          'userId': userId,
+          'type': type,
+          'title': title,
+          'message': message,
+          'relatedId': relatedId,
+        },
+      );
 
-      final response = await _supabase
-          .from(SupabaseTables.notifications)
-          .insert(data)
-          .select()
-          .single();
+      if (response.statusCode == 201 && response.data['success'] == true) {
+        return Success(
+          NotificationModel.fromJson(
+            response.data['data'] as Map<String, dynamic>,
+          ),
+        );
+      }
 
-      return Success(NotificationModel.fromJson(response));
-    } on PostgrestException catch (e) {
+      return Error(AppException(message: 'Failed to send notification'));
+    } on DioException catch (e) {
       return Error(
-        DatabaseException(message: e.message, code: e.code, originalError: e),
+        AppException(
+          message:
+              e.response?.data?['message'] ?? 'Failed to send notification',
+          originalError: e,
+        ),
       );
     } catch (e, st) {
       return Error(

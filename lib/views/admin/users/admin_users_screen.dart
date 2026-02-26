@@ -341,7 +341,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: selectedRole,
+                initialValue: selectedRole,
                 dropdownColor: DarkColors.surface,
                 items: ['normal', 'team_leader', 'company', 'admin']
                     .map(

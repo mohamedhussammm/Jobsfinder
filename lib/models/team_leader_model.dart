@@ -1,29 +1,11 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'team_leader_model.g.dart';
-
 /// Team Leader model - admin assigns team leaders to events
-@JsonSerializable()
 class TeamLeaderModel {
-  @JsonKey(name: 'id')
   final String id;
-
-  @JsonKey(name: 'user_id')
   final String userId;
-
-  @JsonKey(name: 'event_id')
   final String eventId;
-
-  @JsonKey(name: 'assigned_by')
   final String? assignedBy; // Admin ID
-
-  @JsonKey(name: 'status')
   final String status; // 'assigned', 'active', 'completed', 'removed'
-
-  @JsonKey(name: 'assigned_at')
   final DateTime assignedAt;
-
-  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
   TeamLeaderModel({
@@ -41,6 +23,42 @@ class TeamLeaderModel {
   bool get isActive => status == 'active';
   bool get isCompleted => status == 'completed';
   bool get isRemoved => status == 'removed';
+
+  factory TeamLeaderModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic v) {
+      if (v == null) return DateTime.now();
+      return DateTime.tryParse(v.toString()) ?? DateTime.now();
+    }
+
+    String idFrom(dynamic v) {
+      if (v is Map) return (v['_id'] ?? v['id'] ?? '').toString();
+      return (v ?? '').toString();
+    }
+
+    return TeamLeaderModel(
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      userId: idFrom(json['userId'] ?? json['user_id']),
+      eventId: idFrom(json['eventId'] ?? json['event_id']),
+      assignedBy: json['assignedBy'] != null || json['assigned_by'] != null
+          ? idFrom(json['assignedBy'] ?? json['assigned_by'])
+          : null,
+      status: (json['status'] ?? 'assigned').toString(),
+      assignedAt: parseDate(
+        json['assignedAt'] ?? json['assigned_at'] ?? json['createdAt'],
+      ),
+      updatedAt: parseDate(json['updatedAt'] ?? json['updated_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'userId': userId,
+    'eventId': eventId,
+    'assignedBy': assignedBy,
+    'status': status,
+    'assignedAt': assignedAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 
   TeamLeaderModel copyWith({
     String? id,
@@ -61,10 +79,6 @@ class TeamLeaderModel {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
-
-  factory TeamLeaderModel.fromJson(Map<String, dynamic> json) =>
-      _$TeamLeaderModelFromJson(json);
-  Map<String, dynamic> toJson() => _$TeamLeaderModelToJson(this);
 
   @override
   String toString() =>

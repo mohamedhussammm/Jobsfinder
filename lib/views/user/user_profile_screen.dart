@@ -1,11 +1,8 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/typography.dart';
 import '../../models/user_model.dart';
-import '../../core/providers/locale_provider.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/rating_controller.dart';
 import '../../models/rating_model.dart';
@@ -19,25 +16,21 @@ class UserProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentSessionUser = ref.watch(currentUserProvider);
-    final targetUserId = userId ?? currentSessionUser?.id;
+    final userAsync = userId != null && userId != currentSessionUser?.id
+        ? ref.watch(fetchUserByIdProvider(userId!))
+        : null;
 
-    if (targetUserId == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final user = userAsync != null ? userAsync.value : currentSessionUser;
+
+    final isMe = userId == null || userId == currentSessionUser?.id;
+
+    if (user == null && userAsync?.isLoading == true) {
+      return Scaffold(
+        backgroundColor: DarkColors.background,
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
-    // We need a way to fetch a specific user profile if it's not the current user
-    // For now, if it's the current user, use 'user', otherwise we'd need a provider
-    // Let's assume for this homogenization pass we use current user as default
-    final user = userId == null || userId == currentSessionUser?.id
-        ? currentSessionUser
-        : null; // TODO: Implement fetchUserByIdProvider if needed
-
-    if (user == null && userId == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    // Fallback for demo/viewing other profiles (requires a proper fetch)
-    // For now, if we have a userId but no user data, show loading or simple view
     if (user == null) {
       return Scaffold(
         backgroundColor: DarkColors.background,
@@ -49,7 +42,12 @@ class UserProfileScreen extends ConsumerWidget {
             onPressed: () => context.pop(),
           ),
         ),
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: Text(
+            userAsync?.error?.toString() ?? 'User not found',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
       );
     }
 
@@ -57,18 +55,17 @@ class UserProfileScreen extends ConsumerWidget {
       backgroundColor: DarkColors.background,
       appBar: AppBar(
         title: Text(
-          userId == null
-              ? AppLocalizations.of(context)!.myProfile
-              : AppLocalizations.of(
-                  context,
-                )!.myProfile, // For simplicity using My Profile
+          isMe ? 'My Profile' : 'User Profile',
           style: AppTypography.titleLarge.copyWith(color: Colors.white),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => userId == null ? context.go('/') : context.pop(),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
+          onPressed: () => isMe ? context.go('/') : context.pop(),
         ),
       ),
       body: SingleChildScrollView(
@@ -125,44 +122,38 @@ class UserProfileScreen extends ConsumerWidget {
               },
             ),
 
-            // 4. Privacy Settings
-            _buildSectionRow(
-              context,
-              title: 'Privacy Settings',
-              icon: Icons.lock_outline,
-              subtitle: 'Visibility, Data usage',
-              onTap: () {},
-            ),
-            const SizedBox(height: 24),
-            _buildRecentReviewsSection(context, ref, user.id),
-            const SizedBox(height: 32),
-
-            // 5. Language Settings
-            _buildSectionRow(
-              context,
-              title: AppLocalizations.of(context)!.language,
-              icon: Icons.language_outlined,
-              subtitle: ref.watch(localeProvider).languageCode == 'en'
-                  ? AppLocalizations.of(context)!.english
-                  : AppLocalizations.of(context)!.arabic,
-              onTap: () => _showLanguagePicker(context, ref),
-            ),
-
-            const SizedBox(height: 32),
-            OutlinedButton(
-              onPressed: () {
-                context.go('/auth');
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: DarkColors.error,
-                side: const BorderSide(color: DarkColors.error),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+            if (isMe) ...[
+              // 4. Privacy Settings
+              _buildSectionRow(
+                context,
+                title: 'Privacy Settings',
+                icon: Icons.lock_outline,
+                subtitle: 'Visibility, Data usage',
+                onTap: () {},
               ),
-              child: Center(child: Text(AppLocalizations.of(context)!.logout)),
-            ),
+              const SizedBox(height: 24),
+            ],
+
+            _buildRecentReviewsSection(context, ref, user.id),
+
+            if (isMe) ...[
+              const SizedBox(height: 32),
+              OutlinedButton(
+                onPressed: () {
+                  ref.read(authControllerProvider).logout();
+                  context.go('/auth');
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: DarkColors.error,
+                  side: const BorderSide(color: DarkColors.error),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Center(child: Text('Logout')),
+              ),
+            ],
             const SizedBox(height: 32),
           ],
         ),
@@ -370,7 +361,7 @@ class UserProfileScreen extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              AppLocalizations.of(context)!.recentReviews,
+              'Recent Reviews',
               style: AppTypography.titleMedium.copyWith(color: Colors.white),
             ),
             TextButton(
@@ -378,7 +369,7 @@ class UserProfileScreen extends ConsumerWidget {
                 context.push('/ratings/$userId');
               },
               child: Text(
-                AppLocalizations.of(context)!.viewAll,
+                'View All',
                 style: AppTypography.labelSmall.copyWith(
                   color: DarkColors.accent,
                 ),
@@ -477,70 +468,6 @@ class UserProfileScreen extends ConsumerWidget {
         color: DarkColors.textTertiary,
         fontSize: 10,
       ),
-    );
-  }
-
-  void _showLanguagePicker(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: DarkColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                AppLocalizations.of(context)!.selectLanguage,
-                style: AppTypography.titleLarge.copyWith(color: Colors.white),
-              ),
-              const SizedBox(height: 20),
-              _buildLanguageOption(
-                context,
-                ref,
-                title: AppLocalizations.of(context)!.english,
-                code: 'en',
-              ),
-              _buildLanguageOption(
-                context,
-                ref,
-                title: AppLocalizations.of(context)!.arabic,
-                code: 'ar',
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildLanguageOption(
-    BuildContext context,
-    WidgetRef ref, {
-    required String title,
-    required String code,
-  }) {
-    final isSelected = ref.watch(localeProvider).languageCode == code;
-
-    return ListTile(
-      title: Text(
-        title,
-        style: AppTypography.bodyLarge.copyWith(
-          color: isSelected ? DarkColors.accent : Colors.white,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      trailing: isSelected
-          ? const Icon(Icons.check, color: DarkColors.accent)
-          : null,
-      onTap: () {
-        ref.read(localeProvider.notifier).state = Locale(code);
-        Navigator.pop(context);
-      },
     );
   }
 }

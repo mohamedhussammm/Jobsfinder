@@ -1,32 +1,13 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'notification_model.g.dart';
-
 /// Notification model - push notifications to users
-@JsonSerializable()
 class NotificationModel {
-  @JsonKey(name: 'id')
   final String id;
-
-  @JsonKey(name: 'user_id')
   final String userId;
-
-  @JsonKey(name: 'type')
-  final String type; // 'invite', 'accepted', 'declined', 'message', 'rating', 'application_status'
-
-  @JsonKey(name: 'related_id')
-  final String? relatedId; // Link to related resource (event, application, etc)
-
-  @JsonKey(name: 'title')
+  final String
+  type; // 'invite', 'accepted', 'declined', 'message', 'rating', 'application_status'
+  final String? relatedId;
   final String? title;
-
-  @JsonKey(name: 'message')
   final String? message;
-
-  @JsonKey(name: 'is_read')
   final bool isRead;
-
-  @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
   NotificationModel({
@@ -46,6 +27,45 @@ class NotificationModel {
   bool get isDeclined => type == 'declined';
   bool get isRating => type == 'rating';
   bool get isApplicationStatus => type == 'application_status';
+
+  factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic v) {
+      if (v == null) return DateTime.now();
+      return DateTime.tryParse(v.toString()) ?? DateTime.now();
+    }
+
+    // userId may be a populated object
+    final userRaw = json['userId'] ?? json['user_id'];
+    final String userId;
+    if (userRaw is Map) {
+      userId = (userRaw['_id'] ?? userRaw['id'] ?? '').toString();
+    } else {
+      userId = (userRaw ?? '').toString();
+    }
+
+    return NotificationModel(
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      userId: userId,
+      type: (json['type'] ?? 'message').toString(),
+      relatedId:
+          json['relatedId']?.toString() ?? json['related_id']?.toString(),
+      title: json['title']?.toString(),
+      message: json['message']?.toString(),
+      isRead: (json['isRead'] ?? json['is_read'] ?? false) == true,
+      createdAt: parseDate(json['createdAt'] ?? json['created_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'userId': userId,
+    'type': type,
+    'relatedId': relatedId,
+    'title': title,
+    'message': message,
+    'isRead': isRead,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   NotificationModel copyWith({
     String? id,
@@ -68,10 +88,6 @@ class NotificationModel {
       createdAt: createdAt ?? this.createdAt,
     );
   }
-
-  factory NotificationModel.fromJson(Map<String, dynamic> json) =>
-      _$NotificationModelFromJson(json);
-  Map<String, dynamic> toJson() => _$NotificationModelToJson(this);
 
   @override
   String toString() => 'NotificationModel($id, type: $type, isRead: $isRead)';

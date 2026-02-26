@@ -1,112 +1,108 @@
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dio/dio.dart';
+import '../core/api/api_client.dart';
+import '../core/api/api_config.dart';
 import '../core/utils/result.dart';
 
 /// File upload service provider
-final fileUploadServiceProvider = Provider((ref) => FileUploadService());
+final fileUploadServiceProvider = Provider((ref) => FileUploadService(ref));
 
 class FileUploadService {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final Ref ref;
 
-  // Storage bucket names
-  static const String _cvBucket = 'cvs';
-  static const String _avatarBucket = 'avatars';
-  static const String _eventImageBucket = 'event-images';
+  FileUploadService(this.ref);
 
-  /// Upload a CV file for a user
-  Future<Result<String>> uploadCV({
-    required String userId,
-    required Uint8List fileBytes,
-    required String fileName,
-  }) async {
-    try {
-      final ext = fileName.split('.').last;
-      final path = '$userId/cv_${DateTime.now().millisecondsSinceEpoch}.$ext';
+  ApiClient get _api => ref.read(apiClientProvider);
 
-      await _supabase.storage
-          .from(_cvBucket)
-          .uploadBinary(
-            path,
-            fileBytes,
-            fileOptions: FileOptions(
-              contentType: _getMimeType(ext),
-              upsert: true,
-            ),
-          );
-
-      return Success(path);
-    } catch (e, st) {
-      return Error(
-        AppException(
-          message: 'Failed to upload CV: $e',
-          originalError: e,
-          stackTrace: st,
-        ),
-      );
-    }
-  }
-
-  /// Upload an event image
-  Future<Result<String>> uploadEventImage({
-    required String eventId,
-    required Uint8List fileBytes,
-    required String fileName,
-  }) async {
-    try {
-      final ext = fileName.split('.').last;
-      final path =
-          '$eventId/image_${DateTime.now().millisecondsSinceEpoch}.$ext';
-
-      await _supabase.storage
-          .from(_eventImageBucket)
-          .uploadBinary(
-            path,
-            fileBytes,
-            fileOptions: FileOptions(
-              contentType: _getMimeType(ext),
-              upsert: true,
-            ),
-          );
-
-      return Success(path);
-    } catch (e, st) {
-      return Error(
-        AppException(
-          message: 'Failed to upload event image: $e',
-          originalError: e,
-          stackTrace: st,
-        ),
-      );
-    }
-  }
-
-  /// Upload a user avatar
+  /// Upload avatar image
   Future<Result<String>> uploadAvatar({
-    required String userId,
-    required Uint8List fileBytes,
     required String fileName,
+    required Uint8List bytes,
+  }) async {
+    return _uploadFile(
+      endpoint: ApiEndpoints.uploadAvatar,
+      fileName: fileName,
+      bytes: bytes,
+      fieldName: 'avatar',
+    );
+  }
+
+  /// Upload CV / resume
+  Future<Result<String>> uploadCV({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    return _uploadFile(
+      endpoint: ApiEndpoints.uploadCv,
+      fileName: fileName,
+      bytes: bytes,
+      fieldName: 'cv',
+    );
+  }
+
+  /// Upload event image
+  Future<Result<String>> uploadEventImage({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    return _uploadFile(
+      endpoint: ApiEndpoints.uploadEventImage,
+      fileName: fileName,
+      bytes: bytes,
+      fieldName: 'image',
+    );
+  }
+
+  /// Upload company logo
+  Future<Result<String>> uploadCompanyLogo({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    return _uploadFile(
+      endpoint: ApiEndpoints.uploadCompanyLogo,
+      fileName: fileName,
+      bytes: bytes,
+      fieldName: 'logo',
+    );
+  }
+
+  /// Generic file upload method
+  Future<Result<String>> _uploadFile({
+    required String endpoint,
+    required String fileName,
+    required Uint8List bytes,
+    required String fieldName,
   }) async {
     try {
-      final ext = fileName.split('.').last;
-      final path = '$userId/avatar.$ext';
+      final response = await _api.uploadFileBytes(
+        endpoint,
+        bytes: bytes,
+        fileName: fileName,
+        fieldName: fieldName,
+      );
 
-      await _supabase.storage
-          .from(_avatarBucket)
-          .uploadBinary(
-            path,
-            fileBytes,
-            fileOptions: FileOptions(
-              contentType: _getMimeType(ext),
-              upsert: true,
-            ),
-          );
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final url =
+            response.data['data']?['filePath'] ??
+            response.data['data']?['url'] ??
+            response.data['data']?['path'] ??
+            '';
+        return Success(url as String);
+      }
 
-      return Success(path);
+      return Error(AppException(message: 'Failed to upload file'));
+    } on DioException catch (e) {
+      return Error(
+        AppException(
+          message: e.response?.data?['message'] ?? 'Upload failed',
+          originalError: e,
+        ),
+      );
     } catch (e, st) {
       return Error(
         AppException(
-          message: 'Failed to upload avatar: $e',
+          message: 'Upload failed: $e',
           originalError: e,
           stackTrace: st,
         ),
@@ -114,26 +110,39 @@ class FileUploadService {
     }
   }
 
-  /// Get the public URL for a stored file
-  String getPublicUrl(String bucket, String path) {
-    return _supabase.storage.from(bucket).getPublicUrl(path);
-  }
-
-  /// Get a signed URL for private files (e.g., CVs)
-  Future<Result<String>> getSignedUrl(
-    String bucket,
-    String path, {
-    int expiresIn = 3600,
+  /// Upload file from path (for platforms with file system access)
+  Future<Result<String>> uploadFromPath({
+    required String endpoint,
+    required String filePath,
+    required String fieldName,
   }) async {
     try {
-      final url = await _supabase.storage
-          .from(bucket)
-          .createSignedUrl(path, expiresIn);
-      return Success(url);
+      final response = await _api.uploadFile(
+        endpoint,
+        filePath: filePath,
+        fieldName: fieldName,
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final url =
+            response.data['data']?['url'] ??
+            response.data['data']?['path'] ??
+            '';
+        return Success(url as String);
+      }
+
+      return Error(AppException(message: 'Failed to upload file'));
+    } on DioException catch (e) {
+      return Error(
+        AppException(
+          message: e.response?.data?['message'] ?? 'Upload failed',
+          originalError: e,
+        ),
+      );
     } catch (e, st) {
       return Error(
         AppException(
-          message: 'Failed to get signed URL: $e',
+          message: 'Upload failed: $e',
           originalError: e,
           stackTrace: st,
         ),
@@ -141,11 +150,41 @@ class FileUploadService {
     }
   }
 
-  /// Delete a file from storage
-  Future<Result<void>> deleteFile(String bucket, String path) async {
+  /// Get the public URL for an uploaded file
+  String getPublicUrl(String path) {
+    if (path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
+
+    // Ensure it starts with /uploads if it's a relative backend path
+    String formattedPath = path;
+    if (!path.startsWith('uploads/') && !path.startsWith('/uploads/')) {
+      formattedPath = 'uploads/$path';
+    }
+
+    final base = ApiConfig.baseUrl.replaceAll('/api', '');
+    // Ensure no double slashes if base ends in / or path starts with /
+    final cleanBase = base.endsWith('/')
+        ? base.substring(0, base.length - 1)
+        : base;
+    final cleanPath = formattedPath.startsWith('/')
+        ? formattedPath
+        : '/$formattedPath';
+
+    return '$cleanBase$cleanPath';
+  }
+
+  /// Delete a file from server storage
+  Future<Result<void>> deleteFile(String path) async {
     try {
-      await _supabase.storage.from(bucket).remove([path]);
+      await _api.delete('/upload', data: {'path': path});
       return Success(null);
+    } on DioException catch (e) {
+      return Error(
+        AppException(
+          message: e.response?.data?['message'] ?? 'Failed to delete file',
+          originalError: e,
+        ),
+      );
     } catch (e, st) {
       return Error(
         AppException(
@@ -154,27 +193,6 @@ class FileUploadService {
           stackTrace: st,
         ),
       );
-    }
-  }
-
-  /// Determine MIME type from file extension
-  String _getMimeType(String extension) {
-    switch (extension.toLowerCase()) {
-      case 'pdf':
-        return 'application/pdf';
-      case 'doc':
-        return 'application/msword';
-      case 'docx':
-        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-      case 'jpg':
-      case 'jpeg':
-        return 'image/jpeg';
-      case 'png':
-        return 'image/png';
-      case 'webp':
-        return 'image/webp';
-      default:
-        return 'application/octet-stream';
     }
   }
 }

@@ -1,30 +1,38 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:dio/dio.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
 import '../models/login_result.dart';
+import '../core/api/api_client.dart';
+import '../core/api/api_config.dart';
+import '../core/api/token_storage.dart';
 
 /// Current user provider
 final currentUserProvider = StateProvider<UserModel?>((ref) => null);
 
-/// Auth state provider
-final authStateProvider = StreamProvider<AuthState>((ref) {
-  return Supabase.instance.client.auth.onAuthStateChange;
-});
+/// Auth status provider — true if tokens exist (replaces old authStateProvider)
+final isAuthenticatedProvider = StateProvider<bool>((ref) => false);
 
-/// Authentication controller with business logic
+/// Rating controller provider
 final authControllerProvider = Provider((ref) => AuthController(ref));
+
+/// Fetch specific user user profile provider
+final fetchUserByIdProvider = FutureProvider.autoDispose
+    .family<UserModel, String>((ref, userId) async {
+      final controller = ref.watch(authControllerProvider);
+      return await controller.fetchUserById(userId);
+    });
 
 class AuthController {
   final Ref ref;
-  final SupabaseClient _supabase = Supabase.instance.client;
 
   AuthController(this.ref);
 
-  // Static admin credentials
-  static const String adminEmail = 'admin@shiftsphere.com';
-  static const String adminPassword = 'Admin@123';
+  ApiClient get _api => ref.read(apiClientProvider);
+  TokenStorage get _tokenStorage => ref.read(tokenStorageProvider);
 
-  /// HELPER METHOD: Sanitize user data from database
+  /// HELPER METHOD: Sanitize user data from API response
   /// This prevents null values from causing TypeErrors
   Map<String, dynamic> _sanitizeUserData(
     Map<String, dynamic> userData,
@@ -39,18 +47,38 @@ class AuthController {
 
     // Fix null values with proper defaults
     sanitized['national_id_number'] =
-        sanitized['national_id_number'] ?? 'PENDING';
+        sanitized['national_id_number'] ??
+        sanitized['nationalIdNumber'] ??
+        'PENDING';
     sanitized['role'] = sanitized['role'] ?? 'normal';
     sanitized['name'] = sanitized['name'] ?? 'User';
     sanitized['email'] =
         sanitized['email'] ?? fallbackEmail ?? 'unknown@example.com';
-    sanitized['profile_complete'] = sanitized['profile_complete'] ?? false;
+    sanitized['profile_complete'] =
+        sanitized['profile_complete'] ?? sanitized['profileComplete'] ?? false;
 
     // Ensure numbers are proper types
     sanitized['rating_avg'] =
-        (sanitized['rating_avg'] as num?)?.toDouble() ?? 0.0;
+        (sanitized['rating_avg'] ?? sanitized['ratingAvg'] as num?)
+            ?.toDouble() ??
+        0.0;
     sanitized['rating_count'] =
-        (sanitized['rating_count'] as num?)?.toInt() ?? 0;
+        (sanitized['rating_count'] ?? sanitized['ratingCount'] as num?)
+            ?.toInt() ??
+        0;
+
+    // Ensure dates exist
+    sanitized['created_at'] =
+        sanitized['created_at'] ??
+        sanitized['createdAt'] ??
+        DateTime.now().toIso8601String();
+    sanitized['updated_at'] =
+        sanitized['updated_at'] ??
+        sanitized['updatedAt'] ??
+        DateTime.now().toIso8601String();
+
+    // Normalize _id → id (MongoDB)
+    sanitized['id'] = sanitized['id'] ?? sanitized['_id'] ?? '';
 
     return sanitized;
   }
@@ -61,153 +89,68 @@ class AuthController {
     required String password,
   }) async {
     try {
-      // Check for static admin credentials first
-      if (email.trim().toLowerCase() == adminEmail.toLowerCase() &&
-          password == adminPassword) {
-        // Admin login - no database record
-        ref.read(currentUserProvider.notifier).state = UserModel(
-          id: 'admin',
-          email: adminEmail,
-          name: 'Administrator',
-          role: 'admin',
-          nationalIdNumber: 'ADMIN',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          profileComplete: true,
-        );
-        return LoginResult.adminSuccess();
-      }
-
-      // Regular user login
-      final response = await _supabase.auth.signInWithPassword(
-        email: email.trim(),
-        password: password,
+      final response = await _api.post(
+        ApiEndpoints.login,
+        data: {'email': email.trim(), 'password': password},
       );
 
-      final user = response.user;
-      if (user != null) {
-        // Fetch user profile from database
-        try {
-          final userData = await _supabase
-              .from('users')
-              .select()
-              .eq('id', user.id)
-              .single();
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'];
 
-          // Use helper to sanitize data
-          final sanitizedData = _sanitizeUserData(userData, email.trim());
+        // Store tokens
+        await _tokenStorage.saveTokens(
+          accessToken: data['accessToken'],
+          refreshToken: data['refreshToken'],
+        );
 
-          final userModel = UserModel.fromJson(sanitizedData);
-          ref.read(currentUserProvider.notifier).state = userModel;
-          return LoginResult.success(
-            role: userModel.role,
-            userId: userModel.id,
-          );
-        } catch (e) {
-          // Fallback: If profile doesn't exist (PGRST116), create it now
-          if (e.toString().contains('PGRST116') ||
-              e.toString().contains('0 rows')) {
-            final role = user.userMetadata?['role'] ?? 'normal';
+        // Parse user from response
+        final userData = data['user'] as Map<String, dynamic>;
+        final sanitizedData = _sanitizeUserData(userData, email.trim());
+        final userModel = UserModel.fromJson(sanitizedData);
 
-            await _supabase.from('users').insert({
-              'id': user.id,
-              'email': user.email ?? email.trim(),
-              'name': user.userMetadata?['full_name'] ?? 'Unknown',
-              'role': role,
-              'phone': user.userMetadata?['phone'],
-              'national_id_number':
-                  user.userMetadata?['national_id_number'] ?? 'PENDING',
-              'profile_complete': false,
-              'created_at': DateTime.now().toIso8601String(),
-              'updated_at': DateTime.now().toIso8601String(),
-            });
+        ref.read(currentUserProvider.notifier).state = userModel;
+        ref.read(isAuthenticatedProvider.notifier).state = true;
 
-            // Return success with the role from metadata
-            return LoginResult.success(role: role, userId: user.id);
-          }
-          rethrow;
-        }
+        return LoginResult.success(role: userModel.role, userId: userModel.id);
       }
 
       return LoginResult.failure('Login failed. Please try again.');
-    } on AuthException catch (e) {
-      return LoginResult.failure(e.message);
+    } on DioException catch (e) {
+      final message = e.response?.data?['message'] ?? 'Login failed';
+      return LoginResult.failure(message);
     } catch (e) {
       return LoginResult.failure('An error occurred: ${e.toString()}');
     }
   }
 
-  /// Synchronize the current auth session with the user profile in database.
-  /// This is useful for OAuth callbacks and app restarts.
-  Future<void> syncUser() async {
+  /// Try to restore session from stored tokens on app startup
+  Future<void> tryAutoLogin() async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) {
-        ref.read(currentUserProvider.notifier).state = null;
-        return;
-      }
+      await _tokenStorage.init();
+      if (!_tokenStorage.hasTokens) return;
 
-      await syncUserProfile(user);
-    } catch (e) {
-      // Log error but don't throw - this is a background sync
-      print('Error during auth sync: $e');
+      // Try to fetch current user profile with stored token
+      final response = await _api.get(ApiEndpoints.me);
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final userData = response.data['data'] as Map<String, dynamic>;
+        final sanitizedData = _sanitizeUserData(userData, null);
+        final userModel = UserModel.fromJson(sanitizedData);
+
+        ref.read(currentUserProvider.notifier).state = userModel;
+        ref.read(isAuthenticatedProvider.notifier).state = true;
+      } else {
+        await _tokenStorage.clearTokens();
+      }
+    } catch (_) {
+      // Token expired or invalid — user needs to re-login
+      await _tokenStorage.clearTokens();
     }
   }
 
-  /// Fetch or create user profile for a given auth user
-  Future<void> syncUserProfile(User user) async {
-    try {
-      final userData = await _supabase
-          .from('users')
-          .select()
-          .eq('id', user.id)
-          .maybeSingle();
-
-      if (userData != null) {
-        // Profile exists, sync it
-        final sanitizedData = _sanitizeUserData(userData, user.email);
-        final userModel = UserModel.fromJson(sanitizedData);
-        ref.read(currentUserProvider.notifier).state = userModel;
-      } else {
-        // Profile doesn't exist - likely a new OAuth user
-        final email = user.email ?? '';
-        final name =
-            user.userMetadata?['full_name'] ??
-            user.userMetadata?['name'] ??
-            'New User';
-        final phone = user.userMetadata?['phone'] ?? user.phone ?? '';
-        final role = user.userMetadata?['role'] ?? 'normal';
-
-        final newProfile = {
-          'id': user.id,
-          'email': email,
-          'name': name,
-          'role': role,
-          'phone': phone,
-          'national_id_number': 'PENDING',
-          'profile_complete': false,
-          'created_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        };
-
-        await _supabase.from('users').insert(newProfile);
-
-        // Fetch back to ensure all defaults from DB are present
-        final freshData = await _supabase
-            .from('users')
-            .select()
-            .eq('id', user.id)
-            .single();
-
-        final sanitized = _sanitizeUserData(freshData, email);
-        ref.read(currentUserProvider.notifier).state = UserModel.fromJson(
-          sanitized,
-        );
-      }
-    } catch (e) {
-      print('Failed to sync user profile: $e');
-      rethrow;
-    }
+  /// Synchronize user profile — alias for tryAutoLogin
+  Future<void> syncUser() async {
+    await tryAutoLogin();
   }
 
   /// Register user with role
@@ -239,28 +182,112 @@ class AuthController {
         return LoginResult.failure('Invalid role selected');
       }
 
-      // Sign up with Supabase Auth including metadata
-      final authResponse = await _supabase.auth.signUp(
-        email: email.trim(),
-        password: password,
+      final response = await _api.post(
+        ApiEndpoints.register,
         data: {
-          'full_name': fullName.trim(),
+          'email': email.trim(),
+          'password': password,
+          'name': fullName.trim(),
           'role': role,
           'phone': phone.trim(),
-          'national_id_number': nationalId.trim(),
+          'nationalIdNumber': nationalId.trim(),
         },
       );
 
-      final userId = authResponse.user?.id;
-      if (userId == null) {
-        return LoginResult.failure('Registration failed. Please try again.');
+      if (response.statusCode == 201 && response.data['success'] == true) {
+        final data = response.data['data'];
+
+        // Store tokens
+        await _tokenStorage.saveTokens(
+          accessToken: data['accessToken'],
+          refreshToken: data['refreshToken'],
+        );
+
+        final userData = data['user'] as Map<String, dynamic>;
+        final sanitizedData = _sanitizeUserData(userData, email.trim());
+        final userModel = UserModel.fromJson(sanitizedData);
+
+        ref.read(currentUserProvider.notifier).state = userModel;
+        ref.read(isAuthenticatedProvider.notifier).state = true;
+
+        return LoginResult.success(role: role, userId: userModel.id);
       }
 
-      return LoginResult.success(role: role, userId: userId);
-    } on AuthException catch (e) {
-      return LoginResult.failure(e.message);
+      return LoginResult.failure('Registration failed. Please try again.');
+    } on DioException catch (e) {
+      final message = e.response?.data?['message'] ?? 'Registration failed';
+      return LoginResult.failure(message);
     } catch (e) {
       return LoginResult.failure('Registration failed: ${e.toString()}');
+    }
+  }
+
+  /// Google Sign-In — triggers native flow, sends token to backend
+  Future<LoginResult> signInWithGoogle() async {
+    try {
+      // On Web: use clientId. On Android: use serverClientId to get an idToken.
+      final googleSignIn = kIsWeb
+          ? GoogleSignIn(
+              clientId:
+                  '537432724341-knp7n02inu5t7lt5jt96q7dmr07nj8ri.apps.googleusercontent.com',
+              scopes: ['email', 'profile'],
+            )
+          : GoogleSignIn(
+              serverClientId:
+                  '537432724341-knp7n02inu5t7lt5jt96q7dmr07nj8ri.apps.googleusercontent.com',
+              scopes: ['email', 'profile'],
+            );
+
+      // Trigger the Google sign-in flow
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        return LoginResult.failure('Google sign-in cancelled');
+      }
+
+      // Get the auth details
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      final accessToken = googleAuth.accessToken;
+
+      // Web can't reliably get idToken — send accessToken instead
+      String? token = idToken ?? accessToken;
+      String tokenType = idToken != null ? 'idToken' : 'accessToken';
+
+      if (token == null) {
+        return LoginResult.failure('Failed to get Google credentials');
+      }
+
+      // Send token to our backend
+      final response = await _api.post(
+        ApiEndpoints.googleSignIn,
+        data: {'token': token, 'tokenType': tokenType},
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'];
+
+        // Store tokens
+        await _tokenStorage.saveTokens(
+          accessToken: data['accessToken'],
+          refreshToken: data['refreshToken'],
+        );
+
+        final userData = data['user'] as Map<String, dynamic>;
+        final sanitizedData = _sanitizeUserData(userData, googleUser.email);
+        final userModel = UserModel.fromJson(sanitizedData);
+
+        ref.read(currentUserProvider.notifier).state = userModel;
+        ref.read(isAuthenticatedProvider.notifier).state = true;
+
+        return LoginResult.success(role: userModel.role, userId: userModel.id);
+      }
+
+      return LoginResult.failure('Google sign-in failed on server');
+    } on DioException catch (e) {
+      final message = e.response?.data?['message'] ?? 'Google sign-in failed';
+      return LoginResult.failure(message);
+    } catch (e) {
+      return LoginResult.failure('Google sign-in error: ${e.toString()}');
     }
   }
 
@@ -272,7 +299,6 @@ class AuthController {
     String? phone,
   }) async {
     try {
-      // Validate inputs
       if (email.isEmpty || password.isEmpty || fullName.isEmpty) {
         throw Exception('All fields are required');
       }
@@ -281,27 +307,29 @@ class AuthController {
         throw Exception('Password must be at least 6 characters');
       }
 
-      // Sign up with Supabase Auth
-      final authResponse = await _supabase.auth.signUp(
-        email: email,
-        password: password,
+      final response = await _api.post(
+        ApiEndpoints.register,
+        data: {
+          'email': email.trim(),
+          'password': password,
+          'name': fullName.trim(),
+          'phone': phone?.trim(),
+          'role': 'normal',
+        },
       );
 
-      final userId = authResponse.user!.id;
+      if (response.statusCode == 201 && response.data['success'] == true) {
+        final data = response.data['data'];
+        await _tokenStorage.saveTokens(
+          accessToken: data['accessToken'],
+          refreshToken: data['refreshToken'],
+        );
+        ref.read(isAuthenticatedProvider.notifier).state = true;
+        return true;
+      }
 
-      // Create user profile in Supabase
-      await _supabase.from('users').insert({
-        'id': userId,
-        'email': email,
-        'full_name': fullName,
-        'phone': phone,
-        'role': 'user',
-        'national_id_number': 'PENDING',
-        'created_at': DateTime.now().toIso8601String(),
-      });
-
-      return true;
-    } catch (e) {
+      return false;
+    } catch (_) {
       return false;
     }
   }
@@ -316,30 +344,28 @@ class AuthController {
         throw Exception('Email and password are required');
       }
 
-      final response = await _supabase.auth.signInWithPassword(
-        email: email,
-        password: password,
+      final response = await _api.post(
+        ApiEndpoints.login,
+        data: {'email': email.trim(), 'password': password},
       );
 
-      final user = response.user;
-      if (user != null) {
-        // Fetch user profile
-        final userData = await _supabase
-            .from('users')
-            .select()
-            .eq('id', user.id)
-            .single();
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'];
 
-        // FIXED: Use sanitization helper
+        await _tokenStorage.saveTokens(
+          accessToken: data['accessToken'],
+          refreshToken: data['refreshToken'],
+        );
+
+        final userData = data['user'] as Map<String, dynamic>;
         final sanitizedData = _sanitizeUserData(userData, email);
-
         final userModel = UserModel.fromJson(sanitizedData);
+
         ref.read(currentUserProvider.notifier).state = userModel;
+        ref.read(isAuthenticatedProvider.notifier).state = true;
         return true;
       }
 
-      return false;
-    } on AuthException catch (_) {
       return false;
     } catch (_) {
       return false;
@@ -349,45 +375,59 @@ class AuthController {
   /// Logout user
   Future<bool> logout() async {
     try {
-      await _supabase.auth.signOut();
-      ref.read(currentUserProvider.notifier).state = null;
-      return true;
+      final rt = _tokenStorage.refreshToken;
+      if (rt != null) {
+        await _api.post(ApiEndpoints.logout, data: {'refreshToken': rt});
+      }
     } catch (_) {
-      return false;
+      // Logout API call failed — still clear local state
     }
+    await _tokenStorage.clearTokens();
+    ref.read(currentUserProvider.notifier).state = null;
+    ref.read(isAuthenticatedProvider.notifier).state = false;
+    return true;
   }
 
   /// Get current authenticated user
   Future<UserModel?> getCurrentUser() async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) {
-        return null;
+      if (!_tokenStorage.hasTokens) return null;
+
+      final response = await _api.get(ApiEndpoints.me);
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final userData = response.data['data'] as Map<String, dynamic>;
+        final sanitizedData = _sanitizeUserData(userData, null);
+        return UserModel.fromJson(sanitizedData);
       }
 
-      final userData = await _supabase
-          .from('users')
-          .select()
-          .eq('id', user.id)
-          .single();
-
-      // FIXED: Use sanitization helper
-      final sanitizedData = _sanitizeUserData(userData, user.email);
-
-      final userModel = UserModel.fromJson(sanitizedData);
-      return userModel;
+      return null;
     } catch (_) {
       return null;
     }
   }
 
+  /// Fetch anyone's profile by ID (subject to server-side auth)
+  Future<UserModel> fetchUserById(String userId) async {
+    final response = await _api.get(ApiEndpoints.userById(userId));
+
+    if (response.statusCode == 200 && response.data['success'] == true) {
+      final userData = response.data['data']['user'] as Map<String, dynamic>;
+      final sanitizedData = _sanitizeUserData(userData, null);
+      return UserModel.fromJson(sanitizedData);
+    }
+
+    throw Exception(response.data['message'] ?? 'Failed to fetch user profile');
+  }
+
   /// Reset password
   Future<bool> resetPassword({required String email}) async {
     try {
-      await _supabase.auth.resetPasswordForEmail(email);
-      return true;
-    } on AuthException catch (_) {
-      return false;
+      final response = await _api.post(
+        ApiEndpoints.forgotPassword,
+        data: {'email': email.trim()},
+      );
+      return response.statusCode == 200;
     } catch (_) {
       return false;
     }
@@ -401,49 +441,43 @@ class AuthController {
     String? avatarUrl,
   }) async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null || user.id != userId) {
-        throw Exception('User not authenticated');
-      }
-
       final updateData = <String, dynamic>{};
       if (fullName != null) updateData['name'] = fullName;
       if (phone != null) updateData['phone'] = phone;
-      if (avatarUrl != null) updateData['avatar_path'] = avatarUrl;
-      updateData['updated_at'] = DateTime.now().toIso8601String();
+      if (avatarUrl != null) updateData['avatarPath'] = avatarUrl;
 
-      await _supabase.from('users').update(updateData).eq('id', userId);
+      final response = await _api.put(
+        ApiEndpoints.userById(userId),
+        data: updateData,
+      );
 
-      // Refresh current user
-      final userData = await _supabase
-          .from('users')
-          .select()
-          .eq('id', userId)
-          .single();
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        // Refresh current user
+        final userData = response.data['data'] as Map<String, dynamic>;
+        final sanitizedData = _sanitizeUserData(userData, null);
+        final userModel = UserModel.fromJson(sanitizedData);
+        ref.read(currentUserProvider.notifier).state = userModel;
+        return true;
+      }
 
-      // FIXED: Use sanitization helper
-      final sanitizedData = _sanitizeUserData(userData, user.email);
-
-      final userModel = UserModel.fromJson(sanitizedData);
-      ref.read(currentUserProvider.notifier).state = userModel;
-
-      return true;
+      return false;
     } catch (_) {
       return false;
     }
   }
 
-  /// Change password using Supabase auth
+  /// Change password
   Future<bool> changePassword({required String newPassword}) async {
     try {
       if (newPassword.length < 6) {
         throw Exception('Password must be at least 6 characters');
       }
 
-      await _supabase.auth.updateUser(UserAttributes(password: newPassword));
-      return true;
-    } on AuthException catch (_) {
-      return false;
+      final response = await _api.post(
+        ApiEndpoints.resetPassword,
+        data: {'password': newPassword},
+      );
+      return response.statusCode == 200;
     } catch (_) {
       return false;
     }
@@ -452,24 +486,13 @@ class AuthController {
   /// Delete account (soft-delete: mark as deleted, then sign out)
   Future<bool> deleteAccount() async {
     try {
-      final user = _supabase.auth.currentUser;
+      final user = ref.read(currentUserProvider);
       if (user == null) return false;
 
-      // Soft-delete: set deleted_at on users table
-      await _supabase
-          .from('users')
-          .update({
-            'deleted_at': DateTime.now().toIso8601String(),
-            'name': 'Deleted User',
-            'email': 'deleted_${user.id}@removed.com',
-            'phone': null,
-            'avatar_path': null,
-          })
-          .eq('id', user.id);
+      await _api.delete(ApiEndpoints.userById(user.id));
 
       // Sign out
-      await _supabase.auth.signOut();
-      ref.read(currentUserProvider.notifier).state = null;
+      await logout();
       return true;
     } catch (_) {
       return false;

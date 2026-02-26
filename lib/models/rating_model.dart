@@ -1,29 +1,11 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'rating_model.g.dart';
-
 /// Rating model - team leader rates applicants
-@JsonSerializable()
 class RatingModel {
-  @JsonKey(name: 'id')
   final String id;
-
-  @JsonKey(name: 'rater_user_id')
   final String raterUserId; // Team leader
-
-  @JsonKey(name: 'rated_user_id')
   final String ratedUserId; // Applicant
-
-  @JsonKey(name: 'event_id')
   final String? eventId;
-
-  @JsonKey(name: 'score')
   final int score; // 1-5
-
-  @JsonKey(name: 'text_review')
   final String? textReview;
-
-  @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
   RatingModel({
@@ -42,6 +24,43 @@ class RatingModel {
   bool get isAverage => score == 3;
   bool get isPoor => score == 2;
   bool get isBad => score == 1;
+
+  factory RatingModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic v) {
+      if (v == null) return DateTime.now();
+      return DateTime.tryParse(v.toString()) ?? DateTime.now();
+    }
+
+    String idFrom(dynamic v) {
+      if (v is Map) return (v['_id'] ?? v['id'] ?? '').toString();
+      return (v ?? '').toString();
+    }
+
+    return RatingModel(
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      raterUserId: idFrom(
+        json['raterId'] ?? json['rater_user_id'] ?? json['raterUserId'],
+      ),
+      ratedUserId: idFrom(json['ratedUserId'] ?? json['rated_user_id']),
+      eventId: (json['eventId'] ?? json['event_id']) != null
+          ? idFrom(json['eventId'] ?? json['event_id'])
+          : null,
+      score: ((json['score'] ?? 0) as num).toInt(),
+      textReview:
+          json['textReview']?.toString() ?? json['text_review']?.toString(),
+      createdAt: parseDate(json['createdAt'] ?? json['created_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'raterUserId': raterUserId,
+    'ratedUserId': ratedUserId,
+    'eventId': eventId,
+    'score': score,
+    'textReview': textReview,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   RatingModel copyWith({
     String? id,
@@ -62,10 +81,6 @@ class RatingModel {
       createdAt: createdAt ?? this.createdAt,
     );
   }
-
-  factory RatingModel.fromJson(Map<String, dynamic> json) =>
-      _$RatingModelFromJson(json);
-  Map<String, dynamic> toJson() => _$RatingModelToJson(this);
 
   @override
   String toString() => 'RatingModel($id, score: $score/5)';

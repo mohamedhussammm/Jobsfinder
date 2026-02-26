@@ -201,7 +201,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                               activeTrackColor: DarkColors.secondary.withValues(
                                 alpha: 0.5,
                               ),
-                              activeColor: DarkColors.secondary,
+                              activeThumbColor: DarkColors.secondary,
                             ),
                           ],
                         ),
