@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/perf_log.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../controllers/admin_controller.dart';
@@ -22,13 +23,21 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    PerfLog.init('AdminUsersScreen');
+  }
+
+  @override
   void dispose() {
+    PerfLog.dispose('AdminUsersScreen');
     _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    PerfLog.build('AdminUsersScreen');
     final usersAsync = ref.watch(allUsersProvider(0)); // Start with page 0
 
     return Padding(
@@ -80,7 +89,6 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                     ],
                     onChanged: (val) {
                       if (val != null) setState(() => _roleFilter = val);
-                      // In a real app, we'd trigger a refetch here with the filter
                     },
                   ),
                 ),
@@ -119,7 +127,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
             },
           ),
           const SizedBox(height: 16),
-          // Users Table
+          // Users Table Replacement (ListView.builder for lazy loading)
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -131,7 +139,6 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
               ),
               child: usersAsync.when(
                 data: (users) {
-                  // Client-side filtering for demo (controllers usually handle this)
                   var filteredUsers = users;
                   if (_roleFilter != 'all') {
                     filteredUsers = filteredUsers
@@ -160,134 +167,21 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                     );
                   }
 
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SingleChildScrollView(
-                      child: DataTable(
-                        dataRowHeight: 60,
-                        headingRowColor: WidgetStateProperty.all(
-                          DarkColors.surface,
+                  return Column(
+                    children: [
+                      // Table Header
+                      _buildTableHeader(),
+                      const Divider(height: 1, color: DarkColors.borderColor),
+                      // Lazy List
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: filteredUsers.length,
+                          itemBuilder: (context, index) {
+                            return _buildUserRow(filteredUsers[index]);
+                          },
                         ),
-                        columns: const [
-                          DataColumn(
-                            label: Text(
-                              'User',
-                              style: TextStyle(color: AppColors.textSecondary),
-                            ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'Role',
-                              style: TextStyle(color: AppColors.textSecondary),
-                            ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'Status',
-                              style: TextStyle(color: AppColors.textSecondary),
-                            ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'Actions',
-                              style: TextStyle(color: AppColors.textSecondary),
-                            ),
-                          ),
-                        ],
-                        rows: filteredUsers.map((user) {
-                          return DataRow(
-                            cells: [
-                              DataCell(
-                                Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 16,
-                                      backgroundColor: DarkColors.accent
-                                          .withValues(alpha: 0.2),
-                                      backgroundImage: user.avatarPath != null
-                                          ? CachedNetworkImageProvider(
-                                              user.avatarPath!,
-                                            )
-                                          : null,
-                                      child: user.avatarPath == null
-                                          ? Text(
-                                              (user.name ?? user.email)[0]
-                                                  .toUpperCase(),
-                                              style: const TextStyle(
-                                                color: DarkColors.accent,
-                                                fontSize: 12,
-                                              ),
-                                            )
-                                          : null,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          user.name ?? 'No Name',
-                                          style: AppTypography.body1.copyWith(
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        Text(
-                                          user.email,
-                                          style: AppTypography.caption.copyWith(
-                                            color: DarkColors.textTertiary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              DataCell(
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _getRoleColor(
-                                      user.role,
-                                    ).withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    user.role.toUpperCase(),
-                                    style: TextStyle(
-                                      color: _getRoleColor(user.role),
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              DataCell(
-                                Text(
-                                  'Active',
-                                  style: TextStyle(color: DarkColors.success),
-                                ),
-                              ), // Placeholder for active/blocked status
-                              DataCell(
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.edit,
-                                    color: AppColors.primary,
-                                    size: 20,
-                                  ),
-                                  onPressed: () =>
-                                      _showEditUserDialog(context, user),
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
                       ),
-                    ),
+                    ],
                   );
                 },
                 loading: () => ListView.separated(
@@ -304,6 +198,150 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTableHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: DarkColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Text(
+              'User',
+              style: AppTypography.labelSmall.copyWith(
+                color: DarkColors.textSecondary,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              'Role',
+              style: AppTypography.labelSmall.copyWith(
+                color: DarkColors.textSecondary,
+              ),
+            ),
+          ),
+          if (!ResponsiveHelper.isPhone(context))
+            Expanded(
+              flex: 2,
+              child: Text(
+                'Status',
+                style: AppTypography.labelSmall.copyWith(
+                  color: DarkColors.textSecondary,
+                ),
+              ),
+            ),
+          const SizedBox(width: 48), // Action space
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserRow(UserModel user) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: DarkColors.borderColor, width: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: DarkColors.accent.withValues(alpha: 0.2),
+                  backgroundImage: user.avatarPath != null
+                      ? CachedNetworkImageProvider(
+                          user.avatarPath!,
+                          maxHeight: 64, // Optimize memory for thumbnails
+                          maxWidth: 64,
+                        )
+                      : null,
+                  child: user.avatarPath == null
+                      ? Text(
+                          (user.name ?? user.email)[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: DarkColors.accent,
+                            fontSize: 12,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.name ?? 'No Name',
+                        style: AppTypography.body1.copyWith(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        user.email,
+                        style: AppTypography.caption.copyWith(
+                          color: DarkColors.textTertiary,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _getRoleColor(user.role).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  user.role.toUpperCase(),
+                  style: TextStyle(
+                    color: _getRoleColor(user.role),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (!ResponsiveHelper.isPhone(context))
+            Expanded(
+              flex: 2,
+              child: Text(
+                'Active',
+                style: TextStyle(color: DarkColors.success, fontSize: 13),
+              ),
+            ),
+          IconButton(
+            icon: const Icon(Icons.edit, color: AppColors.primary, size: 20),
+            onPressed: () => _showEditUserDialog(context, user),
           ),
         ],
       ),

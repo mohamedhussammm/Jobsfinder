@@ -543,22 +543,22 @@ class EventController {
   }) async {
     try {
       final updateData = <String, dynamic>{
-        if (title != null) 'title': title,
-        if (description != null) 'description': description,
+        'title': ?title,
+        'description': ?description,
         if (location != null) 'location': location.toJson(),
         if (startTime != null) 'startTime': startTime.toIso8601String(),
         if (endTime != null) 'endTime': endTime.toIso8601String(),
-        if (capacity != null) 'capacity': capacity,
-        if (imagePath != null) 'imagePath': imagePath,
-        if (status != null) 'status': status,
-        if (categoryId != null) 'categoryId': categoryId,
-        if (salary != null) 'salary': salary,
-        if (requirements != null) 'requirements': requirements,
-        if (benefits != null) 'benefits': benefits,
-        if (contactEmail != null) 'contactEmail': contactEmail,
-        if (contactPhone != null) 'contactPhone': contactPhone,
-        if (tags != null) 'tags': tags,
-        if (isUrgent != null) 'isUrgent': isUrgent,
+        'capacity': ?capacity,
+        'imagePath': ?imagePath,
+        'status': ?status,
+        'categoryId': ?categoryId,
+        'salary': ?salary,
+        'requirements': ?requirements,
+        'benefits': ?benefits,
+        'contactEmail': ?contactEmail,
+        'contactPhone': ?contactPhone,
+        'tags': ?tags,
+        'isUrgent': ?isUrgent,
       };
 
       final response = await _api.put(

@@ -11,11 +11,33 @@ import '../../controllers/stub_providers.dart';
 import '../../services/logout_service.dart';
 import '../common/skeleton_loader.dart';
 
-class TeamLeaderEventsScreen extends ConsumerWidget {
+import '../../core/utils/perf_log.dart';
+
+class TeamLeaderEventsScreen extends ConsumerStatefulWidget {
   const TeamLeaderEventsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TeamLeaderEventsScreen> createState() =>
+      _TeamLeaderEventsScreenState();
+}
+
+class _TeamLeaderEventsScreenState
+    extends ConsumerState<TeamLeaderEventsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    PerfLog.init('TeamLeaderEventsScreen');
+  }
+
+  @override
+  void dispose() {
+    PerfLog.dispose('TeamLeaderEventsScreen');
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    PerfLog.build('TeamLeaderEventsScreen');
     final currentUser = ref.watch(currentUserProvider);
     final userId = currentUser?.id ?? '';
     final assignmentsAsync = ref.watch(teamLeaderEventsProvider(userId));
@@ -78,50 +100,56 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Statistics Row
-            Row(
-              children: [
-                Expanded(
-                  child: StatCard(
-                    title: 'Active',
-                    value: activeCountAsync.when(
-                      data: (count) => count.toString(),
-                      loading: () => '...',
-                      error: (_, e) => '0',
+      body: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // Statistics Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: StatCard(
+                        title: 'Active',
+                        value: activeCountAsync.when(
+                          data: (count) => count.toString(),
+                          loading: () => '...',
+                          error: (_, e) => '0',
+                        ),
+                        icon: Icons.assignment,
+                        color: DarkColors.accent,
+                      ),
                     ),
-                    icon: Icons.assignment,
-                    color: DarkColors.accent,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: StatCard(
-                    title: 'Completed',
-                    value: completedCountAsync.when(
-                      data: (count) => count.toString(),
-                      loading: () => '...',
-                      error: (_, e) => '0',
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: StatCard(
+                        title: 'Completed',
+                        value: completedCountAsync.when(
+                          data: (count) => count.toString(),
+                          loading: () => '...',
+                          error: (_, e) => '0',
+                        ),
+                        icon: Icons.check_circle,
+                        color: DarkColors.success,
+                      ),
                     ),
-                    icon: Icons.check_circle,
-                    color: DarkColors.success,
-                  ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-            // Events List
-            Text('Assigned Events', style: AppTypography.heading3),
-            const SizedBox(height: 12),
-            assignmentsAsync.when(
-              data: (events) {
-                if (events.isEmpty) {
-                  return Center(
+                // Events List
+                Text('Assigned Events', style: AppTypography.heading3),
+                const SizedBox(height: 12),
+              ]),
+            ),
+          ),
+          assignmentsAsync.when(
+            data: (events) {
+              if (events.isEmpty) {
+                return SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 48),
                       child: Column(
@@ -141,24 +169,38 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
-                  );
-                }
-
-                return ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: events.length,
-                  separatorBuilder: (_, i) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final event = events[index];
-                    return EventAssignmentCard(event: event);
-                  },
+                  ),
                 );
-              },
-              loading: () => Column(
-                children: List.generate(3, (index) => const SkeletonCard()),
+              }
+
+              return SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: EventAssignmentCard(event: events[index]),
+                    ),
+                    childCount: events.length,
+                  ),
+                ),
+              );
+            },
+            loading: () => SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: SkeletonCard(),
+                  ),
+                  childCount: 3,
+                ),
               ),
-              error: (error, _) => Center(
+            ),
+            error: (error, _) => SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 48),
                   child: Column(
@@ -188,8 +230,9 @@ class TeamLeaderEventsScreen extends ConsumerWidget {
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+        ],
       ),
     );
   }

@@ -7,6 +7,7 @@ class UserModel {
   final String? phone;
   final String? nationalIdNumber;
   final String? avatarPath;
+  final String? cvPath;
   final bool profileComplete;
   final double ratingAvg;
   final int ratingCount;
@@ -22,6 +23,7 @@ class UserModel {
     this.phone,
     this.nationalIdNumber,
     this.avatarPath,
+    this.cvPath,
     this.profileComplete = false,
     this.ratingAvg = 0,
     this.ratingCount = 0,
@@ -35,6 +37,22 @@ class UserModel {
   bool get isCompany => role == 'company';
   bool get isTeamLeader => role == 'team_leader';
   bool get isNormalUser => role == 'normal';
+
+  /// Calculate real profile completion percentage based on filled fields (20% each)
+  double get profileCompletion {
+    int count = 0;
+    if (name != null && name!.isNotEmpty) count++;
+    if (phone != null && phone!.isNotEmpty) count++;
+    if (nationalIdNumber != null &&
+        nationalIdNumber!.isNotEmpty &&
+        nationalIdNumber != 'PENDING') {
+      count++;
+    }
+    if (avatarPath != null && avatarPath!.isNotEmpty) count++;
+    if (cvPath != null && cvPath!.isNotEmpty) count++;
+
+    return count / 5.0;
+  }
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     DateTime parseDate(dynamic v) {
@@ -55,6 +73,7 @@ class UserModel {
           json['national_id_number']?.toString(),
       avatarPath:
           json['avatarPath']?.toString() ?? json['avatar_path']?.toString(),
+      cvPath: json['cvPath']?.toString() ?? json['cv_path']?.toString(),
       profileComplete:
           (json['profileComplete'] ?? json['profile_complete'] ?? false) ==
           true,
@@ -78,6 +97,7 @@ class UserModel {
     'phone': phone,
     'nationalIdNumber': nationalIdNumber,
     'avatarPath': avatarPath,
+    'cvPath': cvPath,
     'profileComplete': profileComplete,
     'ratingAvg': ratingAvg,
     'ratingCount': ratingCount,
@@ -95,6 +115,7 @@ class UserModel {
     String? phone,
     String? nationalIdNumber,
     String? avatarPath,
+    String? cvPath,
     bool? profileComplete,
     double? ratingAvg,
     int? ratingCount,
@@ -110,6 +131,7 @@ class UserModel {
       phone: phone ?? this.phone,
       nationalIdNumber: nationalIdNumber ?? this.nationalIdNumber,
       avatarPath: avatarPath ?? this.avatarPath,
+      cvPath: cvPath ?? this.cvPath,
       profileComplete: profileComplete ?? this.profileComplete,
       ratingAvg: ratingAvg ?? this.ratingAvg,
       ratingCount: ratingCount ?? this.ratingCount,

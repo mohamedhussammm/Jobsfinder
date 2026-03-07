@@ -7,27 +7,53 @@ import '../../controllers/auth_controller.dart';
 import '../../controllers/rating_controller.dart';
 import '../../models/rating_model.dart';
 import '../../core/theme/dark_colors.dart';
+import '../../core/utils/perf_log.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import '../../services/file_upload_service.dart';
+import '../../core/utils/result.dart';
+import '../../core/theme/colors.dart';
 
-class UserProfileScreen extends ConsumerWidget {
+class UserProfileScreen extends ConsumerStatefulWidget {
   final String? userId;
 
   const UserProfileScreen({super.key, this.userId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
+}
+
+class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    PerfLog.init('UserProfileScreen');
+  }
+
+  @override
+  void dispose() {
+    PerfLog.dispose('UserProfileScreen');
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    PerfLog.build('UserProfileScreen');
     final currentSessionUser = ref.watch(currentUserProvider);
-    final userAsync = userId != null && userId != currentSessionUser?.id
-        ? ref.watch(fetchUserByIdProvider(userId!))
+    final userAsync =
+        widget.userId != null && widget.userId != currentSessionUser?.id
+        ? ref.watch(fetchUserByIdProvider(widget.userId!))
         : null;
 
     final user = userAsync != null ? userAsync.value : currentSessionUser;
-
-    final isMe = userId == null || userId == currentSessionUser?.id;
+    final isMe =
+        widget.userId == null || widget.userId == currentSessionUser?.id;
 
     if (user == null && userAsync?.isLoading == true) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: DarkColors.background,
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -53,115 +79,256 @@ class UserProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: DarkColors.background,
-      appBar: AppBar(
-        title: Text(
-          isMe ? 'My Profile' : 'User Profile',
-          style: AppTypography.titleLarge.copyWith(color: Colors.white),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Colors.white,
-          ),
-          onPressed: () => isMe ? context.go('/') : context.pop(),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Header Section
-            _buildHeader(user),
-            const SizedBox(height: 24),
+      body: CustomScrollView(
+        slivers: [
+          // Elegant Sliver App Bar
+          _buildSliverAppBar(context, isMe),
 
-            // Profile Completion Progress
-            _buildCompletionCard(user),
-            const SizedBox(height: 24),
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // Header Section
+                _buildHeader(user, isMe),
+                const SizedBox(height: 24),
 
-            // 1. Personal Information
-            _buildSectionRow(
-              context,
-              title: 'Personal Information',
-              icon: Icons.person_outline,
-              subtitle: 'Username, Phone Number',
-              onTap: () {
-                // Navigate to Personal Info Edit
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Edit Personal Info')),
-                );
-              },
-            ),
+                // Profile Completion Progress
+                _buildCompletionCard(user),
+                const SizedBox(height: 12),
 
-            // 2. Professional Details
-            _buildSectionRow(
-              context,
-              title: 'Professional Details',
-              icon: Icons.work_outline,
-              subtitle: 'Experience, Skills, Certificates',
-              onTap: () {
-                // Navigate to Professional Details
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Edit Professional Details')),
-                );
-              },
-            ),
+                if (isMe && user.profileCompletion < 1.0)
+                  _buildCompletionHint(user),
 
-            // 3. Portfolio & Documents
-            _buildSectionRow(
-              context,
-              title: 'Portfolio & Documents',
-              icon: Icons.folder_open,
-              subtitle: 'Upload CV, Portfolio',
-              onTap: () {
-                // Navigate to Documents
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Manage Documents')),
-                );
-              },
-            ),
+                const SizedBox(height: 24),
 
-            if (isMe) ...[
-              // 4. Privacy Settings
-              _buildSectionRow(
-                context,
-                title: 'Privacy Settings',
-                icon: Icons.lock_outline,
-                subtitle: 'Visibility, Data usage',
-                onTap: () {},
-              ),
-              const SizedBox(height: 24),
-            ],
-
-            _buildRecentReviewsSection(context, ref, user.id),
-
-            if (isMe) ...[
-              const SizedBox(height: 32),
-              OutlinedButton(
-                onPressed: () {
-                  ref.read(authControllerProvider).logout();
-                  context.go('/auth');
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: DarkColors.error,
-                  side: const BorderSide(color: DarkColors.error),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                // 1. Personal Information
+                _buildSectionRow(
+                  context,
+                  title: 'Personal Information',
+                  icon: Icons.person_outline,
+                  subtitle:
+                      '${user.name ?? "Not set"}, ${user.phone ?? "No phone"}',
+                  onTap: () => context.push('/edit-profile'),
                 ),
-                child: const Center(child: Text('Logout')),
-              ),
-            ],
-            const SizedBox(height: 32),
-          ],
-        ),
+
+                // 2. Professional Details
+                _buildSectionRow(
+                  context,
+                  title: 'Professional Details',
+                  icon: Icons.work_outline,
+                  subtitle:
+                      'National ID: ${user.nationalIdNumber ?? "Missing"}',
+                  onTap: () => context.push('/edit-profile'),
+                ),
+
+                // 3. Portfolio & Documents
+                _buildSectionRow(
+                  context,
+                  title: 'Portfolio & Documents',
+                  icon: Icons.folder_open,
+                  subtitle: user.cvPath != null
+                      ? 'CV Uploaded'
+                      : 'Upload your CV (Required)',
+                  trailing: user.cvPath != null
+                      ? const Icon(
+                          Icons.check_circle,
+                          color: AppColors.success,
+                          size: 20,
+                        )
+                      : null,
+                  onTap: isMe ? _pickAndUploadCv : () {},
+                ),
+
+                if (isMe) ...[
+                  // 4. Privacy Settings
+                  _buildSectionRow(
+                    context,
+                    title: 'Privacy Settings',
+                    icon: Icons.lock_outline,
+                    subtitle: 'Visibility, Data usage',
+                    onTap: () {},
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                _buildRecentReviewsSection(context, ref, user.id),
+
+                if (isMe) ...[
+                  const SizedBox(height: 32),
+                  OutlinedButton(
+                    onPressed: () {
+                      ref.read(authControllerProvider).logout();
+                      context.go('/auth');
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: DarkColors.error,
+                      side: const BorderSide(color: DarkColors.error),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Center(child: Text('Logout')),
+                  ),
+                ],
+                const SizedBox(height: 32),
+              ]),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildHeader(UserModel user) {
+  bool _isUploading = false;
+
+  Future<void> _pickAndUploadAvatar() async {
+    if (_isUploading) return;
+
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
+
+    if (image == null) return;
+
+    setState(() => _isUploading = true);
+
+    try {
+      final bytes = await image.readAsBytes();
+      final result = await ref
+          .read(fileUploadServiceProvider)
+          .uploadAvatar(fileName: image.name, bytes: bytes);
+
+      if (result is Success<String>) {
+        final currentUser = ref.read(currentUserProvider);
+        if (currentUser != null) {
+          final oldAvatarPath = currentUser.avatarPath;
+
+          await ref
+              .read(authControllerProvider)
+              .updateProfile(userId: currentUser.id, avatarUrl: result.data);
+
+          // Evict old image from cache so CachedNetworkImage fetches fresh
+          if (oldAvatarPath != null) {
+            final oldUrl = ref
+                .read(fileUploadServiceProvider)
+                .getPublicUrl(oldAvatarPath);
+            await CachedNetworkImage.evictFromCache(oldUrl);
+          }
+          // Also evict using the new URL/path just in case
+          final newUrl = ref
+              .read(fileUploadServiceProvider)
+              .getPublicUrl(result.data);
+          await CachedNetworkImage.evictFromCache(newUrl);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile picture updated!'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to upload image'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  Future<void> _pickAndUploadCv() async {
+    if (_isUploading) return;
+
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'png'],
+    );
+
+    if (result == null || result.files.isEmpty) return;
+
+    final file = result.files.first;
+    if (file.bytes == null) return;
+
+    setState(() => _isUploading = true);
+
+    try {
+      final uploadResult = await ref
+          .read(fileUploadServiceProvider)
+          .uploadCV(fileName: file.name, bytes: file.bytes!);
+
+      if (uploadResult is Success<String>) {
+        final currentUser = ref.read(currentUserProvider);
+        if (currentUser != null) {
+          await ref
+              .read(authControllerProvider)
+              .updateProfile(userId: currentUser.id, cvUrl: uploadResult.data);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('CV uploaded successfully!'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to upload CV'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  Widget _buildSliverAppBar(BuildContext context, bool isMe) {
+    return SliverAppBar(
+      floating: true,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: DarkColors.background,
+      title: Text(
+        isMe ? 'My Profile' : 'User Profile',
+        style: AppTypography.titleLarge.copyWith(
+          color: Colors.white,
+          fontSize: 18,
+        ),
+      ),
+      leading: IconButton(
+        icon: const Icon(
+          Icons.arrow_back_ios_new_rounded,
+          color: Colors.white,
+          size: 20,
+        ),
+        onPressed: () => isMe ? context.go('/') : context.pop(),
+      ),
+    );
+  }
+
+  Widget _buildHeader(UserModel user, bool isMe) {
+    final avatarUrl = user.avatarPath != null
+        ? ref.read(fileUploadServiceProvider).getPublicUrl(user.avatarPath!)
+        : null;
+
     return Column(
       children: [
         Stack(
@@ -170,48 +337,74 @@ class UserProfileScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: DarkColors.accent, width: 2),
+                border: Border.all(
+                  color: DarkColors.accent.withValues(alpha: 0.3),
+                  width: 2,
+                ),
               ),
-              child: CircleAvatar(
-                radius: 50,
-                backgroundColor: DarkColors.surface,
-                backgroundImage: user.avatarPath != null
-                    ? NetworkImage(user.avatarPath!)
-                    : null,
-                child: user.avatarPath == null
-                    ? Text(
-                        user.name?[0].toUpperCase() ?? 'U',
-                        style: AppTypography.heading1.copyWith(
-                          color: DarkColors.accent,
+              child: Hero(
+                tag: 'profile_avatar',
+                child: ClipOval(
+                  child: Container(
+                    width: 108,
+                    height: 108,
+                    color: DarkColors.surface,
+                    child: avatarUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl:
+                                "$avatarUrl${avatarUrl.contains('?') ? '&' : '?'}v=${user.updatedAt.millisecondsSinceEpoch}",
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            errorWidget: (context, url, error) =>
+                                _buildAvatarPlaceholder(user),
+                          )
+                        : _buildAvatarPlaceholder(user),
+                  ),
+                ),
+              ),
+            ),
+            if (isMe)
+              Positioned(
+                bottom: 4,
+                right: 4,
+                child: GestureDetector(
+                  onTap: _pickAndUploadAvatar,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: DarkColors.accent,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: DarkColors.background,
+                        width: 2.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
-                      )
-                    : null,
-              ),
-            ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: DarkColors.accent,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+                      ],
                     ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.camera_alt,
-                  color: Colors.white,
-                  size: 16,
+                    child: _isUploading
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.camera_alt_rounded,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                  ),
                 ),
               ),
-            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -237,25 +430,35 @@ class UserProfileScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildAvatarPlaceholder(UserModel user) {
+    return Center(
+      child: Text(
+        user.name?[0].toUpperCase() ?? 'U',
+        style: AppTypography.heading1.copyWith(
+          color: DarkColors.accent,
+          fontSize: 40,
+        ),
+      ),
+    );
+  }
+
   Widget _buildCompletionCard(UserModel user) {
-    final completion = user.profileComplete ? 1.0 : 0.4; // Placeholder logic
+    final completion = user.profileCompletion;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: DarkColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [
+            DarkColors.surface,
+            DarkColors.surface.withValues(alpha: 0.7),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: DarkColors.borderColor.withValues(alpha: 0.1),
+          color: Colors.white.withValues(alpha: 0.05),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,37 +467,75 @@ class UserProfileScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Profile Completion',
-                style: AppTypography.bodyLarge.copyWith(
+                'Profile Strength',
+                style: AppTypography.bodyMedium.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Colors.white.withValues(alpha: 0.9),
                 ),
               ),
-              Text(
-                '${(completion * 100).toInt()}%',
-                style: AppTypography.bodyLarge.copyWith(
-                  color: DarkColors.accent,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: DarkColors.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${(completion * 100).toInt()}%',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: DarkColors.accent,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: completion,
-            backgroundColor: DarkColors.gray100,
-            valueColor: const AlwaysStoppedAnimation<Color>(DarkColors.accent),
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(4),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: completion,
+              backgroundColor: Colors.white.withValues(alpha: 0.05),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                DarkColors.accent,
+              ),
+              minHeight: 10,
+            ),
           ),
-          if (completion < 1.0) ...[
-            const SizedBox(height: 12),
-            Text(
-              'Complete your profile to apply for shifts faster!',
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompletionHint(UserModel user) {
+    String hint = "";
+    if (user.name == null || user.name!.isEmpty) {
+      hint = "Add your full name";
+    } else if (user.phone == null || user.phone!.isEmpty)
+      hint = "Add your phone number";
+    else if (user.nationalIdNumber == null || user.nationalIdNumber!.isEmpty)
+      hint = "Add your National ID (Required for shifts)";
+    else if (user.avatarPath == null)
+      hint = "Upload a profile photo";
+    else if (user.cvPath == null)
+      hint = "Upload your CV to apply for jobs";
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, color: DarkColors.accent, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Next step: $hint',
               style: AppTypography.labelSmall.copyWith(
                 color: DarkColors.textSecondary,
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -306,27 +547,28 @@ class UserProfileScreen extends ConsumerWidget {
     required IconData icon,
     required String subtitle,
     required VoidCallback onTap,
+    Widget? trailing,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: DarkColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: DarkColors.borderColor),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: DarkColors.accent.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
+            color: DarkColors.accent.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: DarkColors.accent, size: 24),
+          child: Icon(icon, color: DarkColors.accent, size: 22),
         ),
         title: Text(
           title,
-          style: AppTypography.bodyLarge.copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
@@ -335,13 +577,16 @@ class UserProfileScreen extends ConsumerWidget {
           subtitle,
           style: AppTypography.labelSmall.copyWith(
             color: DarkColors.textSecondary,
+            fontSize: 11,
           ),
         ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 14,
-          color: DarkColors.textTertiary,
-        ),
+        trailing:
+            trailing ??
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: DarkColors.textTertiary,
+            ),
         onTap: onTap,
       ),
     );

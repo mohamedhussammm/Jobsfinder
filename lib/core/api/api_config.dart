@@ -1,10 +1,12 @@
-import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, kDebugMode, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// API configuration and endpoint constants
 class ApiConfig {
   /// Your PC's local network IP (for physical device access over WiFi)
-  static const String _localNetworkIp = '172.20.10.2';
+  /// Current PC IP: 192.168.1.9
+  static const String _localNetworkIp = '192.168.1.9';
 
   /// Base URL for the backend API — auto-detects platform
   static String get baseUrl {
@@ -13,13 +15,18 @@ class ApiConfig {
     if (envUrl != null && envUrl.isNotEmpty) return envUrl;
 
     String url;
-    // Auto-detect: web → localhost, mobile → local IP
+    // Auto-detect: web/desktop → localhost, mobile → local IP
     if (kIsWeb) {
       url = 'http://localhost:5000/api';
-    } else {
+    } else if (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS) {
       url = 'http://$_localNetworkIp:5000/api';
-      // For android emulators, 10.0.2.2 is usually required
-      // You can manually change _localNetworkIp above or add a platform check here
+      // Note: For android emulators, 10.0.2.2 is usually required.
+      // You can override this in .env or uncomment the line below:
+      // url = 'http://10.0.2.2:5000/api';
+    } else {
+      // Windows, MacOS, Linux
+      url = 'http://localhost:5000/api';
     }
 
     if (kDebugMode) {

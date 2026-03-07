@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import '../../../core/utils/perf_log.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../controllers/event_controller.dart';
@@ -26,7 +27,20 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
   String _statusFilter = 'all'; // 'all', 'pending', 'published', 'cancelled'
 
   @override
+  void initState() {
+    super.initState();
+    PerfLog.init('AdminEventsScreen');
+  }
+
+  @override
+  void dispose() {
+    PerfLog.dispose('AdminEventsScreen');
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    PerfLog.build('AdminEventsScreen');
     // For admin, we ideally want ALL events, but for now we might reuse published or pending providers
     // Or simpler: fetch pending requests specifically if filtered, else fetch published
     // Ideally we need a 'getAllEvents' in admin controller, but let's use what we have or combine
@@ -139,6 +153,8 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
                                           ref
                                               .read(fileUploadServiceProvider)
                                               .getPublicUrl(event.imagePath!),
+                                          maxHeight: 120, // Optimize memory
+                                          maxWidth: 120,
                                         ),
                                         fit: BoxFit.cover,
                                       )

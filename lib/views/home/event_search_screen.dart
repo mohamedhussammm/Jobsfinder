@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/utils/perf_log.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -25,17 +26,20 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
   @override
   void initState() {
     super.initState();
+    PerfLog.init('EventSearchScreen');
     _searchController = TextEditingController();
   }
 
   @override
   void dispose() {
+    PerfLog.dispose('EventSearchScreen');
     _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    PerfLog.build('EventSearchScreen');
     final eventsAsync = ref.watch(publishedEventsProvider(0));
 
     return Scaffold(
@@ -339,7 +343,11 @@ class _EventSearchCard extends ConsumerWidget {
                         imageUrl: ref
                             .read(fileUploadServiceProvider)
                             .getPublicUrl(event.imagePath!),
+                        memCacheHeight:
+                            160, // Optimize memory for search thumbnails
+                        memCacheWidth: 160,
                         fit: BoxFit.cover,
+                        placeholder: (_, __) => const SkeletonCard(),
                         errorWidget: (_, __, ___) =>
                             _ImagePlaceholder(event.categoryName ?? 'EVENT'),
                       )

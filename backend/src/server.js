@@ -24,10 +24,11 @@ const startServer = async () => {
         await mongoose.connect(config.mongoose.uri, config.mongoose.options);
         logger.info(`✅ MongoDB connected: ${mongoose.connection.host}`);
 
-        server.listen(config.port, () => {
+        server.listen(config.port, '0.0.0.0', () => {
             logger.info(`🚀 Server running in ${config.env} mode on port ${config.port}`);
             logger.info(`📡 API: http://localhost:${config.port}/api`);
             logger.info(`❤️  Health: http://localhost:${config.port}/api/health`);
+            logger.info(`🌐 External Access: http://0.0.0.0:${config.port}/api`);
         });
     } catch (error) {
         logger.error('❌ Failed to start server:', error.message);

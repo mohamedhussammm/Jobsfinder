@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../core/utils/perf_log.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -32,7 +33,20 @@ class _EventBrowseScreenState extends ConsumerState<EventBrowseScreen> {
   String? _selectedCategoryId; // null = All
 
   @override
+  void initState() {
+    super.initState();
+    PerfLog.init('EventBrowseScreen');
+  }
+
+  @override
+  void dispose() {
+    PerfLog.dispose('EventBrowseScreen');
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    PerfLog.build('EventBrowseScreen');
     final eventsAsync = ref.watch(
       _selectedCategoryId == null
           ? publishedEventsByCategoryProvider(null)
@@ -359,15 +373,18 @@ class _HeroEventCard extends ConsumerWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: event.imagePath != null
-                  ? Image.network(
-                      ref
+                  ? CachedNetworkImage(
+                      imageUrl: ref
                           .read(fileUploadServiceProvider)
                           .getPublicUrl(event.imagePath!),
+                      memCacheHeight: 400, // Optimize memory for large cards
+                      memCacheWidth: 400,
                       width: double.infinity,
                       height: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) =>
+                      errorWidget: (_, _, _) =>
                           _PlaceholderEventImage(title: event.title),
+                      placeholder: (_, _) => const SkeletonHeroCard(),
                     )
                   : _PlaceholderEventImage(title: event.title),
             ),
@@ -647,6 +664,8 @@ class _ShiftCard extends ConsumerWidget {
                         imageUrl: ref
                             .read(fileUploadServiceProvider)
                             .getPublicUrl(event.imagePath!),
+                        memCacheHeight: 160, // Optimize memory for thumbnails
+                        memCacheWidth: 160,
                         fit: BoxFit.cover,
                         placeholder: (context, url) => const SkeletonCard(),
                         errorWidget: (context, url, error) =>

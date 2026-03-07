@@ -48,6 +48,9 @@ const userSchema = new mongoose.Schema(
         avatarPath: {
             type: String,
         },
+        cvPath: {
+            type: String,
+        },
         profileComplete: {
             type: Boolean,
             default: false,

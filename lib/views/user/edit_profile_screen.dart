@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../core/utils/perf_log.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../controllers/auth_controller.dart';
+import '../../models/user_model.dart';
 import '../../core/theme/colors.dart';
 import '../../core/utils/responsive.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../services/file_upload_service.dart';
+import '../../core/utils/result.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../core/theme/dark_colors.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -16,14 +23,24 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
+  final _nationalIdController = TextEditingController();
   bool _isLoading = false;
+  bool _isUploading = false;
   bool _initialized = false;
 
   @override
+  void initState() {
+    super.initState();
+    PerfLog.init('EditProfileScreen');
+  }
+
+  @override
   void dispose() {
+    PerfLog.dispose('EditProfileScreen');
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
+    _nationalIdController.dispose();
     super.dispose();
   }
 
@@ -34,12 +51,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       _nameController.text = currentUser.name ?? '';
       _phoneController.text = currentUser.phone ?? '';
       _emailController.text = currentUser.email;
+      _nationalIdController.text = currentUser.nationalIdNumber ?? '';
       _initialized = true;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    PerfLog.build('EditProfileScreen');
     _initFields();
     final currentUser = ref.watch(currentUserProvider);
 
@@ -55,15 +74,31 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               Center(
                 child: Stack(
                   children: [
-                    CircleAvatar(
-                      radius: ResponsiveHelper.sp(context, 50),
-                      backgroundColor: Theme.of(
-                        context,
-                      ).primaryColor.withValues(alpha: 0.1),
-                      child: Icon(
-                        Icons.person,
-                        size: ResponsiveHelper.sp(context, 48),
-                        color: Theme.of(context).primaryColor,
+                    ClipOval(
+                      child: Container(
+                        width: ResponsiveHelper.sp(context, 100),
+                        height: ResponsiveHelper.sp(context, 100),
+                        color: DarkColors.surface,
+                        child: currentUser?.avatarPath != null
+                            ? CachedNetworkImage(
+                                imageUrl:
+                                    "${ref.watch(fileUploadServiceProvider).getPublicUrl(currentUser!.avatarPath!)}${currentUser.avatarPath!.contains('?') ? '&' : '?'}v=${currentUser.updatedAt.millisecondsSinceEpoch}",
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => const Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) =>
+                                    _buildAvatarPlaceholder(currentUser),
+                              )
+                            : (currentUser != null)
+                            ? _buildAvatarPlaceholder(currentUser)
+                            : Icon(
+                                Icons.person,
+                                size: ResponsiveHelper.sp(context, 48),
+                                color: DarkColors.accent,
+                              ),
                       ),
                     ),
                     Positioned(
@@ -71,10 +106,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       right: 0,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor,
+                          color: DarkColors.accent,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Theme.of(context).scaffoldBackgroundColor,
+                            color: DarkColors.background,
                             width: 2,
                           ),
                         ),
@@ -84,9 +119,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             color: Colors.white,
                             size: 18,
                           ),
-                          onPressed: () {
-                            // Avatar picker — future enhancement via image_picker
-                          },
+                          onPressed: _isUploading ? null : _pickAndUploadAvatar,
                           constraints: const BoxConstraints(
                             minWidth: 36,
                             minHeight: 36,
@@ -128,6 +161,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 controller: _phoneController,
                 decoration: _inputDecoration('Phone', Icons.phone_outlined),
                 keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+
+              // National ID
+              _buildLabel('National ID'),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _nationalIdController,
+                decoration: _inputDecoration('ID Number', Icons.badge_outlined),
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'National ID is required' : null,
               ),
               const SizedBox(height: 16),
 
@@ -227,6 +271,86 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
+  Widget _buildAvatarPlaceholder(UserModel user) {
+    return Center(
+      child: Text(
+        user.name?[0].toUpperCase() ?? 'U',
+        style: TextStyle(
+          color: DarkColors.accent,
+          fontSize: ResponsiveHelper.sp(context, 40),
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    if (_isUploading) return;
+
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
+
+    if (image == null) return;
+
+    setState(() => _isUploading = true);
+
+    try {
+      final bytes = await image.readAsBytes();
+      final result = await ref
+          .read(fileUploadServiceProvider)
+          .uploadAvatar(fileName: image.name, bytes: bytes);
+
+      if (result is Success<String>) {
+        final currentUser = ref.read(currentUserProvider);
+        if (currentUser != null) {
+          final oldAvatarPath = currentUser.avatarPath;
+
+          await ref
+              .read(authControllerProvider)
+              .updateProfile(userId: currentUser.id, avatarUrl: result.data);
+
+          // Evict old image from cache so CachedNetworkImage fetches fresh
+          if (oldAvatarPath != null) {
+            final oldUrl = ref
+                .read(fileUploadServiceProvider)
+                .getPublicUrl(oldAvatarPath);
+            await CachedNetworkImage.evictFromCache(oldUrl);
+          }
+          // Also evict using the new URL/path just in case
+          final newUrl = ref
+              .read(fileUploadServiceProvider)
+              .getPublicUrl(result.data);
+          await CachedNetworkImage.evictFromCache(newUrl);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile picture updated!'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to upload image'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
@@ -243,6 +367,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       fullName: _nameController.text.trim(),
       phone: _phoneController.text.trim().isNotEmpty
           ? _phoneController.text.trim()
+          : null,
+      nationalIdNumber: _nationalIdController.text.trim().isNotEmpty
+          ? _nationalIdController.text.trim()
           : null,
     );
 

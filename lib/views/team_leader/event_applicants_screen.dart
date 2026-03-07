@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/utils/perf_log.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/dark_colors.dart';
@@ -6,7 +8,7 @@ import '../../core/theme/typography.dart';
 import '../../models/application_model.dart';
 import '../../controllers/application_controller.dart';
 
-class EventApplicantsScreen extends ConsumerWidget {
+class EventApplicantsScreen extends ConsumerStatefulWidget {
   final String eventId;
   final String eventTitle;
 
@@ -17,8 +19,29 @@ class EventApplicantsScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final applicantsAsync = ref.watch(eventApplicationsProvider(eventId));
+  ConsumerState<EventApplicantsScreen> createState() =>
+      _EventApplicantsScreenState();
+}
+
+class _EventApplicantsScreenState extends ConsumerState<EventApplicantsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    PerfLog.init('EventApplicantsScreen');
+  }
+
+  @override
+  void dispose() {
+    PerfLog.dispose('EventApplicantsScreen');
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    PerfLog.build('EventApplicantsScreen');
+    final applicantsAsync = ref.watch(
+      eventApplicationsProvider(widget.eventId),
+    );
 
     return Scaffold(
       backgroundColor: DarkColors.background,
@@ -40,7 +63,7 @@ class EventApplicantsScreen extends ConsumerWidget {
               style: AppTypography.titleLarge.copyWith(color: Colors.white),
             ),
             Text(
-              eventTitle,
+              widget.eventTitle,
               style: AppTypography.labelSmall.copyWith(
                 color: DarkColors.textTertiary,
               ),
@@ -61,7 +84,7 @@ class EventApplicantsScreen extends ConsumerWidget {
               final applicant = applicants[index];
               return _ApplicantCard(
                 applicant: applicant,
-                eventTitle: eventTitle,
+                eventTitle: widget.eventTitle,
               );
             },
           );
@@ -150,7 +173,13 @@ class _ApplicantCard extends StatelessWidget {
               CircleAvatar(
                 radius: 24,
                 backgroundColor: DarkColors.accent.withValues(alpha: 0.1),
-                backgroundImage: avatar != null ? NetworkImage(avatar) : null,
+                backgroundImage: avatar != null
+                    ? CachedNetworkImageProvider(
+                        avatar,
+                        maxHeight: 100, // Optimize memory for thumbnails
+                        maxWidth: 100,
+                      )
+                    : null,
                 child: avatar == null
                     ? Text(
                         name[0].toUpperCase(),

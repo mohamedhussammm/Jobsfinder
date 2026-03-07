@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/dark_colors.dart';
 import '../../models/event_model.dart';
 import '../../controllers/event_controller.dart';
+import '../../controllers/auth_controller.dart';
 import '../../services/file_upload_service.dart';
 
 class EventDetailsScreen extends ConsumerStatefulWidget {
@@ -646,7 +647,53 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   }
 
   // ── Apply Now sticky button ───────────────────────────────────────────────
+  void _showNationalIdRequiredDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: DarkColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.badge_outlined, color: DarkColors.accent),
+            SizedBox(width: 12),
+            Text('Action Required', style: TextStyle(color: Colors.white)),
+          ],
+        ),
+        content: const Text(
+          'A National ID number is required before you can apply for any event shift. Please complete your profile first.',
+          style: TextStyle(color: DarkColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: DarkColors.textTertiary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.push('/edit-profile');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: DarkColors.accent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Complete Profile'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildApplyButton(BuildContext context, EventModel event) {
+    final user = ref.watch(currentUserProvider);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
       decoration: BoxDecoration(
@@ -660,7 +707,21 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
         height: 56,
         child: ElevatedButton(
           onPressed: event.isPublished
-              ? () => context.push('/apply/${event.id}', extra: event.title)
+              ? () {
+                  if (user == null) {
+                    context.push('/auth');
+                    return;
+                  }
+
+                  if (user.nationalIdNumber == null ||
+                      user.nationalIdNumber!.isEmpty ||
+                      user.nationalIdNumber == 'PENDING') {
+                    _showNationalIdRequiredDialog(context);
+                    return;
+                  }
+
+                  context.push('/apply/${event.id}', extra: event.title);
+                }
               : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: DarkColors.primary,

@@ -1,0 +1,29 @@
+{
+    "project_info": {
+        "project_number": "190689343445",
+        "project_id": "instajob-cac45",
+        "storage_bucket": "instajob-cac45.firebasestorage.app"
+    },
+    "client": [
+        {
+            "client_info": {
+                "mobilesdk_app_id": "1:190689343445:android:ceeb7c864f59e6650fef5c",
+                "android_client_info": {
+                    "package_name": "com.example.shiftsphere"
+                }
+            },
+            "oauth_client": [],
+            "api_key": [
+                {
+                    "current_key": "AIzaSyCekdiIHIg8ORmrCqkaydQ5Wyp0wfsERVg"
+                }
+            ],
+            "services": {
+                "appinvite_service": {
+                    "other_platform_oauth_client": []
+                }
+            }
+        }
+    ],
+    "configuration_version": "1"
+}
