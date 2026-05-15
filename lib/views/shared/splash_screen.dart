@@ -14,34 +14,20 @@ class SplashScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // App Logo
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.4),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.work_outline_rounded,
-                size: 52,
-                color: Colors.white,
-              ),
+            Image.asset(
+              'assets/logo/bond.jpeg',
+              width: 150,
+              height: 150,
+              fit: BoxFit.contain,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Text(
-              'ShiftSphere',
+              'BOND',
               style: TextStyle(
-                fontSize: ResponsiveHelper.sp(context, 28),
-                fontWeight: FontWeight.w800,
+                fontSize: ResponsiveHelper.sp(context, 32),
+                fontWeight: FontWeight.w900,
                 color: Colors.white,
-                letterSpacing: -0.5,
+                letterSpacing: 2.0,
               ),
             ),
             const SizedBox(height: 8),

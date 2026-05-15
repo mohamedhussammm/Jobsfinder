@@ -161,12 +161,10 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Logo/Title
-                Text(
-                  'ShiftSphere',
-                  style: AppTypography.displayLarge.copyWith(
-                    color: DarkColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Image.asset(
+                  'assets/logo/bond.jpeg',
+                  height: 120, // Increased height for better visibility
+                  fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -199,7 +197,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Admin: admin@shiftsphere.com',
+                            'Admin: admin@bond.com',
                             style: AppTypography.caption.copyWith(
                               color: DarkColors.primary,
                             ),

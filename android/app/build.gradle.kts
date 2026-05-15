@@ -7,8 +7,9 @@ plugins {
 }
 
 android {
-    namespace = "com.example.shiftsphere"
+    namespace = "com.bond.app"
     compileSdk = flutter.compileSdkVersion
+    buildToolsVersion = "35.0.0"
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -22,7 +23,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.shiftsphere"
+        applicationId = "com.bond.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

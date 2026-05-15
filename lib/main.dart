@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:shiftsphere/controllers/auth_controller.dart';
-import 'package:shiftsphere/core/api/token_storage.dart';
-import 'package:shiftsphere/core/theme/colors.dart';
-import 'package:shiftsphere/core/theme/dark_colors.dart';
-import 'package:shiftsphere/core/theme/typography.dart';
-import 'package:shiftsphere/core/theme/theme_provider.dart';
-import 'package:shiftsphere/routes/app_router.dart';
+import 'package:bond/controllers/auth_controller.dart';
+import 'package:bond/core/api/token_storage.dart';
+import 'package:bond/core/theme/colors.dart';
+import 'package:bond/core/theme/dark_colors.dart';
+import 'package:bond/core/theme/typography.dart';
+import 'package:bond/core/theme/theme_provider.dart';
+import 'package:bond/routes/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,17 +62,17 @@ void main() async {
     );
   };
 
-  runApp(const ProviderScope(child: ShiftSphereApp()));
+  runApp(const ProviderScope(child: BondApp()));
 }
 
-class ShiftSphereApp extends ConsumerStatefulWidget {
-  const ShiftSphereApp({super.key});
+class BondApp extends ConsumerStatefulWidget {
+  const BondApp({super.key});
 
   @override
-  ConsumerState<ShiftSphereApp> createState() => _ShiftSphereAppState();
+  ConsumerState<BondApp> createState() => _BondAppState();
 }
 
-class _ShiftSphereAppState extends ConsumerState<ShiftSphereApp> {
+class _BondAppState extends ConsumerState<BondApp> {
   @override
   void initState() {
     super.initState();
@@ -88,7 +88,7 @@ class _ShiftSphereAppState extends ConsumerState<ShiftSphereApp> {
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
-      title: 'ShiftSphere',
+      title: 'BOND',
       debugShowCheckedModeBanner: false,
       routerConfig: router,
       themeMode: themeMode,

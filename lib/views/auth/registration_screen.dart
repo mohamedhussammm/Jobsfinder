@@ -291,7 +291,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Join ShiftSphere',
+                        'Join BOND',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w800,
