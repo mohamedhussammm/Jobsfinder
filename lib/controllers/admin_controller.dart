@@ -33,16 +33,17 @@ final allApplicationsAdminProvider = FutureProvider.autoDispose
     });
 
 /// All companies provider
-final allCompaniesProvider =
-    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
-      final api = ref.watch(apiClientProvider);
-      final response = await api.get(ApiEndpoints.companies);
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        final list = response.data['data']['companies'] as List;
-        return list.map((e) => e as Map<String, dynamic>).toList();
-      }
-      return [];
-    });
+final allCompaniesProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
+  final api = ref.watch(apiClientProvider);
+  final response = await api.get(ApiEndpoints.companies);
+  if (response.statusCode == 200 && response.data['success'] == true) {
+    final list = response.data['data']['companies'] as List;
+    return list.map((e) => e as Map<String, dynamic>).toList();
+  }
+  return [];
+});
 
 /// Admin controller provider
 final adminControllerProvider = Provider((ref) => AdminController(ref));

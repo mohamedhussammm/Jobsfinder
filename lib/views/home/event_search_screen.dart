@@ -47,7 +47,6 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // Sticky Search Header
             SliverPersistentHeader(
               pinned: true,
               delegate: _SearchHeaderDelegate(
@@ -58,163 +57,165 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
                 showFilters: _showFilters,
               ),
             ),
-
-            // Filters Section
-            if (_showFilters)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Location',
-                        style: AppTypography.labelLarge.copyWith(
-                          color: DarkColors.primary,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children:
-                              [
-                                'All',
-                                'New York',
-                                'Los Angeles',
-                                'Chicago',
-                                'Houston',
-                                'Remote',
-                              ].map((loc) {
-                                final isSelected = _selectedLocation == loc;
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: ChoiceChip(
-                                    label: Text(loc),
-                                    selected: isSelected,
-                                    onSelected: (selected) {
-                                      if (selected) {
-                                        setState(() => _selectedLocation = loc);
-                                      }
-                                    },
-                                    backgroundColor: DarkColors.gray100,
-                                    selectedColor: DarkColors.primary,
-                                    labelStyle: TextStyle(
-                                      color: isSelected
-                                          ? Colors.white
-                                          : DarkColors.textSecondary,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    side: BorderSide(
-                                      color: isSelected
-                                          ? DarkColors.primary
-                                          : DarkColors.borderColor,
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-            // Events List
+            if (_showFilters) _buildFiltersSection(),
             eventsAsync.when(
-              data: (events) {
-                // Apply logic filters
-                var filtered = events;
-                if (_searchController.text.isNotEmpty) {
-                  final query = _searchController.text.toLowerCase();
-                  filtered = filtered
-                      .where(
-                        (e) =>
-                            e.title.toLowerCase().contains(query) ||
-                            (e.description?.toLowerCase().contains(query) ??
-                                false) ||
-                            e.company.toLowerCase().contains(query),
-                      )
-                      .toList();
-                }
-                if (_selectedLocation != 'All') {
-                  filtered = filtered
-                      .where((e) => e.location?.city == _selectedLocation)
-                      .toList();
-                }
+              data: (events) => _buildEventsList(events),
+              loading: () => _buildLoadingState(),
+              error: (e, _) => _buildErrorState(e),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                if (filtered.isEmpty) {
-                  return SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off,
-                            size: 64,
-                            color: DarkColors.textTertiary,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No events found',
-                            style: AppTypography.titleLarge.copyWith(
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Try adjusting your search to find what you\'re looking for.',
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: DarkColors.textSecondary,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                return SliverPadding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 8,
-                  ),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, i) => _EventSearchCard(event: filtered[i]),
-                      childCount: filtered.length,
-                    ),
-                  ),
-                );
-              },
-              loading: () => SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, i) => const SkeletonCard(),
-                    childCount: 6,
-                  ),
-                ),
+  Widget _buildFiltersSection() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Location',
+              style: AppTypography.labelLarge.copyWith(
+                color: DarkColors.primary,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
               ),
-              error: (e, _) => SliverFillRemaining(
-                child: Center(
-                  child: Text(
-                    'Error: $e',
-                    style: const TextStyle(color: DarkColors.error),
-                  ),
-                ),
+            ),
+            const SizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children:
+                    [
+                      'All',
+                      'New York',
+                      'Los Angeles',
+                      'Chicago',
+                      'Houston',
+                      'Remote',
+                    ].map((loc) {
+                      final isSelected = _selectedLocation == loc;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(loc),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() => _selectedLocation = loc);
+                            }
+                          },
+                          backgroundColor: DarkColors.gray100,
+                          selectedColor: DarkColors.primary,
+                          labelStyle: TextStyle(
+                            color: isSelected
+                                ? Colors.white
+                                : DarkColors.textSecondary,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          side: BorderSide(
+                            color: isSelected
+                                ? DarkColors.primary
+                                : DarkColors.borderColor,
+                          ),
+                        ),
+                      );
+                    }).toList(),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEventsList(List<EventModel> events) {
+    var filtered = events;
+    if (_searchController.text.isNotEmpty) {
+      final query = _searchController.text.toLowerCase();
+      filtered = filtered
+          .where(
+            (e) =>
+                e.title.toLowerCase().contains(query) ||
+                (e.description?.toLowerCase().contains(query) ?? false) ||
+                e.company.toLowerCase().contains(query),
+          )
+          .toList();
+    }
+    if (_selectedLocation != 'All') {
+      filtered = filtered
+          .where((e) => e.location?.city == _selectedLocation)
+          .toList();
+    }
+
+    if (filtered.isEmpty) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.search_off,
+                size: 64,
+                color: DarkColors.textTertiary,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No events found',
+                style: AppTypography.titleLarge.copyWith(color: Colors.white),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Try adjusting your search to find what you\'re looking for.',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: DarkColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, i) => _EventSearchCard(event: filtered[i]),
+          childCount: filtered.length,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, i) => const SkeletonCard(),
+          childCount: 6,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(Object e) {
+    return SliverFillRemaining(
+      child: Center(
+        child: Text(
+          'Error: $e',
+          style: const TextStyle(color: DarkColors.error),
         ),
       ),
     );
@@ -315,10 +316,12 @@ class _EventSearchCard extends ConsumerWidget {
 
   const _EventSearchCard({required this.event});
 
+  static final _timeFormatter = DateFormat('h:mm a');
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final timeStr =
-        '${DateFormat('h:mm a').format(event.startTime)} - ${DateFormat('h:mm a').format(event.endTime)}';
+        '${_timeFormatter.format(event.startTime)} - ${_timeFormatter.format(event.endTime)}';
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -347,7 +350,11 @@ class _EventSearchCard extends ConsumerWidget {
                             160, // Optimize memory for search thumbnails
                         memCacheWidth: 160,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) => const SkeletonCard(),
+                        placeholder: (_, __) => const SkeletonLoader(
+                          width: double.infinity,
+                          height: double.infinity,
+                          borderRadius: 12,
+                        ),
                         errorWidget: (_, __, ___) =>
                             _ImagePlaceholder(event.categoryName ?? 'EVENT'),
                       )

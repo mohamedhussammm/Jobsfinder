@@ -50,6 +50,11 @@ class AuthController {
         sanitized['national_id_number'] ??
         sanitized['nationalIdNumber'] ??
         'PENDING';
+    sanitized['age'] = sanitized['age'];
+    sanitized['nationalIdFrontPath'] =
+        sanitized['nationalIdFrontPath'] ?? sanitized['national_id_front_path'];
+    sanitized['nationalIdBackPath'] =
+        sanitized['nationalIdBackPath'] ?? sanitized['national_id_back_path'];
     sanitized['role'] = sanitized['role'] ?? 'normal';
     sanitized['name'] = sanitized['name'] ?? 'User';
     sanitized['email'] =
@@ -447,6 +452,9 @@ class AuthController {
     String? fullName,
     String? phone,
     String? nationalIdNumber,
+    int? age,
+    String? nationalIdFrontUrl,
+    String? nationalIdBackUrl,
     String? avatarUrl,
     String? cvUrl,
   }) async {
@@ -457,11 +465,18 @@ class AuthController {
       if (nationalIdNumber != null) {
         updateData['nationalIdNumber'] = nationalIdNumber;
       }
+      if (age != null) updateData['age'] = age;
+      if (nationalIdFrontUrl != null) {
+        updateData['nationalIdFrontPath'] = nationalIdFrontUrl;
+      }
+      if (nationalIdBackUrl != null) {
+        updateData['nationalIdBackPath'] = nationalIdBackUrl;
+      }
       if (avatarUrl != null) updateData['avatarPath'] = avatarUrl;
       if (cvUrl != null) updateData['cvPath'] = cvUrl;
 
-      final response = await _api.put(
-        ApiEndpoints.userById(userId),
+      final response = await _api.patch(
+        ApiEndpoints.updateProfile,
         data: updateData,
       );
 

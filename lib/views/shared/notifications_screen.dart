@@ -62,8 +62,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               padding: ResponsiveHelper.screenPadding(context),
               itemCount: notifications.length,
               separatorBuilder: (_, i) => const SizedBox(height: 8),
-              itemBuilder: (context, index) =>
-                  _buildNotificationCard(notifications[index]),
+              itemBuilder: (context, index) => _NotificationCard(
+                notification: notifications[index],
+                onTap: () => _handleNotificationTap(notifications[index]),
+                onDelete: () => _deleteNotification(notifications[index].id),
+              ),
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -125,96 +128,144 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationCard(NotificationModel notification) {
-    return Dismissible(
-      key: Key(notification.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 16),
-        decoration: BoxDecoration(
-          color: AppColors.error,
-          borderRadius: BorderRadius.circular(12),
+  Future<void> _markAllAsRead(String userId) async {
+    final controller = ref.read(notificationControllerProvider);
+    await controller.markAllAsRead(userId);
+    ref.invalidate(userNotificationsProvider(userId));
+    ref.invalidate(unreadCountProvider(userId));
+  }
+
+  Future<void> _deleteNotification(String notificationId) async {
+    final currentUser = ref.read(currentUserProvider);
+    if (currentUser == null) return;
+    final controller = ref.read(notificationControllerProvider);
+    await controller.deleteNotification(notificationId);
+    ref.invalidate(userNotificationsProvider(currentUser.id));
+    ref.invalidate(unreadCountProvider(currentUser.id));
+  }
+
+  void _handleNotificationTap(NotificationModel notification) async {
+    // Mark as read
+    if (!notification.isRead) {
+      final controller = ref.read(notificationControllerProvider);
+      await controller.markAsRead(notification.id);
+      final currentUser = ref.read(currentUserProvider);
+      if (currentUser != null) {
+        ref.invalidate(userNotificationsProvider(currentUser.id));
+        ref.invalidate(unreadCountProvider(currentUser.id));
+      }
+    }
+
+    // Navigate based on type and related_id
+    // Navigation based on notification type is handled by the router
+  }
+}
+
+class _NotificationCard extends StatelessWidget {
+  final NotificationModel notification;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _NotificationCard({
+    required this.notification,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: Dismissible(
+        key: Key(notification.id),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+            color: AppColors.error,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.delete, color: Colors.white),
         ),
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      onDismissed: (_) => _deleteNotification(notification.id),
-      child: Card(
-        elevation: notification.isRead ? 0 : 2,
-        color: notification.isRead ? AppColors.surface : AppColors.primaryLight,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => _handleNotificationTap(notification),
-          child: Padding(
-            padding: ResponsiveHelper.cardPadding(context),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Icon
-                Container(
-                  width: ResponsiveHelper.sp(context, 40),
-                  height: ResponsiveHelper.sp(context, 40),
-                  decoration: BoxDecoration(
-                    color: _getNotificationColor(
-                      notification.type,
-                    ).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    _getNotificationIcon(notification.type),
-                    color: _getNotificationColor(notification.type),
-                    size: ResponsiveHelper.sp(context, 20),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        notification.title ?? 'Notification',
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.sp(context, 14),
-                          fontWeight: notification.isRead
-                              ? FontWeight.w500
-                              : FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        notification.message ?? '',
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.sp(context, 13),
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        _formatTime(notification.createdAt),
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.sp(context, 11),
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Unread indicator
-                if (!notification.isRead)
+        onDismissed: (_) => onDelete(),
+        child: Card(
+          elevation: notification.isRead ? 0 : 2,
+          color: notification.isRead
+              ? AppColors.surface
+              : AppColors.primaryLight,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: onTap,
+            child: Padding(
+              padding: ResponsiveHelper.cardPadding(context),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
+                    width: ResponsiveHelper.sp(context, 40),
+                    height: ResponsiveHelper.sp(context, 40),
+                    decoration: BoxDecoration(
+                      color: _getNotificationColor(
+                        notification.type,
+                      ).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      _getNotificationIcon(notification.type),
+                      color: _getNotificationColor(notification.type),
+                      size: ResponsiveHelper.sp(context, 20),
                     ),
                   ),
-              ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          notification.title ?? 'Notification',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.sp(context, 14),
+                            fontWeight: notification.isRead
+                                ? FontWeight.w500
+                                : FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          notification.message ?? '',
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.sp(context, 13),
+                            color: AppColors.textSecondary,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _formatTime(notification.createdAt),
+                          style: TextStyle(
+                            fontSize: ResponsiveHelper.sp(context, 11),
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!notification.isRead)
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -268,37 +319,5 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
     return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-  }
-
-  Future<void> _markAllAsRead(String userId) async {
-    final controller = ref.read(notificationControllerProvider);
-    await controller.markAllAsRead(userId);
-    ref.invalidate(userNotificationsProvider(userId));
-    ref.invalidate(unreadCountProvider(userId));
-  }
-
-  Future<void> _deleteNotification(String notificationId) async {
-    final currentUser = ref.read(currentUserProvider);
-    if (currentUser == null) return;
-    final controller = ref.read(notificationControllerProvider);
-    await controller.deleteNotification(notificationId);
-    ref.invalidate(userNotificationsProvider(currentUser.id));
-    ref.invalidate(unreadCountProvider(currentUser.id));
-  }
-
-  void _handleNotificationTap(NotificationModel notification) async {
-    // Mark as read
-    if (!notification.isRead) {
-      final controller = ref.read(notificationControllerProvider);
-      await controller.markAsRead(notification.id);
-      final currentUser = ref.read(currentUserProvider);
-      if (currentUser != null) {
-        ref.invalidate(userNotificationsProvider(currentUser.id));
-        ref.invalidate(unreadCountProvider(currentUser.id));
-      }
-    }
-
-    // Navigate based on type and related_id
-    // Navigation based on notification type is handled by the router
   }
 }

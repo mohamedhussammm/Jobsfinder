@@ -178,150 +178,194 @@ class UserDashboardScreen extends ConsumerWidget {
               ),
             ),
 
-            // Stats Cards
-            SliverPadding(
-              padding: ResponsiveHelper.screenPadding(context),
-              sliver: SliverToBoxAdapter(
-                child: applicationsAsync.when(
-                  data: (apps) {
-                    final applied = apps
-                        .where((a) => a.status == 'applied')
-                        .length;
-                    final accepted = apps
-                        .where((a) => a.status == 'accepted')
-                        .length;
-                    final total = apps.length;
+            // Content Based on Applications Data
+            ...applicationsAsync.when(
+              data: (apps) {
+                final applied = apps.where((a) => a.status == 'applied').length;
+                final accepted = apps
+                    .where((a) => a.status == 'accepted')
+                    .length;
+                final total = apps.length;
 
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: ResponsiveHelper.sp(context, 16)),
-                        Text(
-                          'Your Activity',
-                          style: TextStyle(
-                            fontSize: ResponsiveHelper.sp(context, 18),
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(height: ResponsiveHelper.sp(context, 12)),
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            final cols = ResponsiveHelper.kpiCardsPerRow(
-                              context,
-                            ).clamp(2, 3);
-                            final spacing = 12.0;
-                            final cardWidth =
-                                (constraints.maxWidth - (cols - 1) * spacing) /
-                                cols;
-
-                            return Wrap(
-                              spacing: spacing,
-                              runSpacing: spacing,
-                              children: [
-                                _buildStatCard(
-                                  context,
-                                  'Total Applied',
-                                  '$total',
-                                  Icons.assignment_outlined,
-                                  AppColors.primary,
-                                  cardWidth,
-                                ),
-                                _buildStatCard(
-                                  context,
-                                  'Pending',
-                                  '$applied',
-                                  Icons.hourglass_empty,
-                                  AppColors.pending,
-                                  cardWidth,
-                                ),
-                                _buildStatCard(
-                                  context,
-                                  'Accepted',
-                                  '$accepted',
-                                  Icons.check_circle_outline,
-                                  AppColors.success,
-                                  cardWidth,
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                        SizedBox(height: ResponsiveHelper.sp(context, 24)),
-
-                        // Quick Actions
-                        Text(
-                          'Quick Actions',
-                          style: TextStyle(
-                            fontSize: ResponsiveHelper.sp(context, 18),
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(height: ResponsiveHelper.sp(context, 12)),
-                        _buildQuickAction(
-                          context,
-                          'Browse Events',
-                          'Find new job opportunities',
-                          Icons.search,
-                          AppColors.primary,
-                          () => Navigator.of(context).pushNamed('/'),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildQuickAction(
-                          context,
-                          'My Applications',
-                          'Track your applications',
-                          Icons.assignment_outlined,
-                          AppColors.info,
-                          () =>
-                              Navigator.of(context).pushNamed('/applications'),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildQuickAction(
-                          context,
-                          'My Ratings',
-                          'See your received ratings',
-                          Icons.star_outline,
-                          AppColors.accent,
-                          () => Navigator.of(context).pushNamed('/ratings'),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildQuickAction(
-                          context,
-                          'Edit Profile',
-                          'Update your information',
-                          Icons.person_outline,
-                          AppColors.secondary,
-                          () =>
-                              Navigator.of(context).pushNamed('/edit-profile'),
-                        ),
-
-                        SizedBox(height: ResponsiveHelper.sp(context, 24)),
-
-                        // Recent Applications
-                        if (apps.isNotEmpty) ...[
+                return [
+                  // Stats Cards
+                  SliverPadding(
+                    padding: ResponsiveHelper.screenPadding(context),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: ResponsiveHelper.sp(context, 16)),
                           Text(
-                            'Recent Applications',
+                            'Your Activity',
                             style: TextStyle(
                               fontSize: ResponsiveHelper.sp(context, 18),
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           SizedBox(height: ResponsiveHelper.sp(context, 12)),
-                          ...apps
-                              .take(3)
-                              .map((app) => _buildRecentAppCard(context, app)),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final cols = ResponsiveHelper.kpiCardsPerRow(
+                                context,
+                              ).clamp(2, 3);
+                              final spacing = 12.0;
+                              final cardWidth =
+                                  (constraints.maxWidth -
+                                      (cols - 1) * spacing) /
+                                  cols;
+
+                              return Wrap(
+                                spacing: spacing,
+                                runSpacing: spacing,
+                                children: [
+                                  _buildStatCard(
+                                    context,
+                                    'Total Applied',
+                                    '$total',
+                                    Icons.assignment_outlined,
+                                    AppColors.primary,
+                                    cardWidth,
+                                  ),
+                                  _buildStatCard(
+                                    context,
+                                    'Pending',
+                                    '$applied',
+                                    Icons.hourglass_empty,
+                                    AppColors.pending,
+                                    cardWidth,
+                                  ),
+                                  _buildStatCard(
+                                    context,
+                                    'Accepted',
+                                    '$accepted',
+                                    Icons.check_circle_outline,
+                                    AppColors.success,
+                                    cardWidth,
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
                         ],
-                      ],
-                    );
-                  },
-                  loading: () => const Padding(
-                    padding: EdgeInsets.all(32),
-                    child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ),
                   ),
-                  error: (e, _) =>
-                      Center(child: Text('Error loading data: $e')),
+
+                  // Quick Actions Section
+                  SliverPadding(
+                    padding: ResponsiveHelper.screenPadding(context),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: ResponsiveHelper.sp(context, 24)),
+                          Text(
+                            'Quick Actions',
+                            style: TextStyle(
+                              fontSize: ResponsiveHelper.sp(context, 18),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(height: ResponsiveHelper.sp(context, 12)),
+                          _buildQuickAction(
+                            context,
+                            'Browse Events',
+                            'Find new job opportunities',
+                            Icons.search,
+                            AppColors.primary,
+                            () => Navigator.of(context).pushNamed('/'),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildQuickAction(
+                            context,
+                            'My Applications',
+                            'Track your applications',
+                            Icons.assignment_outlined,
+                            AppColors.info,
+                            () => Navigator.of(
+                              context,
+                            ).pushNamed('/applications'),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildQuickAction(
+                            context,
+                            'My Ratings',
+                            'See your received ratings',
+                            Icons.star_outline,
+                            AppColors.accent,
+                            () => Navigator.of(context).pushNamed('/ratings'),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildQuickAction(
+                            context,
+                            'Edit Profile',
+                            'Update your information',
+                            Icons.person_outline,
+                            AppColors.secondary,
+                            () => Navigator.of(
+                              context,
+                            ).pushNamed('/edit-profile'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Recent Applications Header
+                  if (apps.isNotEmpty)
+                    SliverPadding(
+                      padding: ResponsiveHelper.screenPadding(context),
+                      sliver: SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: ResponsiveHelper.sp(context, 24)),
+                            Text(
+                              'Recent Applications',
+                              style: TextStyle(
+                                fontSize: ResponsiveHelper.sp(context, 18),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(height: ResponsiveHelper.sp(context, 12)),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  // Recent Applications List (Lazy Loaded)
+                  if (apps.isNotEmpty)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ResponsiveHelper.screenPadding(
+                          context,
+                        ).left,
+                      ),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          if (index >= apps.length || index >= 3) return null;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _RecentAppCard(app: apps[index]),
+                          );
+                        }, childCount: apps.length > 3 ? 3 : apps.length),
+                      ),
+                    ),
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                ];
+              },
+              loading: () => [
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
                 ),
-              ),
+              ],
+              error: (e, _) => [
+                SliverFillRemaining(
+                  child: Center(child: Text('Error loading data: $e')),
+                ),
+              ],
             ),
           ],
         ),
@@ -415,65 +459,73 @@ class UserDashboardScreen extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildRecentAppCard(BuildContext context, ApplicationModel app) {
-    return Card(
-      elevation: 0,
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.borderColor),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Container(
-              width: 4,
-              height: 40,
-              decoration: BoxDecoration(
-                color: _statusColor(app.status),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Application',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: ResponsiveHelper.sp(context, 14),
-                    ),
-                  ),
-                  Text(
-                    'Applied ${app.appliedAt.day}/${app.appliedAt.month}/${app.appliedAt.year}',
-                    style: TextStyle(
-                      fontSize: ResponsiveHelper.sp(context, 11),
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: _statusColor(app.status).withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                app.status.toUpperCase(),
-                style: TextStyle(
+class _RecentAppCard extends StatelessWidget {
+  final ApplicationModel app;
+  const _RecentAppCard({required this.app});
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: Card(
+        elevation: 0,
+        color: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: AppColors.borderColor),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 40,
+                decoration: BoxDecoration(
                   color: _statusColor(app.status),
-                  fontWeight: FontWeight.w700,
-                  fontSize: ResponsiveHelper.sp(context, 10),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Application',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: ResponsiveHelper.sp(context, 14),
+                      ),
+                    ),
+                    Text(
+                      'Applied ${app.appliedAt.day}/${app.appliedAt.month}/${app.appliedAt.year}',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.sp(context, 11),
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _statusColor(app.status).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  app.status.toUpperCase(),
+                  style: TextStyle(
+                    color: _statusColor(app.status),
+                    fontWeight: FontWeight.w700,
+                    fontSize: ResponsiveHelper.sp(context, 10),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

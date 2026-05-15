@@ -35,9 +35,7 @@ final publishedEventsByCategoryProvider = FutureProvider.autoDispose
     });
 
 /// Categories provider
-final categoriesProvider = FutureProvider.autoDispose<List<CategoryModel>>((
-  ref,
-) async {
+final categoriesProvider = FutureProvider<List<CategoryModel>>((ref) async {
   final controller = ref.watch(eventControllerProvider);
   final result = await controller.fetchCategories();
   return result.when(success: (cats) => cats, error: (e) => throw e);

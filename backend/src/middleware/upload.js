@@ -52,4 +52,13 @@ const uploadLogo = multer({
     fileFilter: fileFilter(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']),
 }).single('logo');
 
-module.exports = { uploadAvatar, uploadCV, uploadEventImage, uploadLogo };
+/**
+ * ID Card upload — images only, max 5MB
+ */
+const uploadIdCard = multer({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: fileFilter(['image/jpeg', 'image/png', 'image/webp']),
+}).single('nationalId');
+
+module.exports = { uploadAvatar, uploadCV, uploadEventImage, uploadLogo, uploadIdCard };

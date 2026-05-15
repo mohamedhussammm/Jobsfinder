@@ -22,6 +22,8 @@ const _kTextPrimary = Colors.white;
 const _kTextSecondary = Color(0xFF94A3B8);
 const _kGlassBorder = Color(0x14FFFFFF); // rgba(255,255,255,0.08)
 
+final _timeFormatter = DateFormat('h:mm a');
+
 class EventBrowseScreen extends ConsumerStatefulWidget {
   const EventBrowseScreen({super.key});
 
@@ -60,146 +62,148 @@ class _EventBrowseScreenState extends ConsumerState<EventBrowseScreen> {
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // ── Sticky Search Bar (as SliverAppBar) ─────────────────────────
             SliverPersistentHeader(
               pinned: true,
               delegate: _SearchBarDelegate(),
             ),
 
-            // ── Trending Hero Carousel ───────────────────────────────────────
             SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  // Section header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'CURATED LISTINGS',
-                                style: AppTypography.labelLarge.copyWith(
-                                  fontSize: ResponsiveHelper.sp(context, 10),
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.8,
-                                  color: _kPrimary,
+              child: RepaintBoundary(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+                    // Section header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'CURATED LISTINGS',
+                                  style: AppTypography.labelLarge.copyWith(
+                                    fontSize: ResponsiveHelper.sp(context, 10),
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.8,
+                                    color: _kPrimary,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Trending Near You',
-                                style: AppTypography.headlineMedium.copyWith(
-                                  fontSize: ResponsiveHelper.sp(context, 22),
-                                  fontWeight: FontWeight.w900,
-                                  color: _kTextPrimary,
-                                  letterSpacing: -0.5,
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Trending Near You',
+                                  style: AppTypography.headlineMedium.copyWith(
+                                    fontSize: ResponsiveHelper.sp(context, 22),
+                                    fontWeight: FontWeight.w900,
+                                    color: _kTextPrimary,
+                                    letterSpacing: -0.5,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => context.push('/search'),
-                          child: Text(
-                            'See all',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: _kPrimary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: ResponsiveHelper.sp(context, 14),
+                              ],
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Horizontal hero cards
-                  SizedBox(
-                    height:
-                        MediaQuery.of(context).size.width *
-                        1.0625, // aspect ~4/5 for 85% width
-                    child: heroAsync.when(
-                      data: (events) {
-                        if (events.isEmpty) {
-                          return const _EmptyHeroPlaceholder();
-                        }
-                        final displayEvents = events.take(5).toList();
-                        return ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: displayEvents.length,
-                          itemBuilder: (context, i) {
-                            return RepaintBoundary(
-                              child: _HeroEventCard(
-                                event: displayEvents[i],
-                                onTap: () => context.push(
-                                  '/event/${displayEvents[i].id}',
-                                  extra: displayEvents[i],
-                                ),
+                          TextButton(
+                            onPressed: () => context.push('/search'),
+                            child: Text(
+                              'See all',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: _kPrimary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: ResponsiveHelper.sp(context, 14),
                               ),
-                            );
-                          },
-                        );
-                      },
-                      loading: () => SizedBox(
-                        height: MediaQuery.of(context).size.width * 1.0625,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: 3,
-                          itemBuilder: (context, i) => const SkeletonHeroCard(),
-                        ),
+                            ),
+                          ),
+                        ],
                       ),
-                      error: (e, _) => Center(
-                        child: Text(
-                          '$e',
-                          style: const TextStyle(color: Colors.red),
+                    ),
+                    const SizedBox(height: 12),
+                    // Horizontal hero cards
+                    SizedBox(
+                      height: MediaQuery.of(context).size.width * 1.0625,
+                      child: heroAsync.when(
+                        data: (events) {
+                          if (events.isEmpty) {
+                            return const _EmptyHeroPlaceholder();
+                          }
+                          final displayEvents = events.take(5).toList();
+                          return ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            itemCount: displayEvents.length,
+                            itemBuilder: (context, i) {
+                              return RepaintBoundary(
+                                child: _HeroEventCard(
+                                  event: displayEvents[i],
+                                  onTap: () => context.push(
+                                    '/event/${displayEvents[i].id}',
+                                    extra: displayEvents[i],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                        loading: () => SizedBox(
+                          height: MediaQuery.of(context).size.width * 1.0625,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            itemCount: 3,
+                            itemBuilder: (context, i) =>
+                                const SkeletonHeroCard(),
+                          ),
+                        ),
+                        error: (e, _) => Center(
+                          child: Text(
+                            '$e',
+                            style: const TextStyle(color: Colors.red),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
             // ── Category Filter Chips ────────────────────────────────────────
             SliverToBoxAdapter(
-              child: _CategoryChips(
-                categoriesAsync: categoriesAsync,
-                selectedCategoryId: _selectedCategoryId,
-                onSelected: (id) => setState(() => _selectedCategoryId = id),
+              child: RepaintBoundary(
+                child: _CategoryChips(
+                  categoriesAsync: categoriesAsync,
+                  selectedCategoryId: _selectedCategoryId,
+                  onSelected: (id) => setState(() => _selectedCategoryId = id),
+                ),
               ),
             ),
 
-            // ── Available Shifts Header ──────────────────────────────────────
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(
-                  left: 20,
-                  right: 20,
-                  top: 4,
-                  bottom: 12,
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.bolt, color: _kPrimary, size: 22),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Available Shifts',
-                      style: AppTypography.headlineMedium.copyWith(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: _kTextPrimary,
+              child: RepaintBoundary(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 20,
+                    right: 20,
+                    top: 4,
+                    bottom: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.bolt, color: _kPrimary, size: 22),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Available Shifts',
+                        style: AppTypography.headlineMedium.copyWith(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: _kTextPrimary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -637,7 +641,7 @@ class _ShiftCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final timeStr =
-        '${DateFormat('h:mm a').format(event.startTime)} - ${DateFormat('h:mm a').format(event.endTime)}';
+        '${_timeFormatter.format(event.startTime)} - ${_timeFormatter.format(event.endTime)}';
     final categoryLabel = event.categoryName ?? event.status.toUpperCase();
 
     return GestureDetector(
@@ -667,7 +671,11 @@ class _ShiftCard extends ConsumerWidget {
                         memCacheHeight: 160, // Optimize memory for thumbnails
                         memCacheWidth: 160,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => const SkeletonCard(),
+                        placeholder: (context, url) => const SkeletonLoader(
+                          width: double.infinity,
+                          height: double.infinity,
+                          borderRadius: 10,
+                        ),
                         errorWidget: (context, url, error) =>
                             _SmallImagePlaceholder(categoryLabel),
                       )
@@ -792,20 +800,16 @@ class _GlassPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _kGlassBorder),
-          ),
-          child: child,
-        ),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(
+          alpha: 0.6,
+        ), // Solid semi-transparent back
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _kGlassBorder),
       ),
+      child: child,
     );
   }
 }
@@ -816,20 +820,16 @@ class _GlassBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.35),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: _kGlassBorder),
-          ),
-          child: child,
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(
+          alpha: 0.7,
+        ), // Higher opacity for badge readability
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _kGlassBorder),
       ),
+      child: child,
     );
   }
 }

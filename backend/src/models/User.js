@@ -45,6 +45,16 @@ const userSchema = new mongoose.Schema(
             sparse: true, // allows multiple nulls
             trim: true,
         },
+        age: {
+            type: Number,
+            min: [16, 'Age must be at least 16'],
+        },
+        nationalIdFrontPath: {
+            type: String,
+        },
+        nationalIdBackPath: {
+            type: String,
+        },
         avatarPath: {
             type: String,
         },

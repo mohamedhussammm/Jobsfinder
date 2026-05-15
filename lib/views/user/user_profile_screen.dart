@@ -107,7 +107,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   title: 'Personal Information',
                   icon: Icons.person_outline,
                   subtitle:
-                      '${user.name ?? "Not set"}, ${user.phone ?? "No phone"}',
+                      '${user.name ?? "Not set"}, ${user.age != null ? "${user.age} yrs" : "Age missing"}',
                   onTap: () => context.push('/edit-profile'),
                 ),
 
@@ -120,6 +120,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                       'National ID: ${user.nationalIdNumber ?? "Missing"}',
                   onTap: () => context.push('/edit-profile'),
                 ),
+
+                // 2.5 National ID Verification (NEW)
+                if (isMe) ...[
+                  const SizedBox(height: 8),
+                  _buildIdVerificationSection(user),
+                ],
 
                 // 3. Portfolio & Documents
                 _buildSectionRow(
@@ -298,6 +304,176 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
+  }
+
+  Future<void> _pickAndUploadIdCard(bool isFront) async {
+    if (_isUploading) return;
+
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      maxHeight: 1200,
+      imageQuality: 85,
+    );
+
+    if (image == null) return;
+
+    setState(() => _isUploading = true);
+
+    try {
+      final bytes = await image.readAsBytes();
+      final result = isFront
+          ? await ref
+                .read(fileUploadServiceProvider)
+                .uploadIdFront(fileName: image.name, bytes: bytes)
+          : await ref
+                .read(fileUploadServiceProvider)
+                .uploadIdBack(fileName: image.name, bytes: bytes);
+
+      if (result is Success<String>) {
+        final currentUser = ref.read(currentUserProvider);
+        if (currentUser != null) {
+          // Update profile on backend is handled by the upload route itself for ID paths
+          // But we need to refresh the local user state
+          await ref.read(authControllerProvider).syncUser();
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${isFront ? "Front" : "Back"} of ID uploaded!'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to upload image'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  Widget _buildIdVerificationSection(UserModel user) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            'National ID Verification',
+            style: AppTypography.bodySmall.copyWith(
+              color: DarkColors.textSecondary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: _buildIdCardItem(
+                title: 'Front Side',
+                path: user.nationalIdFrontPath,
+                onTap: () => _pickAndUploadIdCard(true),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildIdCardItem(
+                title: 'Back Side',
+                path: user.nationalIdBackPath,
+                onTap: () => _pickAndUploadIdCard(false),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIdCardItem({
+    required String title,
+    String? path,
+    required VoidCallback onTap,
+  }) {
+    final uploadService = ref.read(fileUploadServiceProvider);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 100,
+        decoration: BoxDecoration(
+          color: DarkColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: path != null
+                ? AppColors.success.withValues(alpha: 0.3)
+                : Colors.white.withValues(alpha: 0.05),
+          ),
+        ),
+        child: Stack(
+          children: [
+            if (path != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: CachedNetworkImage(
+                  imageUrl: uploadService.getPublicUrl(path),
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  memCacheHeight: 300,
+                  placeholder: (context, url) => const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  errorWidget: (context, url, error) => const Icon(
+                    Icons.broken_image_outlined,
+                    color: DarkColors.textTertiary,
+                  ),
+                ),
+              ),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.6),
+                  ],
+                ),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      path != null ? Icons.check_circle : Icons.add_a_photo,
+                      color: path != null ? AppColors.success : Colors.white54,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      title,
+                      style: AppTypography.labelSmall.copyWith(
+                        color: Colors.white,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildSliverAppBar(BuildContext context, bool isMe) {
@@ -521,6 +697,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       hint = "Upload a profile photo";
     else if (user.cvPath == null)
       hint = "Upload your CV to apply for jobs";
+    else if (user.age == null)
+      hint = "Add your age in profile settings";
+    else if (user.nationalIdFrontPath == null ||
+        user.nationalIdBackPath == null)
+      hint = "Upload both sides of your National ID";
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),

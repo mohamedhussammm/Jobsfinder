@@ -24,6 +24,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _nationalIdController = TextEditingController();
+  final _ageController = TextEditingController();
   bool _isLoading = false;
   bool _isUploading = false;
   bool _initialized = false;
@@ -41,6 +42,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _phoneController.dispose();
     _emailController.dispose();
     _nationalIdController.dispose();
+    _ageController.dispose();
     super.dispose();
   }
 
@@ -52,6 +54,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       _phoneController.text = currentUser.phone ?? '';
       _emailController.text = currentUser.email;
       _nationalIdController.text = currentUser.nationalIdNumber ?? '';
+      _ageController.text = currentUser.age?.toString() ?? '';
       _initialized = true;
     }
   }
@@ -172,6 +175,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 decoration: _inputDecoration('ID Number', Icons.badge_outlined),
                 validator: (v) =>
                     (v == null || v.isEmpty) ? 'National ID is required' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Age
+              _buildLabel('Age'),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _ageController,
+                decoration: _inputDecoration('Minimum 16', Icons.cake_outlined),
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Age is required';
+                  final age = int.tryParse(v);
+                  if (age == null || age < 16) return 'Must be 16 or older';
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
 
@@ -371,6 +390,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       nationalIdNumber: _nationalIdController.text.trim().isNotEmpty
           ? _nationalIdController.text.trim()
           : null,
+      age: int.tryParse(_ageController.text.trim()),
     );
 
     setState(() => _isLoading = false);

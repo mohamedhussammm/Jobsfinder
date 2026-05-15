@@ -123,6 +123,8 @@ class ApiEndpoints {
   static const String uploadCv = '/upload/cv';
   static const String uploadEventImage = '/upload/event-image';
   static const String uploadCompanyLogo = '/upload/company-logo';
+  static const String uploadIdFront = '/upload/id-front';
+  static const String uploadIdBack = '/upload/id-back';
 }
 
 /// Common API error messages

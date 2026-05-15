@@ -1,5 +1,6 @@
 const Application = require('../models/Application');
 const Event = require('../models/Event');
+const User = require('../models/User');
 const Notification = require('../models/Notification');
 const AppError = require('../utils/AppError');
 const { parsePagination, paginationMeta } = require('../utils/pagination');
@@ -8,6 +9,21 @@ const { parsePagination, paginationMeta } = require('../utils/pagination');
  * Apply to an event (normal user).
  */
 const applyToEvent = async (userId, data) => {
+    // Check if user has completed their profile
+    const user = await User.findById(userId);
+    if (!user) throw new AppError('User not found', 404);
+
+    const requiredFields = [
+        'name', 'phone', 'nationalIdNumber', 'age',
+        'avatarPath', 'cvPath', 'nationalIdFrontPath', 'nationalIdBackPath'
+    ];
+
+    const missingFields = requiredFields.filter(field => !user[field] || (typeof user[field] === 'string' && user[field].trim() === ''));
+
+    if (missingFields.length > 0) {
+        throw new AppError(`Please complete your profile first. Missing: ${missingFields.join(', ')}`, 400);
+    }
+
     // Check event exists and is published
     const event = await Event.findById(data.eventId);
     if (!event) throw new AppError('Event not found', 404);

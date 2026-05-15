@@ -19,6 +19,8 @@ class _AdminApplicationsScreenState
     extends ConsumerState<AdminApplicationsScreen> {
   String _statusFilter = 'all';
 
+  static final _dateFormatter = DateFormat('MMM dd, yyyy');
+
   @override
   Widget build(BuildContext context) {
     final applicationsAsync = ref.watch(allApplicationsAdminProvider(0));
@@ -107,7 +109,7 @@ class _AdminApplicationsScreenState
                           ),
                         ),
                         subtitle: Text(
-                          'User ID: ${app.userId.substring(0, 8)}... • ${DateFormat('MMM dd, yyyy').format(app.appliedAt)}',
+                          'User ID: ${app.userId.substring(0, 8)}... • ${_dateFormatter.format(app.appliedAt)}',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 12,

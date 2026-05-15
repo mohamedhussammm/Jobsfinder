@@ -59,9 +59,9 @@ class SkeletonCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: const [
-                    SkeletonLoader(width: 40, height: 10),
+                    Flexible(child: SkeletonLoader(width: 40, height: 10)),
                     SizedBox(width: 8),
-                    SkeletonLoader(width: 80, height: 10),
+                    Flexible(child: SkeletonLoader(width: 80, height: 10)),
                   ],
                 ),
               ],
@@ -79,42 +79,44 @@ class SkeletonHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width * 0.85;
-    return Container(
-      width: width,
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        color: AppColors.gray900.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-              child: const SkeletonLoader(
-                width: double.infinity,
-                height: double.infinity,
+    return RepaintBoundary(
+      child: Container(
+        width: width,
+        margin: const EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          color: AppColors.gray900.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+                child: const SkeletonLoader(
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                SkeletonLoader(width: 80, height: 12),
-                SizedBox(height: 8),
-                SkeletonLoader(width: double.infinity, height: 20),
-                SizedBox(height: 8),
-                SkeletonLoader(width: 120, height: 12),
-              ],
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  SkeletonLoader(width: 80, height: 12),
+                  SizedBox(height: 8),
+                  SkeletonLoader(width: double.infinity, height: 20),
+                  SizedBox(height: 8),
+                  SkeletonLoader(width: 120, height: 12),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

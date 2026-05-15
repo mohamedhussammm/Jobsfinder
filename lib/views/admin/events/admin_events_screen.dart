@@ -128,258 +128,20 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
                     separatorBuilder: (_, i) =>
                         const Divider(color: AppColors.borderColor),
                     itemBuilder: (context, index) {
-                      final event = events[index];
-                      final isMobile = ResponsiveHelper.isPhone(context);
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        child: Row(
-                          children: [
-                            // Leading Image
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).scaffoldBackgroundColor,
-                                borderRadius: BorderRadius.circular(8),
-                                image: event.imagePath != null
-                                    ? DecorationImage(
-                                        image: CachedNetworkImageProvider(
-                                          ref
-                                              .read(fileUploadServiceProvider)
-                                              .getPublicUrl(event.imagePath!),
-                                          maxHeight: 120, // Optimize memory
-                                          maxWidth: 120,
-                                        ),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null,
-                              ),
-                              child: event.imagePath == null
-                                  ? const Icon(
-                                      Icons.event,
-                                      color: AppColors.textSecondary,
-                                    )
-                                  : null,
-                            ),
-                            const SizedBox(width: 12),
-
-                            // Event Info
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    event.title,
-                                    style: AppTypography.body1.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${event.companyId} • ${event.startTime.toString().split(' ')[0]}',
-                                    style: TextStyle(
-                                      color: DarkColors.textTertiary,
-                                      fontSize: 12,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(width: 8),
-
-                            // Actions
-                            if (isMobile)
-                              PopupMenuButton<String>(
-                                icon: const Icon(
-                                  Icons.more_vert,
-                                  color: Colors.white70,
-                                ),
-                                color: DarkColors.surface,
-                                onSelected: (value) {
-                                  switch (value) {
-                                    case 'approve':
-                                      _approveEvent(event.id);
-                                      break;
-                                    case 'reject':
-                                      _rejectEvent(event.id);
-                                      break;
-                                    case 'edit':
-                                      _showEditEventDialog(context, event);
-                                      break;
-                                    case 'delete':
-                                      _deleteEvent(event.id);
-                                      break;
-                                    case 'assign':
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) =>
-                                            _AssignTeamLeaderDialog(
-                                              event: event,
-                                            ),
-                                      );
-                                      break;
-                                  }
-                                },
-                                itemBuilder: (context) => [
-                                  if (event.status == 'pending') ...[
-                                    const PopupMenuItem(
-                                      value: 'approve',
-                                      child: ListTile(
-                                        leading: Icon(
-                                          Icons.check_circle,
-                                          color: DarkColors.success,
-                                          size: 20,
-                                        ),
-                                        title: Text(
-                                          'Approve',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                        dense: true,
-                                      ),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'reject',
-                                      child: ListTile(
-                                        leading: Icon(
-                                          Icons.cancel,
-                                          color: DarkColors.error,
-                                          size: 20,
-                                        ),
-                                        title: Text(
-                                          'Reject',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                        dense: true,
-                                      ),
-                                    ),
-                                  ],
-                                  const PopupMenuItem(
-                                    value: 'edit',
-                                    child: ListTile(
-                                      leading: Icon(
-                                        Icons.edit_outlined,
-                                        color: DarkColors.accent,
-                                        size: 20,
-                                      ),
-                                      title: Text(
-                                        'Edit',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                      dense: true,
-                                    ),
-                                  ),
-                                  const PopupMenuItem(
-                                    value: 'assign',
-                                    child: ListTile(
-                                      leading: Icon(
-                                        Icons.person_add_alt_1,
-                                        color: DarkColors.accent,
-                                        size: 20,
-                                      ),
-                                      title: Text(
-                                        'Assign TL',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                      dense: true,
-                                    ),
-                                  ),
-                                  const PopupMenuDivider(),
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: ListTile(
-                                      leading: Icon(
-                                        Icons.delete_outline,
-                                        color: DarkColors.error,
-                                        size: 20,
-                                      ),
-                                      title: Text(
-                                        'Delete',
-                                        style: TextStyle(color: Colors.white70),
-                                      ),
-                                      dense: true,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            else
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _buildStatusBadge(event.status),
-                                  const SizedBox(width: 8),
-                                  if (event.status == 'pending') ...[
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.check_circle,
-                                        color: DarkColors.success,
-                                        size: 20,
-                                      ),
-                                      onPressed: () => _approveEvent(event.id),
-                                      tooltip: 'Approve',
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.cancel,
-                                        color: DarkColors.error,
-                                        size: 20,
-                                      ),
-                                      onPressed: () => _rejectEvent(event.id),
-                                      tooltip: 'Reject',
-                                    ),
-                                  ],
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.edit_outlined,
-                                      color: DarkColors.accent,
-                                      size: 20,
-                                    ),
-                                    onPressed: () =>
-                                        _showEditEventDialog(context, event),
-                                    tooltip: 'Edit',
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.person_add_alt_1,
-                                      color: DarkColors.accent,
-                                      size: 20,
-                                    ),
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) =>
-                                            _AssignTeamLeaderDialog(
-                                              event: event,
-                                            ),
-                                      );
-                                    },
-                                    tooltip: 'Assign TL',
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.delete_outline,
-                                      color: DarkColors.error,
-                                      size: 20,
-                                    ),
-                                    onPressed: () => _deleteEvent(event.id),
-                                    tooltip: 'Delete',
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
+                      return _AdminEventCard(
+                        event: events[index],
+                        onApprove: () => _approveEvent(events[index].id),
+                        onReject: () => _rejectEvent(events[index].id),
+                        onDelete: () => _deleteEvent(events[index].id),
+                        onEdit: () =>
+                            _showEditEventDialog(context, events[index]),
+                        onAssignTL: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) =>
+                                _AssignTeamLeaderDialog(event: events[index]),
+                          );
+                        },
                       );
                     },
                   );
@@ -421,38 +183,6 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
         color: isSelected
             ? DarkColors.primary
             : DarkColors.borderColor.withValues(alpha: 0.3),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(String status) {
-    Color color;
-    switch (status) {
-      case 'published':
-        color = DarkColors.success;
-        break;
-      case 'pending':
-        color = DarkColors.warning;
-        break;
-      case 'cancelled':
-        color = DarkColors.error;
-        break;
-      default:
-        color = DarkColors.textSecondary;
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        status.toUpperCase(),
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
       ),
     );
   }
@@ -1643,6 +1373,294 @@ class _UserDropdown extends ConsumerWidget {
       },
       loading: () => const LinearProgressIndicator(),
       error: (e, s) => Text('Error loading users: $e'),
+    );
+  }
+}
+
+class _AdminEventCard extends ConsumerWidget {
+  final EventModel event;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onAssignTL;
+
+  const _AdminEventCard({
+    required this.event,
+    required this.onApprove,
+    required this.onReject,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onAssignTL,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isMobile = ResponsiveHelper.isPhone(context);
+
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          children: [
+            // Leading Image
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: BorderRadius.circular(8),
+                image: event.imagePath != null
+                    ? DecorationImage(
+                        image: CachedNetworkImageProvider(
+                          ref
+                              .read(fileUploadServiceProvider)
+                              .getPublicUrl(event.imagePath!),
+                          maxHeight: 120, // Optimize memory
+                          maxWidth: 120,
+                        ),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              child: event.imagePath == null
+                  ? const Icon(Icons.event, color: AppColors.textSecondary)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+
+            // Event Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    event.title,
+                    style: AppTypography.body1.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${event.companyId} • ${event.startTime.toString().split(' ')[0]}',
+                    style: TextStyle(
+                      color: DarkColors.textTertiary,
+                      fontSize: 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 8),
+
+            // Actions
+            if (isMobile)
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: Colors.white70),
+                color: DarkColors.surface,
+                onSelected: (value) {
+                  switch (value) {
+                    case 'approve':
+                      onApprove();
+                      break;
+                    case 'reject':
+                      onReject();
+                      break;
+                    case 'edit':
+                      onEdit();
+                      break;
+                    case 'delete':
+                      onDelete();
+                      break;
+                    case 'assign':
+                      onAssignTL();
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  if (event.status == 'pending') ...[
+                    const PopupMenuItem(
+                      value: 'approve',
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.check_circle,
+                          color: DarkColors.success,
+                          size: 20,
+                        ),
+                        title: Text(
+                          'Approve',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        dense: true,
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'reject',
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.cancel,
+                          color: DarkColors.error,
+                          size: 20,
+                        ),
+                        title: Text(
+                          'Reject',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        dense: true,
+                      ),
+                    ),
+                  ],
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.edit_outlined,
+                        color: DarkColors.accent,
+                        size: 20,
+                      ),
+                      title: Text(
+                        'Edit',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      dense: true,
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'assign',
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.person_add_alt_1,
+                        color: DarkColors.accent,
+                        size: 20,
+                      ),
+                      title: Text(
+                        'Assign TL',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      dense: true,
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.delete_outline,
+                        color: DarkColors.error,
+                        size: 20,
+                      ),
+                      title: Text(
+                        'Delete',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      dense: true,
+                    ),
+                  ),
+                ],
+              )
+            else
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _AdminStatusBadge(status: event.status),
+                  const SizedBox(width: 8),
+                  if (event.status == 'pending') ...[
+                    IconButton(
+                      icon: const Icon(
+                        Icons.check_circle,
+                        color: DarkColors.success,
+                        size: 20,
+                      ),
+                      onPressed: onApprove,
+                      tooltip: 'Approve',
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.cancel,
+                        color: DarkColors.error,
+                        size: 20,
+                      ),
+                      onPressed: onReject,
+                      tooltip: 'Reject',
+                    ),
+                  ],
+                  IconButton(
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      color: DarkColors.accent,
+                      size: 20,
+                    ),
+                    onPressed: onEdit,
+                    tooltip: 'Edit',
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.person_add_alt_1,
+                      color: DarkColors.accent,
+                      size: 20,
+                    ),
+                    onPressed: onAssignTL,
+                    tooltip: 'Assign TL',
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: DarkColors.error,
+                      size: 20,
+                    ),
+                    onPressed: onDelete,
+                    tooltip: 'Delete',
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminStatusBadge extends StatelessWidget {
+  final String status;
+  const _AdminStatusBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    Color color;
+    switch (status) {
+      case 'published':
+        color = DarkColors.success;
+        break;
+      case 'pending':
+        color = DarkColors.warning;
+        break;
+      case 'cancelled':
+        color = DarkColors.error;
+        break;
+      default:
+        color = DarkColors.textSecondary;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        status.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

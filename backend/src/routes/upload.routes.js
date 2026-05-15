@@ -55,6 +55,40 @@ router.post(
     })
 );
 
+// ─── Upload National ID Front ───────────────────
+router.post(
+    '/id-front',
+    authorize('normal'),
+    uploadIdCard,
+    asyncHandler(async (req, res) => {
+        if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+
+        const filePath = await uploadFile(req.file.buffer, req.file.originalname, 'ids', req.file.mimetype);
+
+        // Update user's nationalIdFrontPath
+        await User.findByIdAndUpdate(req.user._id, { nationalIdFrontPath: filePath });
+
+        res.json({ success: true, data: { filePath } });
+    })
+);
+
+// ─── Upload National ID Back ────────────────────
+router.post(
+    '/id-back',
+    authorize('normal'),
+    uploadIdCard,
+    asyncHandler(async (req, res) => {
+        if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+
+        const filePath = await uploadFile(req.file.buffer, req.file.originalname, 'ids', req.file.mimetype);
+
+        // Update user's nationalIdBackPath
+        await User.findByIdAndUpdate(req.user._id, { nationalIdBackPath: filePath });
+
+        res.json({ success: true, data: { filePath } });
+    })
+);
+
 // ─── Get CV (signed / authorized) ───────────────
 router.get(
     '/cv/:filename',

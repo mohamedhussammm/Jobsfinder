@@ -67,6 +67,32 @@ class FileUploadService {
     );
   }
 
+  /// Upload National ID Front
+  Future<Result<String>> uploadIdFront({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    return _uploadFile(
+      endpoint: ApiEndpoints.uploadIdFront,
+      fileName: fileName,
+      bytes: bytes,
+      fieldName: 'nationalId',
+    );
+  }
+
+  /// Upload National ID Back
+  Future<Result<String>> uploadIdBack({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    return _uploadFile(
+      endpoint: ApiEndpoints.uploadIdBack,
+      fileName: fileName,
+      bytes: bytes,
+      fieldName: 'nationalId',
+    );
+  }
+
   /// Generic file upload method
   Future<Result<String>> _uploadFile({
     required String endpoint,

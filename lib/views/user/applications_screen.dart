@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../controllers/application_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../../models/application_model.dart';
@@ -93,77 +94,81 @@ class _ApplicationCard extends ConsumerWidget {
 
   const _ApplicationCard({required this.application});
 
+  static final _dateFormatter = DateFormat('dd/MM/yyyy');
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'Event ID: ${application.eventId}',
-                  style: AppTypography.titleSmall.copyWith(
-                    color: AppColors.textPrimary,
+    return RepaintBoundary(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Event ID: ${application.eventId}',
+                    style: AppTypography.titleSmall.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              _StatusBadge(status: application.status),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Applied: ${_formatDate(application.appliedAt)}',
-            style: AppTypography.body2.copyWith(color: AppColors.textTertiary),
-          ),
-          if (application.coverLetter != null) ...[
+                _StatusBadge(status: application.status),
+              ],
+            ),
             const SizedBox(height: 8),
             Text(
-              application.coverLetter!,
+              'Applied: ${_dateFormatter.format(application.appliedAt)}',
               style: AppTypography.body2.copyWith(
-                color: AppColors.textSecondary,
+                color: AppColors.textTertiary,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
-          ],
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              if (application.status == 'applied') ...[
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _withdrawApplication(context, ref),
-                    icon: const Icon(Icons.cancel_outlined, size: 18),
-                    label: const Text('Withdraw'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.error,
-                      side: BorderSide(color: AppColors.error),
+            if (application.coverLetter != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                application.coverLetter!,
+                style: AppTypography.body2.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                if (application.status == 'applied') ...[
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _withdrawApplication(context, ref),
+                      icon: const Icon(Icons.cancel_outlined, size: 18),
+                      label: const Text('Withdraw'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                        side: BorderSide(color: AppColors.error),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
+  // Remove _formatDate as it's now handled by _dateFormatter
 
   Future<void> _withdrawApplication(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(

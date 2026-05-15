@@ -301,162 +301,168 @@ class EventAssignmentCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return InkWell(
-      onTap: () {
-        context.go('/event/${event.id}');
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: DarkColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: DarkColors.borderColor),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        event.title,
-                        style: AppTypography.heading3,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        event.company,
-                        style: AppTypography.body2.copyWith(
-                          color: DarkColors.textTertiary,
+    return RepaintBoundary(
+      child: InkWell(
+        onTap: () {
+          context.go('/event/${event.id}');
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: DarkColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: DarkColors.borderColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          event.title,
+                          style: AppTypography.heading3,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(event.status).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    event.status.toUpperCase(),
-                    style: AppTypography.caption.copyWith(
-                      color: _getStatusColor(event.status),
-                      fontWeight: FontWeight.w600,
+                        const SizedBox(height: 4),
+                        Text(
+                          event.company,
+                          style: AppTypography.body2.copyWith(
+                            color: DarkColors.textTertiary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Details Row
-            Row(
-              children: [
-                Expanded(
-                  child: _DetailItem(
-                    icon: Icons.location_on,
-                    label: event.location?.city ?? 'Unknown',
-                  ),
-                ),
-                Expanded(
-                  child: _DetailItem(
-                    icon: Icons.calendar_today,
-                    label: _formatDate(event.eventDate),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Applicants Info
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.03),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${event.applicants} Applicants',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: DarkColors.textSecondary,
-                        ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(
+                        event.status,
+                      ).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      event.status.toUpperCase(),
+                      style: AppTypography.caption.copyWith(
+                        color: _getStatusColor(event.status),
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Capacity: ${event.capacity}',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: DarkColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          context.push(
-                            '/team-leader/applicants/${event.id}?title=${Uri.encodeComponent(event.title)}',
-                          );
-                        },
-                        icon: const Icon(Icons.people, size: 16),
-                        label: const Text('Manage'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: DarkColors.accent,
-                          side: const BorderSide(color: DarkColors.accent),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          context.go('/event/${event.id}');
-                        },
-                        icon: const Icon(Icons.arrow_forward, size: 16),
-                        label: const Text('View'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: DarkColors.accent,
-                          foregroundColor: DarkColors.gray50,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+
+              // Details Row
+              Row(
+                children: [
+                  Expanded(
+                    child: _DetailItem(
+                      icon: Icons.location_on,
+                      label: event.location?.city ?? 'Unknown',
+                    ),
+                  ),
+                  Expanded(
+                    child: _DetailItem(
+                      icon: Icons.calendar_today,
+                      label: _formatDate(event.eventDate),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Applicants Info
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.03),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${event.applicants} Applicants',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: DarkColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Capacity: ${event.capacity}',
+                          style: AppTypography.labelSmall.copyWith(
+                            color: DarkColors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            context.push(
+                              '/team-leader/applicants/${event.id}?title=${Uri.encodeComponent(event.title)}',
+                            );
+                          },
+                          icon: const Icon(Icons.people, size: 16),
+                          label: const Text('Manage'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: DarkColors.accent,
+                            side: const BorderSide(color: DarkColors.accent),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            context.go('/event/${event.id}');
+                          },
+                          icon: const Icon(Icons.arrow_forward, size: 16),
+                          label: const Text('View'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: DarkColors.accent,
+                            foregroundColor: DarkColors.gray50,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

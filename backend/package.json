@@ -8,7 +8,6 @@
     "dev": "node --watch src/server.js",
     "seed": "node src/seeds/index.js",
     "seed:admin": "node src/seeds/admin.seed.js",
-    "seed:production": "node src/seeds/production.seed.js",
     "seed:categories": "node src/seeds/categories.seed.js"
   },
   "keywords": [

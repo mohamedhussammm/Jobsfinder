@@ -6,6 +6,9 @@ class UserModel {
   final String role; // 'normal', 'company', 'team_leader', 'admin'
   final String? phone;
   final String? nationalIdNumber;
+  final int? age;
+  final String? nationalIdFrontPath;
+  final String? nationalIdBackPath;
   final String? avatarPath;
   final String? cvPath;
   final bool profileComplete;
@@ -22,6 +25,9 @@ class UserModel {
     this.role = 'normal',
     this.phone,
     this.nationalIdNumber,
+    this.age,
+    this.nationalIdFrontPath,
+    this.nationalIdBackPath,
     this.avatarPath,
     this.cvPath,
     this.profileComplete = false,
@@ -38,7 +44,7 @@ class UserModel {
   bool get isTeamLeader => role == 'team_leader';
   bool get isNormalUser => role == 'normal';
 
-  /// Calculate real profile completion percentage based on filled fields (20% each)
+  /// Calculate real profile completion percentage based on filled fields (8 fields total)
   double get profileCompletion {
     int count = 0;
     if (name != null && name!.isNotEmpty) count++;
@@ -48,10 +54,13 @@ class UserModel {
         nationalIdNumber != 'PENDING') {
       count++;
     }
+    if (age != null && age! > 0) count++;
     if (avatarPath != null && avatarPath!.isNotEmpty) count++;
     if (cvPath != null && cvPath!.isNotEmpty) count++;
+    if (nationalIdFrontPath != null && nationalIdFrontPath!.isNotEmpty) count++;
+    if (nationalIdBackPath != null && nationalIdBackPath!.isNotEmpty) count++;
 
-    return count / 5.0;
+    return count / 8.0;
   }
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -71,6 +80,13 @@ class UserModel {
       nationalIdNumber:
           json['nationalIdNumber']?.toString() ??
           json['national_id_number']?.toString(),
+      age: json['age'] != null ? int.tryParse(json['age'].toString()) : null,
+      nationalIdFrontPath:
+          json['nationalIdFrontPath']?.toString() ??
+          json['national_id_front_path']?.toString(),
+      nationalIdBackPath:
+          json['nationalIdBackPath']?.toString() ??
+          json['national_id_back_path']?.toString(),
       avatarPath:
           json['avatarPath']?.toString() ?? json['avatar_path']?.toString(),
       cvPath: json['cvPath']?.toString() ?? json['cv_path']?.toString(),
@@ -96,6 +112,9 @@ class UserModel {
     'role': role,
     'phone': phone,
     'nationalIdNumber': nationalIdNumber,
+    'age': age,
+    'nationalIdFrontPath': nationalIdFrontPath,
+    'nationalIdBackPath': nationalIdBackPath,
     'avatarPath': avatarPath,
     'cvPath': cvPath,
     'profileComplete': profileComplete,
@@ -114,6 +133,9 @@ class UserModel {
     String? role,
     String? phone,
     String? nationalIdNumber,
+    int? age,
+    String? nationalIdFrontPath,
+    String? nationalIdBackPath,
     String? avatarPath,
     String? cvPath,
     bool? profileComplete,
@@ -130,6 +152,9 @@ class UserModel {
       role: role ?? this.role,
       phone: phone ?? this.phone,
       nationalIdNumber: nationalIdNumber ?? this.nationalIdNumber,
+      age: age ?? this.age,
+      nationalIdFrontPath: nationalIdFrontPath ?? this.nationalIdFrontPath,
+      nationalIdBackPath: nationalIdBackPath ?? this.nationalIdBackPath,
       avatarPath: avatarPath ?? this.avatarPath,
       cvPath: cvPath ?? this.cvPath,
       profileComplete: profileComplete ?? this.profileComplete,

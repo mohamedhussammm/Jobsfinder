@@ -159,123 +159,125 @@ class _ApplicantCard extends StatelessWidget {
     final String name = user?.name ?? 'Unknown User';
     final String? avatar = user?.avatarPath;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: DarkColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: DarkColors.borderColor),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: DarkColors.accent.withValues(alpha: 0.1),
-                backgroundImage: avatar != null
-                    ? CachedNetworkImageProvider(
-                        avatar,
-                        maxHeight: 100, // Optimize memory for thumbnails
-                        maxWidth: 100,
-                      )
-                    : null,
-                child: avatar == null
-                    ? Text(
-                        name[0].toUpperCase(),
-                        style: const TextStyle(
-                          color: DarkColors.accent,
+    return RepaintBoundary(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: DarkColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: DarkColors.borderColor),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: DarkColors.accent.withValues(alpha: 0.1),
+                  backgroundImage: avatar != null
+                      ? CachedNetworkImageProvider(
+                          avatar,
+                          maxHeight: 100, // Optimize memory for thumbnails
+                          maxWidth: 100,
+                        )
+                      : null,
+                  child: avatar == null
+                      ? Text(
+                          name[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: DarkColors.accent,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: AppTypography.bodyLarge.copyWith(
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: AppTypography.bodyLarge.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
                       ),
-                    ),
-                    Text(
-                      'Status: ${applicant.status}',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: _getStatusColor(applicant.status),
+                      Text(
+                        'Status: ${applicant.status}',
+                        style: AppTypography.labelSmall.copyWith(
+                          color: _getStatusColor(applicant.status),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(
-                  Icons.chevron_right_rounded,
-                  color: Colors.white54,
-                ),
-                onPressed: () {
-                  if (user?.id != null) {
-                    context.push('/profile/${user!.id}');
-                  }
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
+                IconButton(
+                  icon: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.white54,
+                  ),
                   onPressed: () {
                     if (user?.id != null) {
                       context.push('/profile/${user!.id}');
                     }
                   },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.1),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text('View Profile'),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (user?.id != null) {
-                      context.push(
-                        '/team-leader/rate'
-                        '?applicantId=${user!.id}'
-                        '&applicantName=${Uri.encodeComponent(name)}'
-                        '&eventId=${applicant.eventId}'
-                        '&eventTitle=${Uri.encodeComponent(eventTitle)}',
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: DarkColors.accent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      if (user?.id != null) {
+                        context.push('/profile/${user!.id}');
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    elevation: 0,
+                    child: const Text('View Profile'),
                   ),
-                  child: const Text('Rate Usher'),
                 ),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (user?.id != null) {
+                        context.push(
+                          '/team-leader/rate'
+                          '?applicantId=${user!.id}'
+                          '&applicantName=${Uri.encodeComponent(name)}'
+                          '&eventId=${applicant.eventId}'
+                          '&eventTitle=${Uri.encodeComponent(eventTitle)}',
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: DarkColors.accent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text('Rate Usher'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
