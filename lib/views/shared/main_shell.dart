@@ -62,33 +62,35 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     return Scaffold(
       body: widget.child,
-      bottomNavigationBar: Material(
-        color: Theme.of(context).cardColor,
-        elevation: 8,
-        shadowColor: Colors.black.withValues(alpha: 0.3),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                // Nav items
-                ...List.generate(_navItems.length, (index) {
-                  final item = _navItems[index];
-                  final isActive = _currentIndex == index;
-                  return _buildNavItem(
-                    context,
-                    ref,
-                    item,
-                    isActive,
-                    index,
-                    currentUser?.id,
-                  );
-                }),
+      bottomNavigationBar: RepaintBoundary(
+        child: Material(
+          color: Theme.of(context).cardColor,
+          elevation: 8,
+          shadowColor: Colors.black.withValues(alpha: 0.3),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  // Nav items
+                  ...List.generate(_navItems.length, (index) {
+                    final item = _navItems[index];
+                    final isActive = _currentIndex == index;
+                    return _buildNavItem(
+                      context,
+                      ref,
+                      item,
+                      isActive,
+                      index,
+                      currentUser?.id,
+                    );
+                  }),
 
-                // Logout button
-                _buildLogoutButton(context, ref),
-              ],
+                  // Logout button
+                  _buildLogoutButton(context, ref),
+                ],
+              ),
             ),
           ),
         ),

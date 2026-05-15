@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../core/api/api_client.dart';
@@ -8,12 +9,23 @@ import '../core/utils/result.dart';
 import 'admin_controller.dart';
 
 /// Published events provider (for homepage)
-final publishedEventsProvider = FutureProvider.autoDispose
-    .family<List<EventModel>, int>((ref, page) async {
-      final controller = ref.watch(eventControllerProvider);
-      final result = await controller.fetchPublishedEvents(page: page);
-      return result.when(success: (events) => events, error: (e) => throw e);
+final publishedEventsProvider = FutureProvider.family<List<EventModel>, int>(
+  (ref, page) async {
+    // Keep data alive for 30 seconds after last use
+    final link = ref.keepAlive();
+    Timer? timer;
+
+    ref.onDispose(() => timer?.cancel());
+    ref.onCancel(() {
+      timer = Timer(const Duration(seconds: 30), () => link.close());
     });
+    ref.onResume(() => timer?.cancel());
+
+    final controller = ref.watch(eventControllerProvider);
+    final result = await controller.fetchPublishedEvents(page: page);
+    return result.when(success: (events) => events, error: (e) => throw e);
+  },
+);
 
 /// Pending events provider (for admin dashboard)
 final pendingEventsAdminProvider = FutureProvider.autoDispose<List<EventModel>>(
@@ -25,17 +37,30 @@ final pendingEventsAdminProvider = FutureProvider.autoDispose<List<EventModel>>(
 );
 
 /// Published events filtered by category
-final publishedEventsByCategoryProvider = FutureProvider.autoDispose
-    .family<List<EventModel>, String?>((ref, categoryId) async {
-      final controller = ref.watch(eventControllerProvider);
-      final result = await controller.fetchPublishedEvents(
-        categoryId: categoryId,
-      );
-      return result.when(success: (events) => events, error: (e) => throw e);
-    });
+final publishedEventsByCategoryProvider = FutureProvider.family<
+  List<EventModel>,
+  String?
+>((ref, categoryId) async {
+  // Keep data alive for 30 seconds after last use
+  final link = ref.keepAlive();
+  Timer? timer;
+
+  ref.onDispose(() => timer?.cancel());
+  ref.onCancel(() {
+    timer = Timer(const Duration(seconds: 30), () => link.close());
+  });
+  ref.onResume(() => timer?.cancel());
+
+  final controller = ref.watch(eventControllerProvider);
+  final result = await controller.fetchPublishedEvents(categoryId: categoryId);
+  return result.when(success: (events) => events, error: (e) => throw e);
+});
 
 /// Categories provider
 final categoriesProvider = FutureProvider<List<CategoryModel>>((ref) async {
+  // Categories almost never change, keep them alive indefinitely once loaded
+  ref.keepAlive();
+
   final controller = ref.watch(eventControllerProvider);
   final result = await controller.fetchCategories();
   return result.when(success: (cats) => cats, error: (e) => throw e);

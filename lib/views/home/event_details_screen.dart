@@ -36,20 +36,22 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final eventAsync = ref.watch(eventDetailsProvider(widget.eventId));
+    final theme = Theme.of(context);
+    final mq = MediaQuery.of(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: eventAsync.when(
-        data: (event) => _buildBody(context, event),
+        data: (event) => _buildBody(context, event, theme, mq),
         loading: () {
           if (widget.initialEvent != null) {
-            return _buildBody(context, widget.initialEvent!);
+            return _buildBody(context, widget.initialEvent!, theme, mq);
           }
           return _buildLoading();
         },
         error: (e, _) {
           if (widget.initialEvent != null) {
-            return _buildBody(context, widget.initialEvent!);
+            return _buildBody(context, widget.initialEvent!, theme, mq);
           }
           return _buildError(e);
         },
@@ -57,7 +59,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     );
   }
 
-  Widget _buildBody(BuildContext context, EventModel event) {
+  Widget _buildBody(
+    BuildContext context,
+    EventModel event,
+    ThemeData theme,
+    MediaQueryData mq,
+  ) {
     return Stack(
       children: [
         CustomScrollView(
@@ -69,7 +76,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 offset: const Offset(0, -24),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Theme.of(context).scaffoldBackgroundColor,
+                    color: theme.scaffoldBackgroundColor,
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(24),
                     ),

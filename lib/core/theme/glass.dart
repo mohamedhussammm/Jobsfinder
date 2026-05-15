@@ -160,6 +160,7 @@ class GlassContainer extends StatelessWidget {
   final BoxDecoration? decoration;
   final bool addBorder;
   final GlassStyle style;
+  final bool useBlur;
 
   const GlassContainer({
     super.key,
@@ -174,6 +175,7 @@ class GlassContainer extends StatelessWidget {
     this.decoration,
     this.addBorder = true,
     this.style = GlassStyle.standard,
+    this.useBlur = false,
   });
 
   /// Teal-tinted glass (matches reference designs)
@@ -189,7 +191,8 @@ class GlassContainer extends StatelessWidget {
        blur = GlassConfig.blurMedium,
        decoration = null,
        addBorder = true,
-       style = GlassStyle.teal;
+       style = GlassStyle.teal,
+       useBlur = false;
 
   /// Card with gradient background
   const GlassContainer.gradient({
@@ -204,7 +207,8 @@ class GlassContainer extends StatelessWidget {
        blur = 0,
        decoration = null,
        addBorder = true,
-       style = GlassStyle.gradient;
+       style = GlassStyle.gradient,
+       useBlur = false;
 
   /// Hero card with prominent gradient
   const GlassContainer.hero({
@@ -219,13 +223,14 @@ class GlassContainer extends StatelessWidget {
        blur = 0,
        decoration = null,
        addBorder = true,
-       style = GlassStyle.hero;
+       style = GlassStyle.hero,
+       useBlur = false;
 
   @override
   Widget build(BuildContext context) {
     final effectiveDecoration = decoration ?? _getStyleDecoration();
 
-    if (blur > 0) {
+    if (blur > 0 && useBlur) {
       return ClipRRect(
         borderRadius:
             borderRadius ?? BorderRadius.circular(GlassConfig.radiusLarge),

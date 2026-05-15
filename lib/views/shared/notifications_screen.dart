@@ -61,6 +61,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             return ListView.separated(
               padding: ResponsiveHelper.screenPadding(context),
               itemCount: notifications.length,
+              addAutomaticKeepAlives: false,
               separatorBuilder: (_, i) => const SizedBox(height: 8),
               itemBuilder: (context, index) => _NotificationCard(
                 notification: notifications[index],

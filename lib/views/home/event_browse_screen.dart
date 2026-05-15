@@ -57,10 +57,18 @@ class _EventBrowseScreenState extends ConsumerState<EventBrowseScreen> {
     final categoriesAsync = ref.watch(categoriesProvider);
     final heroAsync = ref.watch(publishedEventsByCategoryProvider(null));
 
+    final mq = MediaQuery.of(context);
+    final size = mq.size;
+    final heroHeight = size.width * 1.0625;
+
     return Scaffold(
       backgroundColor: _kBg,
       body: SafeArea(
         child: CustomScrollView(
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          cacheExtent: 500,
           slivers: [
             SliverPersistentHeader(
               pinned: true,
@@ -123,7 +131,7 @@ class _EventBrowseScreenState extends ConsumerState<EventBrowseScreen> {
                     const SizedBox(height: 12),
                     // Horizontal hero cards
                     SizedBox(
-                      height: MediaQuery.of(context).size.width * 1.0625,
+                      height: heroHeight,
                       child: heroAsync.when(
                         data: (events) {
                           if (events.isEmpty) {
@@ -132,6 +140,7 @@ class _EventBrowseScreenState extends ConsumerState<EventBrowseScreen> {
                           final displayEvents = events.take(5).toList();
                           return ListView.builder(
                             scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             itemCount: displayEvents.length,
                             itemBuilder: (context, i) {
@@ -148,9 +157,10 @@ class _EventBrowseScreenState extends ConsumerState<EventBrowseScreen> {
                           );
                         },
                         loading: () => SizedBox(
-                          height: MediaQuery.of(context).size.width * 1.0625,
+                          height: heroHeight,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             itemCount: 3,
                             itemBuilder: (context, i) =>
@@ -241,16 +251,28 @@ class _EventBrowseScreenState extends ConsumerState<EventBrowseScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, i) => RepaintBoundary(
-                        child: _ShiftCard(
-                          event: events[i],
-                          onTap: () => context.push(
-                            '/event/${events[i].id}',
-                            extra: events[i],
+                      (context, i) {
+                        final event = events[i];
+                        final timeStr =
+                            '${_timeFormatter.format(event.startTime)} - ${_timeFormatter.format(event.endTime)}';
+                        final categoryLabel =
+                            event.categoryName ?? event.status.toUpperCase();
+
+                        return RepaintBoundary(
+                          child: _ShiftCard(
+                            event: event,
+                            timeStr: timeStr,
+                            categoryLabel: categoryLabel,
+                            onTap: () => context.push(
+                              '/event/${event.id}',
+                              extra: event,
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                       childCount: events.length,
+                      addAutomaticKeepAlives: false,
+                      addRepaintBoundaries: false,
                     ),
                   ),
                 );
@@ -386,6 +408,8 @@ class _HeroEventCard extends ConsumerWidget {
                       width: double.infinity,
                       height: double.infinity,
                       fit: BoxFit.cover,
+                      fadeInDuration: Duration.zero,
+                      fadeOutDuration: Duration.zero,
                       errorWidget: (_, _, _) =>
                           _PlaceholderEventImage(title: event.title),
                       placeholder: (_, _) => const SkeletonHeroCard(),
@@ -634,15 +658,19 @@ class _Chip extends StatelessWidget {
 // ─── Shift Card ──────────────────────────────────────────────────────────────
 class _ShiftCard extends ConsumerWidget {
   final EventModel event;
+  final String timeStr;
+  final String categoryLabel;
   final VoidCallback? onTap;
 
-  const _ShiftCard({required this.event, this.onTap});
+  const _ShiftCard({
+    required this.event,
+    required this.timeStr,
+    required this.categoryLabel,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final timeStr =
-        '${_timeFormatter.format(event.startTime)} - ${_timeFormatter.format(event.endTime)}';
-    final categoryLabel = event.categoryName ?? event.status.toUpperCase();
 
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
@@ -671,6 +699,8 @@ class _ShiftCard extends ConsumerWidget {
                         memCacheHeight: 160, // Optimize memory for thumbnails
                         memCacheWidth: 160,
                         fit: BoxFit.cover,
+                        fadeInDuration: Duration.zero,
+                        fadeOutDuration: Duration.zero,
                         placeholder: (context, url) => const SkeletonLoader(
                           width: double.infinity,
                           height: double.infinity,

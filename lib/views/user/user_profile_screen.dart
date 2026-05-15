@@ -87,98 +87,110 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // Header Section
-                _buildHeader(user, isMe),
-                const SizedBox(height: 24),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final widgets = [
+                    // Header Section
+                    RepaintBoundary(child: _buildHeader(user, isMe)),
+                    const SizedBox(height: 24),
 
-                // Profile Completion Progress
-                _buildCompletionCard(user),
-                const SizedBox(height: 12),
+                    // Profile Completion Progress
+                    RepaintBoundary(child: _buildCompletionCard(user)),
+                    const SizedBox(height: 12),
 
-                if (isMe && user.profileCompletion < 1.0)
-                  _buildCompletionHint(user),
+                    if (isMe && user.profileCompletion < 1.0)
+                      RepaintBoundary(child: _buildCompletionHint(user)),
 
-                const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                // 1. Personal Information
-                _buildSectionRow(
-                  context,
-                  title: 'Personal Information',
-                  icon: Icons.person_outline,
-                  subtitle:
-                      '${user.name ?? "Not set"}, ${user.age != null ? "${user.age} yrs" : "Age missing"}',
-                  onTap: () => context.push('/edit-profile'),
-                ),
-
-                // 2. Professional Details
-                _buildSectionRow(
-                  context,
-                  title: 'Professional Details',
-                  icon: Icons.work_outline,
-                  subtitle:
-                      'National ID: ${user.nationalIdNumber ?? "Missing"}',
-                  onTap: () => context.push('/edit-profile'),
-                ),
-
-                // 2.5 National ID Verification (NEW)
-                if (isMe) ...[
-                  const SizedBox(height: 8),
-                  _buildIdVerificationSection(user),
-                ],
-
-                // 3. Portfolio & Documents
-                _buildSectionRow(
-                  context,
-                  title: 'Portfolio & Documents',
-                  icon: Icons.folder_open,
-                  subtitle: user.cvPath != null
-                      ? 'CV Uploaded'
-                      : 'Upload your CV (Required)',
-                  trailing: user.cvPath != null
-                      ? const Icon(
-                          Icons.check_circle,
-                          color: AppColors.success,
-                          size: 20,
-                        )
-                      : null,
-                  onTap: isMe ? _pickAndUploadCv : () {},
-                ),
-
-                if (isMe) ...[
-                  // 4. Privacy Settings
-                  _buildSectionRow(
-                    context,
-                    title: 'Privacy Settings',
-                    icon: Icons.lock_outline,
-                    subtitle: 'Visibility, Data usage',
-                    onTap: () {},
-                  ),
-                  const SizedBox(height: 24),
-                ],
-
-                _buildRecentReviewsSection(context, ref, user.id),
-
-                if (isMe) ...[
-                  const SizedBox(height: 32),
-                  OutlinedButton(
-                    onPressed: () {
-                      ref.read(authControllerProvider).logout();
-                      context.go('/auth');
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: DarkColors.error,
-                      side: const BorderSide(color: DarkColors.error),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                    // 1. Personal Information
+                    _buildSectionRow(
+                      context,
+                      title: 'Personal Information',
+                      icon: Icons.person_outline,
+                      subtitle:
+                          '${user.name ?? "Not set"}, ${user.age != null ? "${user.age} yrs" : "Age missing"}',
+                      onTap: () => context.push('/edit-profile'),
                     ),
-                    child: const Center(child: Text('Logout')),
-                  ),
-                ],
-                const SizedBox(height: 32),
-              ]),
+
+                    // 2. Professional Details
+                    _buildSectionRow(
+                      context,
+                      title: 'Professional Details',
+                      icon: Icons.work_outline,
+                      subtitle:
+                          'National ID: ${user.nationalIdNumber ?? "Missing"}',
+                      onTap: () => context.push('/edit-profile'),
+                    ),
+
+                    // 2.5 National ID Verification (NEW)
+                    if (isMe) ...[
+                      const SizedBox(height: 8),
+                      RepaintBoundary(child: _buildIdVerificationSection(user)),
+                    ],
+
+                    // 3. Portfolio & Documents
+                    _buildSectionRow(
+                      context,
+                      title: 'Portfolio & Documents',
+                      icon: Icons.folder_open,
+                      subtitle: user.cvPath != null
+                          ? 'CV Uploaded'
+                          : 'Upload your CV (Required)',
+                      trailing: user.cvPath != null
+                          ? const Icon(
+                              Icons.check_circle,
+                              color: AppColors.success,
+                              size: 20,
+                            )
+                          : null,
+                      onTap: isMe ? _pickAndUploadCv : () {},
+                    ),
+
+                    if (isMe) ...[
+                      // 4. Privacy Settings
+                      _buildSectionRow(
+                        context,
+                        title: 'Privacy Settings',
+                        icon: Icons.lock_outline,
+                        subtitle: 'Visibility, Data usage',
+                        onTap: () {},
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    RepaintBoundary(
+                      child: _buildRecentReviewsSection(context, ref, user.id),
+                    ),
+
+                    if (isMe) ...[
+                      const SizedBox(height: 32),
+                      OutlinedButton(
+                        onPressed: () {
+                          ref.read(authControllerProvider).logout();
+                          context.go('/auth');
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: DarkColors.error,
+                          side: const BorderSide(color: DarkColors.error),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Center(child: Text('Logout')),
+                      ),
+                    ],
+                    const SizedBox(height: 32),
+                  ];
+
+                  if (index >= widgets.length) return null;
+                  return widgets[index];
+                },
+                childCount: 15, // Approximate max count including spacers
+                addAutomaticKeepAlives: false,
+                addRepaintBoundaries: false,
+              ),
             ),
           ),
         ],

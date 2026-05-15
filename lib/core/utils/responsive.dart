@@ -1,5 +1,39 @@
 import 'package:flutter/material.dart';
 
+/// Data class to hold responsive info for a build cycle to avoid multiple MediaQuery lookups
+class ResponsiveData {
+  final double width;
+  final double height;
+  final double textScaleFactor;
+  final double scale;
+  final EdgeInsets padding;
+
+  ResponsiveData({
+    required this.width,
+    required this.height,
+    required this.textScaleFactor,
+    required this.scale,
+    required this.padding,
+  });
+
+  factory ResponsiveData.fromContext(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final width = mediaQuery.size.width;
+    final height = mediaQuery.size.height;
+    // Base design dimensions (iPhone 13/14 = 375x812)
+    const double baseWidth = 375.0;
+    final scale = (width / baseWidth).clamp(0.8, 1.3);
+
+    return ResponsiveData(
+      width: width,
+      height: height,
+      textScaleFactor: mediaQuery.textScaleFactor,
+      scale: scale,
+      padding: mediaQuery.padding,
+    );
+  }
+}
+
 /// Responsive design utility for adapting UI to all screen sizes
 class ResponsiveHelper {
   // Base design dimensions (iPhone 13/14 = 375x812)
@@ -133,4 +167,5 @@ extension ResponsiveContext on BuildContext {
   double get screenH => ResponsiveHelper.screenHeight(this);
   EdgeInsets get responsivePadding => ResponsiveHelper.screenPadding(this);
   EdgeInsets get responsiveCardPadding => ResponsiveHelper.cardPadding(this);
+  ResponsiveData get responsive => ResponsiveData.fromContext(this);
 }

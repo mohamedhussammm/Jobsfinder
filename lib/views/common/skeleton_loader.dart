@@ -16,19 +16,21 @@ class SkeletonLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: AppColors.gray800.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(borderRadius),
+    return RepaintBoundary(
+      child: Container(
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              color: AppColors.gray800.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(borderRadius),
+            ),
+          )
+          .animate(onPlay: (controller) => controller.repeat())
+          .shimmer(
+            duration: 1500.ms,
+            color: AppColors.gray700.withValues(alpha: 0.3),
           ),
-        )
-        .animate(onPlay: (controller) => controller.repeat())
-        .shimmer(
-          duration: 1200.ms,
-          color: AppColors.gray700.withValues(alpha: 0.3),
-        );
+    );
   }
 }
 

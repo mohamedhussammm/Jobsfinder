@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/file_upload_service.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/glass.dart';
@@ -25,36 +26,45 @@ class EventCard extends ConsumerWidget {
           padding: EdgeInsets.zero,
           borderRadius: BorderRadius.circular(GlassConfig.radiusLarge),
           addBorder: true,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Event image placeholder
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(GlassConfig.radiusLarge),
-                    topRight: Radius.circular(GlassConfig.radiusLarge),
+          child: RepaintBoundary(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Event image placeholder
+                Container(
+                  height: 200,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(GlassConfig.radiusLarge),
+                      topRight: Radius.circular(GlassConfig.radiusLarge),
+                    ),
+                    color: Theme.of(context).cardColor,
                   ),
-                  color: Theme.of(context).cardColor,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(GlassConfig.radiusLarge),
+                      topRight: Radius.circular(GlassConfig.radiusLarge),
+                    ),
+                    child: event.imagePath != null
+                        ? CachedNetworkImage(
+                            imageUrl: ref
+                                .read(fileUploadServiceProvider)
+                                .getPublicUrl(event.imagePath!),
+                            fit: BoxFit.cover,
+                            memCacheHeight: 400,
+                            placeholder: (context, url) => Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            errorWidget: (context, url, error) => Icon(
+                              Icons.image_not_supported,
+                              color: AppColors.gray400,
+                              size: 48,
+                            ),
+                          )
+                        : Icon(Icons.event, color: AppColors.gray400, size: 48),
+                  ),
                 ),
-                child: event.imagePath != null
-                    ? Image.network(
-                        ref
-                            .read(fileUploadServiceProvider)
-                            .getPublicUrl(event.imagePath!),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.image_not_supported,
-                            color: AppColors.gray400,
-                            size: 48,
-                          );
-                        },
-                      )
-                    : Icon(Icons.event, color: AppColors.gray400, size: 48),
-              ),
               // Event details
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -171,6 +181,7 @@ class EventCard extends ConsumerWidget {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),
