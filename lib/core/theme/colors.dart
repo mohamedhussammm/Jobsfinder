@@ -1,90 +1,84 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Primary Colors — CYAN/TEAL (matching reference designs)
-  static const Color primary = Color(0xFF0EA5E9);
-  static const Color primaryLight = Color(0xFFE0F2FE);
-  static const Color primaryDark = Color(0xFF0284C7);
+  // Backgrounds
+  static const Color backgroundPrimary   = Color(0xFFF7F9FF); // main bg
+  static const Color backgroundSecondary = Color(0xFFE8EEFF); // cards, surfaces
+  static const Color backgroundTertiary  = Color(0xFFFFFFFF); // elevated cards
 
-  // Secondary Colors
-  static const Color secondary = Color(0xFF10B981);
-  static const Color secondaryLight = Color(0xFFD1FAE5);
-  static const Color secondaryDark = Color(0xFF059669);
+  // Brand
+  static const Color primary             = Color(0xFF6B4EFF); // Bond Purple
+  static const Color primaryLight        = Color(0xFFF3F0FF); // soft purple
+  static const Color primaryDark         = Color(0xFF563DCC); // deep purple
 
-  // Accent Colors
-  static const Color accent = Color(0xFFF59E0B);
-  static const Color accentLight = Color(0xFFFEF3C7);
-  static const Color accentDark = Color(0xFFD97706);
+  // Accent (event energy / CTA highlights)
+  static const Color accent              = Color(0xFFE07B14); // amber accent
+  static const Color accentLight         = Color(0xFFFEF0DA); // amber badge bg
+  static const Color accentDark          = Color(0xFFA05808); // amber text on light bg
 
-  // Status Colors
-  static const Color success = Color(0xFF10B981);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color error = Color(0xFFEF4444);
-  static const Color info = Color(0xFF0EA5E9);
+  // Text
+  static const Color textPrimary         = Color(0xFF1A2340); // headings
+  static const Color textSecondary       = Color(0xFF6B7A99); // subtitles, captions
+  static const Color textHint            = Color(0xFFAAB4CC); // placeholders
 
-  // Neutral Colors
-  static const Color white = Color(0xFFFFFFFF);
-  static const Color black = Color(0xFF000000);
-  static const Color gray50 = Color(0xFFFAFAFA);
-  static const Color gray100 = Color(0xFFF3F4F6);
-  static const Color gray200 = Color(0xFFE5E7EB);
-  static const Color gray300 = Color(0xFFD1D5DB);
-  static const Color gray400 = Color(0xFF9CA3AF);
-  static const Color gray500 = Color(0xFF6B7280);
-  static const Color gray600 = Color(0xFF4B5563);
-  static const Color gray700 = Color(0xFF374151);
-  static const Color gray800 = Color(0xFF1F2937);
-  static const Color gray900 = Color(0xFF111827);
+  // Status
+  static const Color success             = Color(0xFF3D8A5F);
+  static const Color successLight        = Color(0xFFDFF0E3);
+  static const Color warning             = Color(0xFFE07B14);
+  static const Color warningLight        = Color(0xFFFEF0DA);
+  static const Color error               = Color(0xFFD64040);
+  static const Color errorLight          = Color(0xFFFFECEC);
+  static const Color info                = Color(0xFF6B4EFF);
+  static const Color infoLight           = Color(0xFFF3F0FF);
 
-  // Semantic Colors (for UI elements)
-  static const Color background = Color(0xFFFAFAFA);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color borderColor = Color(0xFFE5E7EB);
+  // Borders & Dividers
+  static const Color border              = Color(0xFFDDE3F0);
+  static const Color borderStrong        = Color(0xFFB8C4DF);
+  static const Color divider             = Color(0xFFEEF1F8);
 
-  // Text Colors
-  static const Color textPrimary = Color(0xFF111827);
-  static const Color textSecondary = Color(0xFF4B5563);
-  static const Color textTertiary = Color(0xFF9CA3AF);
-  static const Color text = Color(0xFF111827); // Alias for textPrimary
+  // Glassmorphism (light version)
+  static const Color glassBackground     = Color(0xCCFFFFFF); // white at 80% opacity
+  static const Color glassBorder         = Color(0x4DFFFFFF);
 
-  // Warning Light
-  static const Color warningLight = Color(0xFFFEF3C7);
+  // Navigation
+  static const Color navBackground       = Color(0xFFFFFFFF);
+  static const Color navSelected         = Color(0xFF6B4EFF);
+  static const Color navUnselected       = Color(0xFF9AA5BE);
 
-  // Dark Background
-  static const Color darkBg = Color(0xFF1F2937);
+  // Shimmer / Skeleton
+  static const Color shimmerBase         = Color(0xFFE8EEFF);
+  static const Color shimmerHighlight    = Color(0xFFF7F9FF);
 
-  // Glass Secondary
-  static const Color glassSecondary = Color(0xFFF3F4F6);
+  // Role-specific tints (for admin/team leader headers)
+  static const Color adminTint           = Color(0xFFEDE8FF); // soft violet
+  static const Color teamLeaderTint      = Color(0xFFDFF0E3); // soft green
+  static const Color white               = Color(0xFFFFFFFF);
+  static const Color textTertiary        = Color(0xFFAAB4CC); // Alias for hint
 
-  // Glass Colors (Semi-transparent)
-  static const Color glassLight = Color(0xFFFFFFFF);
-  static const Color glassDark = Color(0xFF1F2937);
+  // Aliases for legacy system compatibility
+  static const Color surface             = Color(0xFFFFFFFF);
+  static const Color borderColor         = Color(0xFFDDE3F0);
+  static const Color pending             = Color(0xFFE07B14);
+  static const Color secondary           = Color(0xFFE07B14); // Usually maps to accent
 
-  // Status-specific
-  static const Color pending = Color(0xFFF59E0B);
-  static const Color published = Color(0xFF10B981);
-  static const Color completed = Color(0xFF0EA5E9);
-  static const Color cancelled = Color(0xFFEF4444);
+  // Gray scale aliases
+  static const Color gray50              = Color(0xFFF9FAFB);
+  static const Color gray100             = Color(0xFFF3F4F6);
+  static const Color gray200             = Color(0xFFE5E7EB);
+  static const Color gray300             = Color(0xFFD1D5DB);
+  static const Color gray400             = Color(0xFF9CA3AF);
+  static const Color gray500             = Color(0xFF6B7280);
 
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
     colors: [primary, primaryDark],
-  );
-
-  static const LinearGradient successGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [success, secondaryDark],
   );
 
-  static const LinearGradient glassGradient = LinearGradient(
+  static const LinearGradient accentGradient = LinearGradient(
+    colors: [accent, Color(0xFFF59E0B)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      Color.fromARGB(30, 255, 255, 255),
-      Color.fromARGB(10, 255, 255, 255),
-    ],
   );
 }

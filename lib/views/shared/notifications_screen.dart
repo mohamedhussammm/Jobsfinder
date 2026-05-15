@@ -186,7 +186,7 @@ class _NotificationCard extends StatelessWidget {
             color: AppColors.error,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(Icons.delete, color: Colors.white),
+          child: const Icon(Icons.delete, color: AppColors.textPrimary),
         ),
         onDismissed: (_) => onDelete(),
         child: Card(

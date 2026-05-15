@@ -44,28 +44,58 @@ class UserModel {
   bool get isTeamLeader => role == 'team_leader';
   bool get isNormalUser => role == 'normal';
 
+  /// Check if user is eligible to apply for events (for ushers)
+  /// Requires: Name, Phone, Email, and valid National ID
+  bool get isEligibleToApply {
+    // Only normal users (Ushers) need validation
+    if (!isNormalUser) return true;
+
+    final hasName = name != null && name!.trim().length >= 3;
+    final hasPhone = phone != null && RegExp(r'^01[0125][0-9]{8}$').hasMatch(phone!.trim());
+    final hasEmail = email.isNotEmpty && email.contains('@');
+    final hasValidId = nationalIdNumber != null && RegExp(r'^[0-9]{14}$').hasMatch(nationalIdNumber!);
+
+    return hasName && hasPhone && hasEmail && hasValidId;
+  }
+
   /// Calculate real profile completion percentage based on filled fields (8 fields total)
   double get profileCompletion {
     int count = 0;
-    if (name != null && name!.isNotEmpty) count++;
-    if (phone != null && phone!.isNotEmpty) count++;
+    if (name != null && name!.isNotEmpty) {
+      count++;
+    }
+    if (phone != null && phone!.isNotEmpty) {
+      count++;
+    }
     if (nationalIdNumber != null &&
         nationalIdNumber!.isNotEmpty &&
         nationalIdNumber != 'PENDING') {
       count++;
     }
-    if (age != null && age! > 0) count++;
-    if (avatarPath != null && avatarPath!.isNotEmpty) count++;
-    if (cvPath != null && cvPath!.isNotEmpty) count++;
-    if (nationalIdFrontPath != null && nationalIdFrontPath!.isNotEmpty) count++;
-    if (nationalIdBackPath != null && nationalIdBackPath!.isNotEmpty) count++;
+    if (age != null && age! > 0) {
+      count++;
+    }
+    if (avatarPath != null && avatarPath!.isNotEmpty) {
+      count++;
+    }
+    if (cvPath != null && cvPath!.isNotEmpty) {
+      count++;
+    }
+    if (nationalIdFrontPath != null && nationalIdFrontPath!.isNotEmpty) {
+      count++;
+    }
+    if (nationalIdBackPath != null && nationalIdBackPath!.isNotEmpty) {
+      count++;
+    }
 
     return count / 8.0;
   }
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     DateTime parseDate(dynamic v) {
-      if (v == null) return DateTime.now();
+      if (v == null) {
+        return DateTime.now();
+      }
       return DateTime.tryParse(v.toString()) ?? DateTime.now();
     }
 

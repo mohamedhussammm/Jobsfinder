@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/api/api_config.dart';
 import '../core/api/token_storage.dart';
 
 /// Realtime service provider
@@ -63,7 +62,7 @@ class RealtimeService {
     final token = tokenStorage.accessToken;
     if (token == null) return;
 
-    final baseUrl = ApiConfig.baseUrl.replaceAll('/api', '');
+    // final baseUrl = ApiConfig.baseUrl.replaceAll('/api', '');
 
     // ─── Socket.io Implementation ───────────────
     // Uncomment when socket_io_client package is available:

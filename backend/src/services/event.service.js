@@ -39,6 +39,7 @@ const getPublishedEvents = async (query) => {
         Event.find(filter)
             .populate('companyId', 'name logoPath verified')
             .populate('categoryId', 'name icon')
+            .populate('applications')
             .skip(skip).limit(limit)
             .sort({ startTime: 1 }),
         Event.countDocuments(filter),
@@ -53,7 +54,8 @@ const getPublishedEvents = async (query) => {
 const getEventById = async (id) => {
     const event = await Event.findById(id)
         .populate('companyId', 'name logoPath verified owner')
-        .populate('categoryId', 'name icon');
+        .populate('categoryId', 'name icon')
+        .populate('applications');
     if (!event) throw new AppError('Event not found', 404);
     return event;
 };
@@ -161,6 +163,7 @@ const searchEvents = async (query) => {
         Event.find(filter)
             .populate('companyId', 'name logoPath')
             .populate('categoryId', 'name icon')
+            .populate('applications')
             .skip(skip).limit(limit)
             .sort({ startTime: 1 }),
         Event.countDocuments(filter),

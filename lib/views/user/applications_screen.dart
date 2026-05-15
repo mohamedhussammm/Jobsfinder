@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../controllers/application_controller.dart';
 import '../../controllers/auth_controller.dart';
@@ -32,7 +33,7 @@ class ApplicationsScreen extends ConsumerWidget {
         title: Text(
           'My Applications',
           style: AppTypography.headlineSmall.copyWith(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -103,7 +104,7 @@ class _ApplicationCard extends ConsumerWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: AppColors.backgroundTertiary,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
@@ -114,40 +115,79 @@ class _ApplicationCard extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
-                    'Event ID: ${application.eventId}',
-                    style: AppTypography.titleSmall.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        application.eventTitle,
+                        style: AppTypography.titleMedium.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        application.companyName,
+                        style: AppTypography.labelSmall.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 _StatusBadge(status: application.status),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Applied: ${_dateFormatter.format(application.appliedAt)}',
-              style: AppTypography.body2.copyWith(
-                color: AppColors.textTertiary,
-              ),
+            const SizedBox(height: 16),
+            
+            // Minimal Status History/Details
+            Row(
+              children: [
+                Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textTertiary),
+                const SizedBox(width: 8),
+                Text(
+                  'Applied: ${_dateFormatter.format(application.appliedAt)}',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ),
-            if (application.coverLetter != null) ...[
+            
+            if (application.coverLetter != null && application.coverLetter!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
                 application.coverLetter!,
-                style: AppTypography.body2.copyWith(
+                style: AppTypography.bodySmall.copyWith(
                   color: AppColors.textSecondary,
+                  fontStyle: FontStyle.italic,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
-            const SizedBox(height: 12),
+
+            const SizedBox(height: 16),
             Row(
               children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      context.push('/event/${application.eventId}');
+                    },
+                    icon: const Icon(Icons.visibility_outlined, size: 18),
+                    label: const Text('View Event'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryLight,
+                      foregroundColor: AppColors.primary,
+                      elevation: 0,
+                    ),
+                  ),
+                ),
                 if (application.status == 'applied') ...[
+                  const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _withdrawApplication(context, ref),
@@ -155,7 +195,7 @@ class _ApplicationCard extends ConsumerWidget {
                       label: const Text('Withdraw'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.error,
-                        side: BorderSide(color: AppColors.error),
+                        side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
                       ),
                     ),
                   ),

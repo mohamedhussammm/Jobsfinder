@@ -1,12 +1,12 @@
 import 'user_model.dart';
+import 'event_model.dart';
 
 /// Application model - user's application to an event
 class ApplicationModel {
   final String id;
   final String userId;
   final String eventId;
-  final String
-  status; // 'applied', 'shortlisted', 'invited', 'accepted', 'declined', 'rejected'
+  final String status; // 'applied', 'shortlisted', 'invited', 'accepted', 'declined', 'rejected'
   final String? cvPath;
   final String? coverLetter;
   final DateTime appliedAt;
@@ -15,6 +15,7 @@ class ApplicationModel {
   final bool isAvailable;
   final bool openToOtherOptions;
   final UserModel? user;
+  final EventModel? event;
 
   ApplicationModel({
     required this.id,
@@ -29,6 +30,7 @@ class ApplicationModel {
     this.isAvailable = false,
     this.openToOtherOptions = false,
     this.user,
+    this.event,
   });
 
   // Status helpers
@@ -45,30 +47,42 @@ class ApplicationModel {
 
   factory ApplicationModel.fromJson(Map<String, dynamic> json) {
     DateTime parseDate(dynamic v) {
-      if (v == null) return DateTime.now();
+      if (v == null) {
+        return DateTime.now();
+      }
       return DateTime.tryParse(v.toString()) ?? DateTime.now();
     }
 
     // Backend uses MongoDB _id / camelCase fields
-    final userId = (json['userId'] ?? json['user_id'])?.toString();
-    final eventId = (json['eventId'] ?? json['event_id'])?.toString();
+    final userIdRaw = json['userId'] ?? json['user_id'];
+    final eventIdRaw = json['eventId'] ?? json['event_id'];
 
     // userId / eventId may be nested objects if populated
-    final userIdStr =
-        userId ??
-        (json['userId'] is Map ? json['userId']['_id'] : null)?.toString() ??
-        '';
-    final eventIdStr =
-        eventId ??
-        (json['eventId'] is Map ? json['eventId']['_id'] : null)?.toString() ??
-        '';
-
-    // Nested user object if populated
+    final String userIdStr;
     UserModel? user;
-    final userJson =
-        json['user'] ?? (json['userId'] is Map ? json['userId'] : null);
-    if (userJson is Map<String, dynamic>) {
-      user = UserModel.fromJson(userJson);
+    if (userIdRaw is Map<String, dynamic>) {
+      userIdStr = (userIdRaw['_id'] ?? userIdRaw['id'] ?? '').toString();
+      user = UserModel.fromJson(userIdRaw);
+    } else {
+      userIdStr = (userIdRaw ?? '').toString();
+    }
+
+    final String eventIdStr;
+    EventModel? event;
+    if (eventIdRaw is Map<String, dynamic>) {
+      eventIdStr = (eventIdRaw['_id'] ?? eventIdRaw['id'] ?? '').toString();
+      event = EventModel.fromJson(eventIdRaw);
+    } else {
+      eventIdStr = (eventIdRaw ?? '').toString();
+    }
+
+    // Secondary user check for legacy populates
+    if (user == null && json['user'] is Map<String, dynamic>) {
+      user = UserModel.fromJson(json['user']);
+    }
+    // Secondary event check
+    if (event == null && json['event'] is Map<String, dynamic>) {
+      event = EventModel.fromJson(json['event']);
     }
 
     return ApplicationModel(
@@ -89,6 +103,7 @@ class ApplicationModel {
           json['openToOtherOptions'] == true ||
           json['open_to_other_options'] == true,
       user: user,
+      event: event,
     );
   }
 
@@ -119,6 +134,7 @@ class ApplicationModel {
     bool? isAvailable,
     bool? openToOtherOptions,
     UserModel? user,
+    EventModel? event,
   }) {
     return ApplicationModel(
       id: id ?? this.id,
@@ -133,6 +149,7 @@ class ApplicationModel {
       isAvailable: isAvailable ?? this.isAvailable,
       openToOtherOptions: openToOtherOptions ?? this.openToOtherOptions,
       user: user ?? this.user,
+      event: event ?? this.event,
     );
   }
 
@@ -143,11 +160,6 @@ class ApplicationModel {
 
 /// Extension to provide UI-expected properties
 extension ApplicationModelExtensions on ApplicationModel {
-  // Event title - placeholder until we implement proper event joins
-  String get eventTitle =>
-      'Event'; // Placeholder — populated via event join when available
-
-  // Company name - placeholder until we implement proper company joins
-  String get companyName =>
-      'Company'; // Placeholder — populated via company join when available
+  String get eventTitle => event?.title ?? 'Event';
+  String get companyName => event?.companyName ?? 'Company';
 }

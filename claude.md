@@ -1,10 +1,10 @@
-# InstaJob (ShiftSphere) — Project Intelligence
+# BOND — Project Intelligence
 
 > This document provides essential context for AI assistants working on this codebase.
 
 ## Project Overview
 
-**InstaJob** (package name: `shiftsphere`) is a **Flutter + Node.js/MongoDB** job/shift marketplace app.
+**BOND** (package name: `com.bond.app`) is a **Flutter + Node.js/MongoDB** job/shift marketplace app.
 - **Users** (ushers) browse and apply for event shifts (concerts, conferences, etc.)
 - **Team Leaders** manage attendance and rate workers per event
 - **Admins** manage the entire platform (events, users, analytics)
@@ -192,3 +192,11 @@ backend/src/
 - `.env` file required in project root with `API_BASE_URL`
 - Backend runs on port 5000 by default
 - Local network IP for mobile testing: `192.168.1.9`
+
+## Google Sign-In Configuration
+
+### Android Production Credentials
+- **Package Name**: `com.bond.app`
+- **SHA-1 Fingerprint**: `16:E4:49:03:AC:44:A4:4D:DA:17:C8:80:0D:D4:BF:D0:9E:C2:53:DB`
+- **Android Client ID**: `537432724341-ebfva9v5u1fohlshito4js0opnnu7ep6.apps.googleusercontent.com`
+- **Web Client ID (Server Client ID)**: `537432724341-knp7n02inu5t7lt5jt96q7dmr07nj8ri.apps.googleusercontent.com`

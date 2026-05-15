@@ -70,7 +70,7 @@ class _SocialLoginSectionState extends ConsumerState<SocialLoginSection> {
           children: [
             Expanded(
               child: Divider(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: AppColors.glassBorder,
                 thickness: 1,
               ),
             ),
@@ -79,7 +79,7 @@ class _SocialLoginSectionState extends ConsumerState<SocialLoginSection> {
               child: Text(
                 'Or continue with',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: AppColors.textSecondary,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -87,7 +87,7 @@ class _SocialLoginSectionState extends ConsumerState<SocialLoginSection> {
             ),
             Expanded(
               child: Divider(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: AppColors.glassBorder,
                 thickness: 1,
               ),
             ),

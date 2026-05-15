@@ -3,12 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/theme/dark_colors.dart';
+import '../../core/theme/colors.dart';
 import '../../models/event_model.dart';
 import '../../controllers/event_controller.dart';
 import '../../controllers/auth_controller.dart';
 import 'package:intl/intl.dart';
 import '../../services/file_upload_service.dart';
+import '../../controllers/application_controller.dart';
 
 class EventDetailsScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -26,12 +27,24 @@ class EventDetailsScreen extends ConsumerStatefulWidget {
 
 class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   bool _descExpanded = false;
+  bool _isContentReady = false;
 
   static final _dateFormatter = DateFormat('EEE, MMM d, yyyy');
   static final _timeFormatter = DateFormat('hh:mm a');
 
   String _formatDate(DateTime date) => _dateFormatter.format(date);
   String _formatTime(DateTime date) => _timeFormatter.format(date);
+
+  @override
+  void initState() {
+    super.initState();
+    // Delay rendering of heavy sections until transition is done
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) {
+        setState(() => _isContentReady = true);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,39 +101,50 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                       _TagsSection(event: event),
                       const SizedBox(height: 16),
                       _TitleSection(event: event),
-                      const SizedBox(height: 24),
-                      _InfoGridSection(
-                        event: event,
-                        formatDate: _formatDate,
-                        formatTime: _formatTime,
-                      ),
-                      const SizedBox(height: 28),
-                      _DescriptionSection(
-                        description: event.description,
-                        isExpanded: _descExpanded,
-                        onToggle: () =>
-                            setState(() => _descExpanded = !_descExpanded),
-                      ),
-                      const SizedBox(height: 28),
-                      if (event.requirements?.isNotEmpty ?? false) ...[
-                        _RequirementSection(requirements: event.requirements!),
-                        const SizedBox(height: 28),
-                      ],
-                      if (event.benefits?.isNotEmpty ?? false) ...[
-                        _BenefitSection(benefits: event.benefits!),
-                        const SizedBox(height: 28),
-                      ],
-                      if ((event.contactEmail?.isNotEmpty ?? false) ||
-                          (event.contactPhone?.isNotEmpty ?? false)) ...[
-                        _ContactSection(event: event),
-                        const SizedBox(height: 28),
-                      ],
-                      if (event.location != null) ...[
-                        _LocationSection(
+                      
+                      // Delayed content to prevent transition jank
+                      if (!_isContentReady)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 60),
+                          child: Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      else ...[
+                        const SizedBox(height: 24),
+                        _InfoGridSection(
                           event: event,
-                          onOpenMap: () => _openMap(event),
+                          formatDate: _formatDate,
+                          formatTime: _formatTime,
                         ),
                         const SizedBox(height: 28),
+                        _DescriptionSection(
+                          description: event.description,
+                          isExpanded: _descExpanded,
+                          onToggle: () =>
+                              setState(() => _descExpanded = !_descExpanded),
+                        ),
+                        const SizedBox(height: 28),
+                        if (event.requirements?.isNotEmpty ?? false) ...[
+                          _RequirementSection(requirements: event.requirements!),
+                          const SizedBox(height: 28),
+                        ],
+                        if (event.benefits?.isNotEmpty ?? false) ...[
+                          _BenefitSection(benefits: event.benefits!),
+                          const SizedBox(height: 28),
+                        ],
+                        if ((event.contactEmail?.isNotEmpty ?? false) ||
+                            (event.contactPhone?.isNotEmpty ?? false)) ...[
+                          _ContactSection(event: event),
+                          const SizedBox(height: 28),
+                        ],
+                        if (event.location != null) ...[
+                          _LocationSection(
+                            event: event,
+                            onOpenMap: () => _openMap(event),
+                          ),
+                          const SizedBox(height: 28),
+                        ],
                       ],
                       const SizedBox(height: 100),
                     ],
@@ -148,13 +172,13 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     showDialog(
       context: outerContext,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: DarkColors.surface,
+        backgroundColor: AppColors.backgroundTertiary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(Icons.error_outline_rounded, color: DarkColors.error),
+            Icon(Icons.error_outline_rounded, color: AppColors.error),
             SizedBox(width: 12),
-            Text('Profile Incomplete', style: TextStyle(color: Colors.white)),
+            Text('Profile Incomplete', style: TextStyle(color: AppColors.textPrimary)),
           ],
         ),
         content: const Column(
@@ -162,32 +186,37 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'To apply for events, your profile must be 100% complete. This includes:',
+              'To apply for events, your core profile details must be provided:',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.bold,
               ),
             ),
             SizedBox(height: 12),
             Text(
-              '• Profile Photo & Full Name',
-              style: TextStyle(color: DarkColors.textSecondary),
+              '• Full Name & Verified Email',
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             Text(
-              '• Phone Number & Age (16+)',
-              style: TextStyle(color: DarkColors.textSecondary),
+              '• Valid Phone Number',
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             Text(
-              '• National ID Number',
-              style: TextStyle(color: DarkColors.textSecondary),
+              '• National ID (14 digits)',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Bonus (Optional for better selection chance):',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             Text(
-              '• National ID Photos (Front & Back)',
-              style: TextStyle(color: DarkColors.textSecondary),
-            ),
-            Text(
-              '• Professional CV',
-              style: TextStyle(color: DarkColors.textSecondary),
+              '• Photos, Age, Professional CV',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
           ],
         ),
@@ -196,7 +225,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text(
               'Later',
-              style: TextStyle(color: DarkColors.textTertiary),
+              style: TextStyle(color: AppColors.textHint),
             ),
           ),
           ElevatedButton(
@@ -207,7 +236,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               outerContext.push('/edit-profile');
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: DarkColors.accent,
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -222,27 +251,34 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
 
   Widget _buildApplyButton(BuildContext context, EventModel event) {
     final user = ref.watch(currentUserProvider);
+    
+    // Check if user has already applied to this event
+    final hasApplied = user != null && 
+        ref.watch(userApplicationsProvider(user.id)).maybeWhen(
+          data: (apps) => apps.any((a) => a.eventId == event.id),
+          orElse: () => false,
+        );
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.07)),
+          top: BorderSide(color: AppColors.border),
         ),
       ),
       child: SizedBox(
         width: double.infinity,
         height: 56,
         child: ElevatedButton(
-          onPressed: event.isPublished
+          onPressed: (event.isPublished && !hasApplied)
               ? () {
                   if (user == null) {
                     context.push('/auth');
                     return;
                   }
 
-                  if (user.profileCompletion < 1.0) {
+                  if (!user.isEligibleToApply) {
                     _showProfileIncompleteDialog(context);
                     return;
                   }
@@ -251,10 +287,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                 }
               : null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: DarkColors.primary,
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
-            disabledBackgroundColor: Colors.white.withValues(alpha: 0.08),
-            disabledForegroundColor: Colors.white.withValues(alpha: 0.3),
+            disabledBackgroundColor: AppColors.borderStrong,
+            disabledForegroundColor: AppColors.textHint,
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -264,19 +300,21 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                event.isPublished ? 'APPLY NOW' : 'NOT AVAILABLE',
+                hasApplied 
+                    ? 'ALREADY APPLIED' 
+                    : (event.isPublished ? 'APPLY NOW' : 'NOT AVAILABLE'),
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
                 ),
               ),
-              if (event.isPublished) ...[
+              if (event.isPublished && !hasApplied) ...[
                 const SizedBox(width: 10),
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
+                    color: AppColors.glassBorder,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.arrow_forward_rounded, size: 16),
@@ -294,7 +332,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Sharing: ${event.title}'),
-        backgroundColor: const Color(0xFF1E4D6B),
+        backgroundColor: AppColors.primaryDark,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
@@ -316,14 +354,14 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
   // ── Loading / Error states ────────────────────────────────────────────────
   Widget _buildLoading() {
     return const Scaffold(
-      backgroundColor: Color(0xFF0D1117),
-      body: Center(child: CircularProgressIndicator(color: Color(0xFF60A5FA))),
+      backgroundColor: AppColors.backgroundPrimary,
+      body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
     );
   }
 
   Widget _buildError(Object error) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.backgroundPrimary,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -333,13 +371,13 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               const Icon(
                 Icons.error_outline_rounded,
                 size: 64,
-                color: Color(0xFFF87171),
+                color: AppColors.error,
               ),
               const SizedBox(height: 16),
               const Text(
                 'Could not load event',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
@@ -348,7 +386,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               Text(
                 error.toString(),
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: AppColors.textSecondary,
                   fontSize: 13,
                 ),
                 textAlign: TextAlign.center,
@@ -366,7 +404,7 @@ class _MapGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.04)
+      ..color = AppColors.border
       ..strokeWidth = 1;
 
     const spacing = 28.0;
@@ -379,7 +417,7 @@ class _MapGridPainter extends CustomPainter {
 
     // Draw some "road" lines
     final roadPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08)
+      ..color = AppColors.borderStrong
       ..strokeWidth = 3
       ..strokeCap = StrokeCap.round;
 
@@ -439,7 +477,7 @@ class _HeroSection extends ConsumerWidget {
                     .read(fileUploadServiceProvider)
                     .getPublicUrl(event.imagePath!),
                 fit: BoxFit.cover,
-                memCacheHeight: 800,
+                memCacheHeight: 600, // Reduced for performance
                 placeholder: (context, url) =>
                     _GradientHero(status: event.status),
                 errorWidget: (context, url, error) =>
@@ -492,9 +530,9 @@ Widget _circleButton({
               context,
             ).scaffoldBackgroundColor.withValues(alpha: 0.5),
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            border: Border.all(color: AppColors.borderStrong),
           ),
-          child: Icon(icon, color: Colors.white, size: 20),
+          child: Icon(icon, color: AppColors.textPrimary, size: 20),
         ),
       ),
     ),
@@ -546,13 +584,13 @@ class _StatusBadge extends StatelessWidget {
   Color _statusColor(String status) {
     switch (status) {
       case 'published':
-        return const Color(0xFF4ADE80);
+        return AppColors.success;
       case 'pending':
-        return const Color(0xFFFBBF24);
+        return AppColors.warning;
       case 'completed':
-        return const Color(0xFF60A5FA);
+        return AppColors.primary;
       default:
-        return Colors.white70;
+        return AppColors.textSecondary;
     }
   }
 }
@@ -575,7 +613,7 @@ class _GradientHero extends StatelessWidget {
         child: Icon(
           Icons.event_rounded,
           size: 80,
-          color: Colors.white.withValues(alpha: 0.18),
+          color: AppColors.glassBorder,
         ),
       ),
     );
@@ -584,13 +622,13 @@ class _GradientHero extends StatelessWidget {
   List<Color> _heroColors(String status) {
     switch (status) {
       case 'published':
-        return [const Color(0xFF0F4C35), const Color(0xFF1A6B4A)];
+        return [AppColors.successLight, AppColors.success];
       case 'pending':
-        return [const Color(0xFF4C3A0F), const Color(0xFF6B541A)];
+        return [AppColors.warningLight, AppColors.warning];
       case 'completed':
-        return [const Color(0xFF0F2A4C), const Color(0xFF1A3F6B)];
+        return [AppColors.infoLight, AppColors.info];
       default:
-        return [const Color(0xFF1A1A2E), const Color(0xFF16213E)];
+        return [AppColors.backgroundSecondary, AppColors.backgroundPrimary];
     }
   }
 }
@@ -610,31 +648,37 @@ class _TagsSection extends StatelessWidget {
           if (event.isUrgent)
             _tagChip(
               '🔥 URGENT',
-              const Color(0xFF3A1A1A),
-              const Color(0xFFF87171),
+              AppColors.errorLight,
+              AppColors.error,
             ),
           if (event.salary != null && event.salary! > 0)
             _tagChip(
-              'SAR ${event.salary!.toStringAsFixed(0)}',
-              const Color(0xFF1A3A2A),
-              const Color(0xFF4ADE80),
+              'EGP ${event.salary!.toStringAsFixed(0)}',
+              AppColors.accentLight,
+              AppColors.success,
+            ),
+          if (event.categoryName != null)
+            _tagChip(
+              '${event.categoryName!.toUpperCase()} (${event.appliedCount}/${event.capacity ?? "∞"})',
+              AppColors.primary.withValues(alpha: 0.1),
+              AppColors.primary,
             ),
           _tagChip(
             'Instant Book',
-            const Color(0xFF1A2A3A),
-            const Color(0xFF60A5FA),
+            AppColors.infoLight,
+            AppColors.primary,
           ),
           if (event.isUpcoming)
             _tagChip(
               'Upcoming',
-              const Color(0xFF2A1A3A),
-              const Color(0xFFA78BFA),
+              AppColors.primaryLight,
+              AppColors.primaryDark,
             ),
           ...event.tags.map(
             (tag) => _tagChip(
               tag.toUpperCase(),
-              const Color(0xFF1A2A2A),
-              const Color(0xFF67E8F9),
+              AppColors.backgroundSecondary,
+              AppColors.primary,
             ),
           ),
         ],
@@ -678,7 +722,7 @@ class _TitleSection extends StatelessWidget {
             style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w800,
-              color: Colors.white,
+              color: AppColors.textPrimary,
               height: 1.2,
             ),
           ),
@@ -687,7 +731,7 @@ class _TitleSection extends StatelessWidget {
             event.company,
             style: TextStyle(
               fontSize: 15,
-              color: Colors.white.withValues(alpha: 0.55),
+              color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -714,9 +758,9 @@ class _InfoGridSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: AppColors.backgroundTertiary,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+          border: Border.all(color: AppColors.border),
         ),
         child: IntrinsicHeight(
           child: Row(
@@ -725,7 +769,7 @@ class _InfoGridSection extends StatelessWidget {
                 icon: Icons.calendar_today_rounded,
                 label: 'Date',
                 value: formatDate(event.startTime),
-                color: const Color(0xFF60A5FA),
+                color: AppColors.primary,
               ),
               _verticalDivider(),
               _infoCell(
@@ -733,14 +777,14 @@ class _InfoGridSection extends StatelessWidget {
                 label: 'Shift',
                 value:
                     '${formatTime(event.startTime)} - ${formatTime(event.endTime)}',
-                color: const Color(0xFF34D399),
+                color: AppColors.success,
               ),
               _verticalDivider(),
               _infoCell(
                 icon: Icons.people_rounded,
                 label: 'CAPACITY',
                 value: event.capacity != null ? '${event.capacity}' : '∞',
-                color: const Color(0xFFFBBF24),
+                color: AppColors.warning,
               ),
             ],
           ),
@@ -766,7 +810,7 @@ class _InfoGridSection extends StatelessWidget {
               label.toUpperCase(),
               style: const TextStyle(
                 fontSize: 9,
-                color: Colors.white38,
+                color: AppColors.textHint,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.8,
               ),
@@ -776,7 +820,7 @@ class _InfoGridSection extends StatelessWidget {
               value,
               style: const TextStyle(
                 fontSize: 12,
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.w700,
               ),
               textAlign: TextAlign.center,
@@ -793,7 +837,7 @@ class _InfoGridSection extends StatelessWidget {
     return Container(
       width: 1,
       height: 40,
-      color: Colors.white.withValues(alpha: 0.07),
+      color: AppColors.border,
     );
   }
 }
@@ -822,9 +866,9 @@ class _DescriptionSection extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+                border: Border.all(color: AppColors.border),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -833,7 +877,7 @@ class _DescriptionSection extends StatelessWidget {
                     description ?? 'No description provided for this event.',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.72),
+                      color: AppColors.textSecondary,
                       height: 1.65,
                     ),
                     maxLines: isExpanded ? null : 4,
@@ -848,7 +892,7 @@ class _DescriptionSection extends StatelessWidget {
                       child: Text(
                         isExpanded ? 'Show Less' : 'Read More',
                         style: const TextStyle(
-                          color: Color(0xFF60A5FA),
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -872,7 +916,7 @@ class _DescriptionSection extends StatelessWidget {
         style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w800,
-          color: Colors.white,
+          color: AppColors.textPrimary,
           letterSpacing: -0.2,
         ),
       ),
@@ -893,7 +937,7 @@ class _RequirementSection extends StatelessWidget {
         const SizedBox(height: 12),
         _ContentBox(
           icon: Icons.checklist_rounded,
-          iconColor: const Color(0xFF60A5FA),
+          iconColor: AppColors.primary,
           text: requirements,
         ),
       ],
@@ -908,7 +952,7 @@ class _RequirementSection extends StatelessWidget {
         style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w800,
-          color: Colors.white,
+          color: AppColors.textPrimary,
           letterSpacing: -0.2,
         ),
       ),
@@ -929,7 +973,7 @@ class _BenefitSection extends StatelessWidget {
         const SizedBox(height: 12),
         _ContentBox(
           icon: Icons.card_giftcard_rounded,
-          iconColor: const Color(0xFF4ADE80),
+          iconColor: AppColors.success,
           text: benefits,
         ),
       ],
@@ -944,7 +988,7 @@ class _BenefitSection extends StatelessWidget {
         style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w800,
-          color: Colors.white,
+          color: AppColors.textPrimary,
           letterSpacing: -0.2,
         ),
       ),
@@ -971,9 +1015,9 @@ class _ContentBox extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: AppColors.backgroundTertiary,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -985,7 +1029,7 @@ class _ContentBox extends StatelessWidget {
                 text,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white.withValues(alpha: 0.72),
+                  color: AppColors.textSecondary,
                   height: 1.6,
                 ),
               ),
@@ -1013,9 +1057,9 @@ class _ContactSection extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
+              color: AppColors.backgroundTertiary,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+              border: Border.all(color: AppColors.border),
             ),
             child: Column(
               children: [
@@ -1023,7 +1067,7 @@ class _ContactSection extends StatelessWidget {
                   _contactRow(
                     Icons.email_outlined,
                     event.contactEmail!,
-                    const Color(0xFF60A5FA),
+                    AppColors.primary,
                     () => launchUrl(Uri.parse('mailto:${event.contactEmail}')),
                   ),
                 if ((event.contactEmail?.isNotEmpty ?? false) &&
@@ -1033,7 +1077,7 @@ class _ContactSection extends StatelessWidget {
                   _contactRow(
                     Icons.phone_outlined,
                     event.contactPhone!,
-                    const Color(0xFF4ADE80),
+                    AppColors.success,
                     () => launchUrl(Uri.parse('tel:${event.contactPhone}')),
                   ),
               ],
@@ -1052,7 +1096,7 @@ class _ContactSection extends StatelessWidget {
         style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w800,
-          color: Colors.white,
+          color: AppColors.textPrimary,
           letterSpacing: -0.2,
         ),
       ),
@@ -1075,7 +1119,7 @@ class _ContactSection extends StatelessWidget {
             text,
             style: const TextStyle(
               fontSize: 14,
-              color: Colors.white,
+              color: AppColors.textPrimary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1083,7 +1127,7 @@ class _ContactSection extends StatelessWidget {
           Icon(
             Icons.open_in_new_rounded,
             size: 14,
-            color: Colors.white.withValues(alpha: 0.3),
+            color: AppColors.textHint,
           ),
         ],
       ),
@@ -1111,7 +1155,7 @@ class _LocationSection extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
-                  color: Colors.white,
+                  color: AppColors.textPrimary,
                   letterSpacing: -0.2,
                 ),
               ),
@@ -1120,7 +1164,7 @@ class _LocationSection extends StatelessWidget {
                   event.location!.city,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: AppColors.textSecondary,
                   ),
                 ),
             ],
@@ -1148,8 +1192,8 @@ class _MapBox extends StatelessWidget {
           height: 160,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: Theme.of(context).cardColor,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+            color: AppColors.backgroundTertiary,
+            border: Border.all(color: AppColors.border),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
@@ -1164,7 +1208,7 @@ class _MapBox extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF60A5FA),
+                          color: AppColors.primary,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
@@ -1178,7 +1222,7 @@ class _MapBox extends StatelessWidget {
                         ),
                         child: const Icon(
                           Icons.location_on_rounded,
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           size: 22,
                         ),
                       ),
@@ -1186,7 +1230,7 @@ class _MapBox extends StatelessWidget {
                       Text(
                         event.location?.address ?? 'View on map',
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),

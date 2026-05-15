@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../controllers/rating_controller.dart';
 import '../../controllers/auth_controller.dart';
-import '../../core/theme/dark_colors.dart';
+import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/theme/glass.dart';
 import '../../core/utils/responsive.dart';
@@ -20,9 +20,9 @@ class UserRatingsScreen extends ConsumerWidget {
 
     if (targetUserId == null) {
       return const Scaffold(
-        backgroundColor: DarkColors.background,
+        backgroundColor: AppColors.backgroundPrimary,
         body: Center(
-          child: Text('User not found', style: TextStyle(color: Colors.white)),
+          child: Text('User not found', style: TextStyle(color: AppColors.textPrimary)),
         ),
       );
     }
@@ -30,11 +30,11 @@ class UserRatingsScreen extends ConsumerWidget {
     final ratingsAsync = ref.watch(userRatingsProvider(targetUserId));
 
     return Scaffold(
-      backgroundColor: DarkColors.background,
+      backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
         title: Text(
           'My Ratings',
-          style: AppTypography.titleLarge.copyWith(color: Colors.white),
+          style: AppTypography.titleLarge.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -50,20 +50,20 @@ class UserRatingsScreen extends ConsumerWidget {
                   Icon(
                     Icons.star_border,
                     size: ResponsiveHelper.sp(context, 64),
-                    color: DarkColors.textTertiary.withValues(alpha: 0.3),
+                    color: AppColors.textHint.withValues(alpha: 0.3),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No ratings yet',
                     style: AppTypography.titleMedium.copyWith(
-                      color: DarkColors.textSecondary,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Complete events to receive ratings',
                     style: AppTypography.bodySmall.copyWith(
-                      color: DarkColors.textTertiary,
+                      color: AppColors.textHint,
                     ),
                   ),
                 ],
@@ -93,7 +93,7 @@ class UserRatingsScreen extends ConsumerWidget {
                               avg.toStringAsFixed(1),
                               style: AppTypography.heading1.copyWith(
                                 fontSize: ResponsiveHelper.sp(context, 40),
-                                color: Colors.white,
+                                color: AppColors.textPrimary,
                               ),
                             ),
                             Row(
@@ -102,7 +102,7 @@ class UserRatingsScreen extends ConsumerWidget {
                                   i < avg.round()
                                       ? Icons.star
                                       : Icons.star_border,
-                                  color: DarkColors.accent,
+                                  color: AppColors.primary,
                                   size: ResponsiveHelper.sp(context, 18),
                                 );
                               }),
@@ -111,7 +111,7 @@ class UserRatingsScreen extends ConsumerWidget {
                             Text(
                               '${ratings.length} rating${ratings.length != 1 ? 's' : ''}',
                               style: AppTypography.labelSmall.copyWith(
-                                color: DarkColors.textTertiary,
+                                color: AppColors.textHint,
                               ),
                             ),
                           ],
@@ -137,14 +137,14 @@ class UserRatingsScreen extends ConsumerWidget {
                                     Text(
                                       '$star',
                                       style: AppTypography.labelSmall.copyWith(
-                                        color: DarkColors.textSecondary,
+                                        color: AppColors.textSecondary,
                                       ),
                                     ),
                                     const SizedBox(width: 4),
                                     const Icon(
                                       Icons.star,
                                       size: 12,
-                                      color: DarkColors.accent,
+                                      color: AppColors.primary,
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
@@ -152,8 +152,8 @@ class UserRatingsScreen extends ConsumerWidget {
                                         borderRadius: BorderRadius.circular(4),
                                         child: LinearProgressIndicator(
                                           value: pct,
-                                          backgroundColor: DarkColors.gray100,
-                                          color: DarkColors.accent,
+                                          backgroundColor: AppColors.backgroundSecondary,
+                                          color: AppColors.primary,
                                           minHeight: 6,
                                         ),
                                       ),
@@ -193,9 +193,9 @@ class UserRatingsScreen extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: DarkColors.surface,
+        color: AppColors.backgroundTertiary,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: DarkColors.borderColor),
+        border: Border.all(color: AppColors.border),
       ),
       child: Padding(
         padding: ResponsiveHelper.cardPadding(context),
@@ -209,7 +209,7 @@ class UserRatingsScreen extends ConsumerWidget {
                   children: List.generate(5, (i) {
                     return Icon(
                       i < rating.score ? Icons.star : Icons.star_border,
-                      color: DarkColors.accent,
+                      color: AppColors.primary,
                       size: ResponsiveHelper.sp(context, 16),
                     );
                   }),
@@ -218,7 +218,7 @@ class UserRatingsScreen extends ConsumerWidget {
                 Text(
                   _formatDate(rating.createdAt),
                   style: AppTypography.labelSmall.copyWith(
-                    color: DarkColors.textTertiary,
+                    color: AppColors.textHint,
                   ),
                 ),
               ],
@@ -228,7 +228,7 @@ class UserRatingsScreen extends ConsumerWidget {
               Text(
                 rating.textReview!,
                 style: AppTypography.bodySmall.copyWith(
-                  color: DarkColors.textSecondary,
+                  color: AppColors.textSecondary,
                   height: 1.4,
                 ),
               ),

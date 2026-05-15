@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../controllers/team_leader_controller.dart';
 import '../../controllers/application_controller.dart';
 import '../../controllers/auth_controller.dart';
-import '../../core/theme/dark_colors.dart';
+import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/utils/responsive.dart';
 import '../../models/application_model.dart';
@@ -44,14 +44,14 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
     );
 
     return Scaffold(
-      backgroundColor: DarkColors.background,
+      backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           'Attendance: ${widget.eventTitle}',
           style: AppTypography.titleLarge.copyWith(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontSize: ResponsiveHelper.sp(context, 18),
           ),
         ),
@@ -64,15 +64,15 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 Icons.check_circle_outline,
                 size: 18,
                 color: _isSaving
-                    ? DarkColors.textTertiary
-                    : DarkColors.secondary,
+                    ? AppColors.textHint
+                    : AppColors.secondary,
               ),
               label: Text(
                 'Save',
                 style: TextStyle(
                   color: _isSaving
-                      ? DarkColors.textTertiary
-                      : DarkColors.secondary,
+                      ? AppColors.textHint
+                      : AppColors.secondary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -95,13 +95,13 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   Icon(
                     Icons.people_outline,
                     size: ResponsiveHelper.sp(context, 64),
-                    color: DarkColors.textTertiary.withValues(alpha: 0.3),
+                    color: AppColors.textHint.withValues(alpha: 0.3),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No accepted applicants',
                     style: AppTypography.bodyLarge.copyWith(
-                      color: DarkColors.textSecondary,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -128,12 +128,12 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: DarkColors.surface,
+                    color: AppColors.backgroundTertiary,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isPresent
-                          ? DarkColors.secondary.withValues(alpha: 0.5)
-                          : DarkColors.borderColor,
+                          ? AppColors.secondary.withValues(alpha: 0.5)
+                          : AppColors.border,
                     ),
                   ),
                   child: Padding(
@@ -146,8 +146,8 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                             CircleAvatar(
                               radius: ResponsiveHelper.sp(context, 20),
                               backgroundColor: isPresent
-                                  ? DarkColors.secondary.withValues(alpha: 0.1)
-                                  : DarkColors.gray100,
+                                  ? AppColors.secondary.withValues(alpha: 0.1)
+                                  : AppColors.backgroundSecondary,
                               backgroundImage: app.user?.avatarPath != null
                                   ? NetworkImage(app.user!.avatarPath!)
                                   : null,
@@ -155,8 +155,8 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                   ? Icon(
                                       Icons.person,
                                       color: isPresent
-                                          ? DarkColors.secondary
-                                          : DarkColors.textTertiary,
+                                          ? AppColors.secondary
+                                          : AppColors.textHint,
                                       size: ResponsiveHelper.sp(context, 20),
                                     )
                                   : null,
@@ -169,7 +169,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                   Text(
                                     'Applicant',
                                     style: AppTypography.titleMedium.copyWith(
-                                      color: Colors.white,
+                                      color: AppColors.textPrimary,
                                       fontSize: ResponsiveHelper.sp(
                                         context,
                                         15,
@@ -179,7 +179,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                   Text(
                                     'ID: ${app.userId.substring(0, 8)}...',
                                     style: AppTypography.labelSmall.copyWith(
-                                      color: DarkColors.textTertiary,
+                                      color: AppColors.textHint,
                                     ),
                                   ),
                                 ],
@@ -189,7 +189,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                             if (isPresent)
                               IconButton(
                                 icon: const Icon(Icons.star_rate_rounded),
-                                color: DarkColors.accent,
+                                color: AppColors.primary,
                                 tooltip: 'Rate applicant',
                                 onPressed: () => _navigateToRate(app),
                               ),
@@ -198,10 +198,10 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                               onChanged: (val) {
                                 setState(() => _attendance[app.userId] = val);
                               },
-                              activeTrackColor: DarkColors.secondary.withValues(
+                              activeTrackColor: AppColors.secondary.withValues(
                                 alpha: 0.5,
                               ),
-                              activeThumbColor: DarkColors.secondary,
+                              activeThumbColor: AppColors.secondary,
                             ),
                           ],
                         ),
@@ -212,8 +212,8 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                           style: AppTypography.labelMedium.copyWith(
                             fontWeight: FontWeight.w600,
                             color: isPresent
-                                ? DarkColors.secondary
-                                : DarkColors.error,
+                                ? AppColors.secondary
+                                : AppColors.error,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -223,22 +223,22 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                           decoration: InputDecoration(
                             hintText: 'Notes (optional)',
                             hintStyle: TextStyle(
-                              color: DarkColors.textTertiary,
+                              color: AppColors.textHint,
                             ),
                             filled: true,
-                            fillColor: DarkColors.gray100.withValues(
+                            fillColor: AppColors.backgroundSecondary.withValues(
                               alpha: 0.5,
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide(
-                                color: DarkColors.borderColor,
+                                color: AppColors.border,
                               ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide(
-                                color: DarkColors.borderColor,
+                                color: AppColors.border,
                               ),
                             ),
                             contentPadding: const EdgeInsets.symmetric(
@@ -247,7 +247,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                             ),
                           ),
                           style: AppTypography.bodySmall.copyWith(
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                           ),
                           maxLines: 2,
                         ),
@@ -307,7 +307,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Attendance saved successfully!'),
-        backgroundColor: DarkColors.success,
+        backgroundColor: AppColors.success,
       ),
     );
 

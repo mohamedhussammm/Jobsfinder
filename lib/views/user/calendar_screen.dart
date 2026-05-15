@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../controllers/application_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../../core/theme/colors.dart';
+import '../../core/theme/typography.dart';
 import '../../core/utils/responsive.dart';
 import '../../models/application_model.dart';
 
@@ -151,7 +152,7 @@ class _CalendarBodyState extends State<_CalendarBody> {
 
     // Empty cells before first day
     for (int i = 1; i < startWeekday; i++) {
-      cells.add(const SizedBox(width: 36, height: 36));
+      cells.add(const SizedBox(width: 44, height: 44));
     }
 
     // Day cells
@@ -164,16 +165,23 @@ class _CalendarBodyState extends State<_CalendarBody> {
       cells.add(
         GestureDetector(
           onTap: () => setState(() => _selectedDay = day),
-          child: Container(
-            width: 36,
-            height: 36,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColors.primary
                   : isToday
-                  ? AppColors.primaryLight
-                  : null,
-              borderRadius: BorderRadius.circular(8),
+                  ? AppColors.primary.withValues(alpha: 0.1)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected 
+                  ? AppColors.primary 
+                  : (isToday ? AppColors.primary.withValues(alpha: 0.3) : Colors.transparent),
+                width: 1.5,
+              ),
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -181,8 +189,8 @@ class _CalendarBodyState extends State<_CalendarBody> {
                 Text(
                   '$day',
                   style: TextStyle(
-                    fontSize: ResponsiveHelper.sp(context, 14),
-                    fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
+                    fontSize: 15,
+                    fontWeight: isToday || isSelected ? FontWeight.w700 : FontWeight.w400,
                     color: isSelected
                         ? Colors.white
                         : isToday
@@ -192,7 +200,7 @@ class _CalendarBodyState extends State<_CalendarBody> {
                 ),
                 if (hasEvent)
                   Positioned(
-                    bottom: 2,
+                    bottom: 6,
                     child: Container(
                       width: 4,
                       height: 4,
@@ -210,8 +218,8 @@ class _CalendarBodyState extends State<_CalendarBody> {
     }
 
     return Wrap(
-      spacing: (MediaQuery.of(context).size.width - 32 - 7 * 36) / 6,
-      runSpacing: 4,
+      spacing: (MediaQuery.of(context).size.width - 32 - 7 * 44) / 6,
+      runSpacing: 8,
       children: cells,
     );
   }
@@ -219,56 +227,76 @@ class _CalendarBodyState extends State<_CalendarBody> {
   Widget _buildSelectedDayEvents(BuildContext context) {
     if (_selectedDay == null) {
       return Center(
-        child: Text(
-          'Select a day to see your schedule',
-          style: TextStyle(
-            color: AppColors.textTertiary,
-            fontSize: ResponsiveHelper.sp(context, 14),
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.calendar_month_outlined, size: 48, color: AppColors.textTertiary.withValues(alpha: 0.3)),
+            const SizedBox(height: 16),
+            Text(
+              'Select a date to view shift details',
+              style: TextStyle(
+                color: AppColors.textTertiary,
+                fontSize: 14,
+              ),
+            ),
+          ],
         ),
       );
     }
 
-    // For now, show accepted apps (in a real app, we'd filter by event dates)
+    final eventsForDay = widget.acceptedApps; // Placeholder: in real app, filter by date
+
+    if (eventsForDay.isEmpty) {
+      return const Center(child: Text('No shifts scheduled for this day'));
+    }
+
     return ListView.builder(
-      padding: ResponsiveHelper.screenPadding(context),
-      itemCount: widget.acceptedApps.length,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: eventsForDay.length,
       itemBuilder: (context, index) {
-        final app = widget.acceptedApps[index];
-        return Card(
-          elevation: 0,
-          margin: const EdgeInsets.only(bottom: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: AppColors.borderColor),
+        final app = eventsForDay[index];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.backgroundTertiary,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
           ),
-          child: ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.work_outline, color: AppColors.primary, size: 20),
               ),
-              child: const Icon(
-                Icons.event_available,
-                color: AppColors.success,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      app.eventTitle,
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      app.companyName,
+                      style: AppTypography.labelSmall.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            title: Text(
-              'Accepted Application',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: ResponsiveHelper.sp(context, 14),
-              ),
-            ),
-            subtitle: Text(
-              'Applied ${app.appliedAt.day}/${app.appliedAt.month}/${app.appliedAt.year}',
-              style: TextStyle(
-                fontSize: ResponsiveHelper.sp(context, 12),
-                color: AppColors.textTertiary,
-              ),
-            ),
-            trailing: const Icon(Icons.chevron_right, color: AppColors.gray400),
+              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textHint),
+            ],
           ),
         );
       },

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/colors.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:ui';
@@ -218,7 +220,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 child: Container(
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: AppColors.borderStrong,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -228,7 +230,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 child: Container(
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: AppColors.borderStrong,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -295,7 +297,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -392,6 +394,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your phone number';
                           }
+                          if (!RegExp(r'^01[0125][0-9]{8}$').hasMatch(value.trim())) {
+                            return 'Enter a valid Egyptian phone (01XXXXXXXXX)';
+                          }
                           return null;
                         },
                       ),
@@ -405,6 +410,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your national ID';
+                          }
+                          if (!RegExp(r'^[0-9]{14}$').hasMatch(value.trim())) {
+                            return 'ID must be exactly 14 digits';
                           }
                           return null;
                         },
@@ -452,7 +460,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           obscureText: isPassword,
           keyboardType: keyboardType,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -461,17 +469,17 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             hintText: placeholder,
             hintStyle: TextStyle(color: Colors.grey[800]),
             filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.05),
+            fillColor: AppColors.border,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: AppColors.borderStrong,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: AppColors.borderStrong,
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -554,7 +562,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           border: Border.all(
             color: isSelected
                 ? const Color(0xFF176782)
-                : Colors.white.withValues(alpha: 0.05),
+                : AppColors.border,
             width: isSelected ? 2 : 1,
           ),
           boxShadow: [
@@ -588,13 +596,13 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Colors.white.withValues(alpha: 0.1),
+                          AppColors.borderStrong,
                           Colors.white.withValues(alpha: 0.02),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: AppColors.borderStrong,
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -603,7 +611,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                           offset: const Offset(0, 10),
                         ),
                         BoxShadow(
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: AppColors.glassBorder,
                           blurRadius: 1,
                           offset: const Offset(0, 1),
                         ),
@@ -619,7 +627,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -660,7 +668,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             TextSpan(
               text: 'Terms of Service',
               style: TextStyle(
-                color: Colors.white70,
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.bold,
                 decoration: TextDecoration.underline,
               ),
@@ -669,7 +677,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             TextSpan(
               text: 'Privacy Policy',
               style: TextStyle(
-                color: Colors.white70,
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.bold,
                 decoration: TextDecoration.underline,
               ),
@@ -703,8 +711,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                color: AppColors.borderStrong,
+                border: Border.all(color: AppColors.glassBorder),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Material(
@@ -719,7 +727,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(
-                                color: Colors.white,
+                                color: AppColors.textPrimary,
                                 strokeWidth: 2,
                               ),
                             ),
@@ -730,7 +738,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                               Text(
                                 'Create Account',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.textPrimary,
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: -0.5,
@@ -739,7 +747,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                               SizedBox(width: 12),
                               Icon(
                                 Icons.arrow_forward,
-                                color: Colors.white,
+                                color: AppColors.textPrimary,
                                 size: 20,
                               ),
                             ],

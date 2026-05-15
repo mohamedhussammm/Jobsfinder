@@ -37,9 +37,11 @@ class AnalyticsController {
 
       return Error(AppException(message: 'Failed to fetch KPI'));
     } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      final serverMessage = e.response?.data?['message'];
       return Error(
         AppException(
-          message: e.response?.data?['message'] ?? 'Failed to fetch analytics',
+          message: serverMessage ?? 'Failed to fetch analytics (Status: $statusCode)',
           originalError: e,
         ),
       );

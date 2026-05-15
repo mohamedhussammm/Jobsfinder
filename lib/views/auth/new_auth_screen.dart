@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
-import '../../core/theme/dark_colors.dart';
 import '../../core/theme/glass.dart';
 import '../../controllers/auth_controller.dart';
 import 'widgets/social_login_section.dart';
@@ -23,6 +22,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _nationalIdController;
   bool _isLoading = false;
+  bool _obscurePassword = true;
   String? _errorMessage;
   String _selectedRole = 'normal'; // Default role: Usher/Applicant
 
@@ -90,7 +90,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
               SnackBar(
                 content: const Text(
                   'Registration successful! Please login.',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.textPrimary),
                 ),
                 backgroundColor: AppColors.success,
               ),
@@ -161,10 +161,27 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Logo/Title
-                Image.asset(
-                  'assets/logo/bond.jpeg',
-                  height: 120, // Increased height for better visibility
-                  fit: BoxFit.contain,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/logo/bond.jpeg',
+                      height: 100,
+                      width: 100,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -199,7 +216,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                           child: Text(
                             'Admin: admin@bond.com',
                             style: AppTypography.caption.copyWith(
-                              color: DarkColors.primary,
+                              color: AppColors.primary,
                             ),
                           ),
                         ),
@@ -247,7 +264,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                             labelText: 'Full Name',
                             prefixIcon: const Icon(
                               Icons.person,
-                              color: DarkColors.primary,
+                              color: AppColors.primary,
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -263,7 +280,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: const BorderSide(
-                                color: DarkColors.primary,
+                                color: AppColors.primary,
                                 width: 2,
                               ),
                             ),
@@ -281,7 +298,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                           labelText: 'Email',
                           prefixIcon: const Icon(
                             Icons.email,
-                            color: DarkColors.primary,
+                            color: AppColors.primary,
                           ),
                           // Inherits other styles from theme
                         ),
@@ -292,14 +309,27 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                       TextField(
                         controller: _passwordController,
                         style: AppTypography.body1,
-                        obscureText: true,
+                        obscureText: _obscurePassword,
                         decoration: InputDecoration(
                           labelText: 'Password',
                           prefixIcon: const Icon(
                             Icons.lock,
-                            color: DarkColors.primary,
+                            color: AppColors.primary,
                           ),
-                          // Inherits other styles from theme
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: AppColors.textTertiary,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -313,7 +343,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                             labelText: 'I am a...',
                             prefixIcon: Icon(
                               Icons.work,
-                              color: DarkColors.primary,
+                              color: AppColors.primary,
                             ),
                             // Inherits borders from theme
                           ),
@@ -365,7 +395,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _handleSubmit,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: DarkColors.primary,
+                            backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 18),
                             shape: RoundedRectangleBorder(
@@ -424,7 +454,7 @@ class _NewAuthScreenState extends ConsumerState<NewAuthScreen> {
                         TextSpan(
                           text: _isLogin ? 'Register' : 'Login',
                           style: const TextStyle(
-                            color: DarkColors.primary,
+                            color: AppColors.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

@@ -7,7 +7,6 @@ import '../../controllers/application_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../../services/file_upload_service.dart';
 import '../../core/theme/colors.dart';
-import '../../core/theme/dark_colors.dart';
 import '../../core/theme/typography.dart';
 
 class ApplicationFormScreen extends ConsumerStatefulWidget {
@@ -78,21 +77,21 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DarkColors.background,
+      backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: DarkColors.background,
+        backgroundColor: AppColors.backgroundPrimary,
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: Colors.white,
+            color: AppColors.textPrimary,
           ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Apply for Event',
           style: AppTypography.headlineSmall.copyWith(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -106,10 +105,10 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: DarkColors.surface,
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: DarkColors.borderColor.withValues(alpha: 0.1),
+                  color: AppColors.border.withValues(alpha: 0.1),
                 ),
               ),
               child: Row(
@@ -117,12 +116,12 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: DarkColors.primary.withValues(alpha: 0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
                       Icons.event_available_rounded,
-                      color: DarkColors.primary,
+                      color: AppColors.primary,
                       size: 28,
                     ),
                   ),
@@ -134,14 +133,14 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
                         Text(
                           'You are applying for',
                           style: AppTypography.labelSmall.copyWith(
-                            color: Colors.white60,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           widget.eventTitle,
                           style: AppTypography.titleMedium.copyWith(
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             fontWeight: FontWeight.bold,
                           ),
                           maxLines: 1,
@@ -235,14 +234,14 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
         Text(
           title,
           style: AppTypography.titleMedium.copyWith(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           subtitle,
-          style: AppTypography.bodySmall.copyWith(color: Colors.white60),
+          style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
@@ -256,12 +255,12 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
     return TextField(
       controller: controller,
       maxLines: maxLines,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: AppColors.textPrimary),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.white38),
+        hintStyle: const TextStyle(color: AppColors.textHint),
         filled: true,
-        fillColor: DarkColors.surface,
+        fillColor: AppColors.backgroundTertiary,
         contentPadding: const EdgeInsets.all(16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -269,11 +268,11 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: DarkColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
     );
@@ -286,12 +285,12 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: DarkColors.surface,
+          color: AppColors.backgroundTertiary,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: _cvFileName != null
-                ? DarkColors.primary
-                : Colors.white.withValues(alpha: 0.05),
+                ? AppColors.primary
+                : AppColors.border,
             width: _cvFileName != null ? 1.5 : 1,
           ),
         ),
@@ -301,14 +300,14 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
               _cvFileName != null
                   ? Icons.description_rounded
                   : Icons.upload_file_rounded,
-              color: _cvFileName != null ? DarkColors.primary : Colors.white60,
+              color: _cvFileName != null ? AppColors.primary : AppColors.textSecondary,
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 _cvFileName ?? 'Tap to select PDF/DOC file',
                 style: TextStyle(
-                  color: _cvFileName != null ? Colors.white : Colors.white60,
+                  color: _cvFileName != null ? Colors.white : AppColors.textSecondary,
                   fontSize: 14,
                 ),
                 maxLines: 1,
@@ -319,7 +318,7 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
               IconButton(
                 icon: const Icon(
                   Icons.close_rounded,
-                  color: Colors.white54,
+                  color: AppColors.textSecondary,
                   size: 20,
                 ),
                 onPressed: () => setState(() {
@@ -342,9 +341,9 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: DarkColors.surface,
+        color: AppColors.backgroundTertiary,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,11 +353,11 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
             child: Checkbox(
               value: value,
               onChanged: onChanged,
-              activeColor: DarkColors.primary,
+              activeColor: AppColors.primary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(4),
               ),
-              side: const BorderSide(color: Colors.white24),
+              side: const BorderSide(color: AppColors.textHint),
             ),
           ),
           const SizedBox(width: 8),
@@ -370,7 +369,7 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -378,7 +377,7 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                 ),
               ],
             ),
@@ -397,9 +396,9 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
       child: ElevatedButton(
         onPressed: canSubmit ? _submitApplication : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: DarkColors.primary,
+          backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: Colors.white.withValues(alpha: 0.05),
+          disabledBackgroundColor: AppColors.border,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -410,7 +409,7 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
-                  color: Colors.white,
+                  color: AppColors.textPrimary,
                   strokeWidth: 2,
                 ),
               )
@@ -464,7 +463,7 @@ class _ApplicationFormScreenState extends ConsumerState<ApplicationFormScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Application submitted successfully!'),
-            backgroundColor: DarkColors.success,
+            backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
         );

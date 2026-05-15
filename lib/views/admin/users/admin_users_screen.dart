@@ -6,7 +6,6 @@ import '../../../controllers/admin_controller.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../models/user_model.dart';
-import '../../../core/theme/dark_colors.dart';
 import '../../../core/utils/responsive.dart';
 import '../../common/skeleton_loader.dart';
 
@@ -52,7 +51,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                 child: Text(
                   'User Management',
                   style: AppTypography.titleLarge.copyWith(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontSize: ResponsiveHelper.sp(context, 20),
                   ),
                   maxLines: 1,
@@ -64,17 +63,17 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: DarkColors.surface,
+                  color: AppColors.backgroundTertiary,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: DarkColors.borderColor.withValues(alpha: 0.5),
+                    color: AppColors.border.withValues(alpha: 0.5),
                   ),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _roleFilter,
-                    dropdownColor: DarkColors.surface,
-                    style: AppTypography.body2.copyWith(color: Colors.white),
+                    dropdownColor: AppColors.backgroundTertiary,
+                    style: AppTypography.body2.copyWith(color: AppColors.textPrimary),
                     items: const [
                       DropdownMenuItem(value: 'all', child: Text('All Roles')),
                       DropdownMenuItem(value: 'normal', child: Text('Users')),
@@ -99,26 +98,26 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
           // Search Bar
           TextField(
             controller: _searchController,
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: AppColors.textPrimary),
             decoration: InputDecoration(
               hintText: 'Search by name or email...',
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+              hintStyle: TextStyle(color: AppColors.textHint),
               prefixIcon: const Icon(
                 Icons.search,
-                color: DarkColors.textSecondary,
+                color: AppColors.textSecondary,
               ),
               filled: true,
-              fillColor: Theme.of(context).cardColor,
+              fillColor: AppColors.backgroundTertiary,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: DarkColors.borderColor.withValues(alpha: 0.3),
+                  color: AppColors.border.withValues(alpha: 0.3),
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: DarkColors.borderColor.withValues(alpha: 0.3),
+                  color: AppColors.border.withValues(alpha: 0.3),
                 ),
               ),
             ),
@@ -131,10 +130,10 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: DarkColors.borderColor.withValues(alpha: 0.5),
+                  color: AppColors.border.withValues(alpha: 0.5),
                 ),
               ),
               child: usersAsync.when(
@@ -171,7 +170,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                     children: [
                       // Table Header
                       _buildTableHeader(),
-                      const Divider(height: 1, color: DarkColors.borderColor),
+                      const Divider(height: 1, color: AppColors.border),
                       // Lazy List
                       Expanded(
                         child: ListView.builder(
@@ -208,7 +207,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: DarkColors.surface,
+        color: AppColors.backgroundTertiary,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
       ),
       child: Row(
@@ -218,7 +217,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
             child: Text(
               'User',
               style: AppTypography.labelSmall.copyWith(
-                color: DarkColors.textSecondary,
+                color: AppColors.textSecondary,
               ),
             ),
           ),
@@ -227,7 +226,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
             child: Text(
               'Role',
               style: AppTypography.labelSmall.copyWith(
-                color: DarkColors.textSecondary,
+                color: AppColors.textSecondary,
               ),
             ),
           ),
@@ -237,7 +236,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
               child: Text(
                 'Status',
                 style: AppTypography.labelSmall.copyWith(
-                  color: DarkColors.textSecondary,
+                  color: AppColors.textSecondary,
                 ),
               ),
             ),
@@ -252,7 +251,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: DarkColors.borderColor, width: 0.5),
+          bottom: BorderSide(color: AppColors.border, width: 0.5),
         ),
       ),
       child: Row(
@@ -263,7 +262,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
               children: [
                 CircleAvatar(
                   radius: 16,
-                  backgroundColor: DarkColors.accent.withValues(alpha: 0.2),
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.2),
                   backgroundImage: user.avatarPath != null
                       ? CachedNetworkImageProvider(
                           user.avatarPath!,
@@ -275,7 +274,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                       ? Text(
                           (user.name ?? user.email)[0].toUpperCase(),
                           style: const TextStyle(
-                            color: DarkColors.accent,
+                            color: AppColors.primary,
                             fontSize: 12,
                           ),
                         )
@@ -289,7 +288,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                       Text(
                         user.name ?? 'No Name',
                         style: AppTypography.body1.copyWith(
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           fontSize: 14,
                         ),
                         maxLines: 1,
@@ -298,7 +297,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                       Text(
                         user.email,
                         style: AppTypography.caption.copyWith(
-                          color: DarkColors.textTertiary,
+                          color: AppColors.textHint,
                           fontSize: 11,
                         ),
                         maxLines: 1,
@@ -336,7 +335,7 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
               flex: 2,
               child: Text(
                 'Active',
-                style: TextStyle(color: DarkColors.success, fontSize: 13),
+                style: TextStyle(color: AppColors.success, fontSize: 13),
               ),
             ),
           IconButton(
@@ -351,13 +350,13 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
   Color _getRoleColor(String role) {
     switch (role) {
       case 'admin':
-        return DarkColors.error;
+        return AppColors.primary;
       case 'company':
-        return DarkColors.accent;
+        return AppColors.primaryDark;
       case 'team_leader':
-        return DarkColors.warning;
+        return const Color(0xFF0D9488); // Professional Teal
       default:
-        return DarkColors.success;
+        return AppColors.textSecondary;
     }
   }
 
@@ -368,26 +367,26 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          backgroundColor: DarkColors.surface,
-          title: const Text('Edit User', style: TextStyle(color: Colors.white)),
+          backgroundColor: AppColors.backgroundTertiary,
+          title: const Text('Edit User', style: TextStyle(color: AppColors.textPrimary)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 'Change role for ${user.email}',
-                style: const TextStyle(color: DarkColors.textSecondary),
+                style: const TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 initialValue: selectedRole,
-                dropdownColor: DarkColors.surface,
+                dropdownColor: AppColors.backgroundTertiary,
                 items: ['normal', 'team_leader', 'company', 'admin']
                     .map(
                       (r) => DropdownMenuItem(
                         value: r,
                         child: Text(
                           r.toUpperCase(),
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: AppColors.textPrimary),
                         ),
                       ),
                     )
@@ -397,10 +396,10 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                 },
                 decoration: InputDecoration(
                   labelText: 'Role',
-                  labelStyle: const TextStyle(color: DarkColors.textTertiary),
+                  labelStyle: const TextStyle(color: AppColors.textHint),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: DarkColors.borderColor),
+                    borderSide: const BorderSide(color: AppColors.border),
                   ),
                 ),
               ),

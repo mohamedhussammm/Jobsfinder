@@ -21,14 +21,14 @@ class SkeletonLoader extends StatelessWidget {
             width: width,
             height: height,
             decoration: BoxDecoration(
-              color: AppColors.gray800.withValues(alpha: 0.5),
+              color: AppColors.shimmerBase,
               borderRadius: BorderRadius.circular(borderRadius),
             ),
           )
           .animate(onPlay: (controller) => controller.repeat())
           .shimmer(
             duration: 1500.ms,
-            color: AppColors.gray700.withValues(alpha: 0.3),
+            color: AppColors.shimmerHighlight,
           ),
     );
   }
@@ -43,9 +43,9 @@ class SkeletonCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.gray900.withValues(alpha: 0.3),
+        color: AppColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
@@ -86,9 +86,9 @@ class SkeletonHeroCard extends StatelessWidget {
         width: width,
         margin: const EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
-          color: AppColors.gray900.withValues(alpha: 0.3),
+          color: AppColors.backgroundSecondary,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

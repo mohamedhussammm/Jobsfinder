@@ -24,9 +24,9 @@ class _MainShellState extends ConsumerState<MainShell> {
     _NavItem('/', 'Events', Icons.event_outlined, Icons.event),
     _NavItem(
       '/applications',
-      'Apply',
-      Icons.assignment_outlined,
-      Icons.assignment,
+      'My Jobs',
+      Icons.work_outline,
+      Icons.work,
     ),
     _NavItem(
       '/notifications',
@@ -64,14 +64,14 @@ class _MainShellState extends ConsumerState<MainShell> {
       body: widget.child,
       bottomNavigationBar: RepaintBoundary(
         child: Material(
-          color: Theme.of(context).cardColor,
-          elevation: 8,
-          shadowColor: Colors.black.withValues(alpha: 0.3),
+          color: AppColors.navBackground,
+          elevation: 12,
+          shadowColor: AppColors.border.withValues(alpha: 0.5),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Nav items
                   ...List.generate(_navItems.length, (index) {
@@ -86,8 +86,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                       currentUser?.id,
                     );
                   }),
-
-                  // Logout button
+                  // Logout Button
                   _buildLogoutButton(context, ref),
                 ],
               ),
@@ -120,7 +119,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         ),
         decoration: BoxDecoration(
           color: isActive
-              ? AppColors.primary.withValues(alpha: 0.1)
+              ? AppColors.primaryLight
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
@@ -133,8 +132,8 @@ class _MainShellState extends ConsumerState<MainShell> {
                 Icon(
                   isActive ? item.activeIcon : item.icon,
                   color: isActive
-                      ? Theme.of(context).primaryColor
-                      : Colors.white.withValues(alpha: 0.4),
+                      ? AppColors.navSelected
+                      : AppColors.navUnselected,
                   size: ResponsiveHelper.iconSize(context),
                 ),
                 // Notification badge
@@ -147,7 +146,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               Text(
                 item.label,
                 style: TextStyle(
-                  color: Theme.of(context).primaryColor,
+                  color: AppColors.navSelected,
                   fontWeight: FontWeight.w700,
                   fontSize: ResponsiveHelper.sp(context, 12),
                 ),
@@ -178,7 +177,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).cardColor,
+        backgroundColor: AppColors.backgroundTertiary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Sign Out',
@@ -233,7 +232,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             child: Text(
               count > 9 ? '9+' : '$count',
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontSize: 9,
                 fontWeight: FontWeight.w700,
               ),

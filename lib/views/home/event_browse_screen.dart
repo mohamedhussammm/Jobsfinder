@@ -14,12 +14,12 @@ import '../common/skeleton_loader.dart';
 import '../../services/file_upload_service.dart';
 
 // ─── Colors matching the reference design exactly ───────────────────────────
-const _kBg = Color(0xFF111117);
-const _kSurface = Color(0xFF1A1A23);
-const _kPrimary = Color(0xFF176782);
-const _kTextPrimary = Colors.white;
-const _kTextSecondary = Color(0xFF94A3B8);
-const _kGlassBorder = Color(0x14FFFFFF); // rgba(255,255,255,0.08)
+const _kBg = AppColors.backgroundPrimary;
+const _kSurface = AppColors.backgroundTertiary;
+const _kPrimary = AppColors.primary;
+const _kTextPrimary = AppColors.textPrimary;
+const _kTextSecondary = AppColors.textSecondary;
+const _kGlassBorder = AppColors.border;
 
 final _timeFormatter = DateFormat('h:mm a');
 
@@ -318,7 +318,7 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
       behavior: HitTestBehavior.translucent,
       onTap: () => context.push('/search'),
       child: Container(
-        color: const Color(0xEE111117),
+        color: AppColors.backgroundPrimary.withValues(alpha: 0.9),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         child: Row(
           children: [
@@ -326,7 +326,7 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
               child: Container(
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E2A),
+                  color: AppColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: _kGlassBorder),
                 ),
@@ -354,7 +354,7 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: const Color(0xFF1E1E2A),
+                color: AppColors.backgroundSecondary,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: _kGlassBorder),
               ),
@@ -439,7 +439,7 @@ class _HeroEventCard extends ConsumerWidget {
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                    color: _kTextPrimary,
                     letterSpacing: 0.3,
                   ),
                 ),
@@ -463,7 +463,7 @@ class _HeroEventCard extends ConsumerWidget {
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -503,9 +503,7 @@ class _HeroEventCard extends ConsumerWidget {
                                 vertical: 3,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFFD97706,
-                                ).withValues(alpha: 0.2),
+                                color: AppColors.accentLight,
                                 borderRadius: BorderRadius.circular(99),
                               ),
                               child: Text(
@@ -513,7 +511,7 @@ class _HeroEventCard extends ConsumerWidget {
                                 style: const TextStyle(
                                   fontSize: 9,
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFFF59E0B),
+                                  color: AppColors.accentDark,
                                 ),
                               ),
                             ),
@@ -628,7 +626,7 @@ class _Chip extends StatelessWidget {
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? _kPrimary : const Color(0xFF1E1E2A),
+          color: isSelected ? _kPrimary : AppColors.backgroundSecondary,
           borderRadius: BorderRadius.circular(99),
           border: Border.all(color: isSelected ? _kPrimary : _kGlassBorder),
           boxShadow: isSelected
@@ -832,9 +830,9 @@ class _GlassPanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(
-          alpha: 0.6,
-        ), // Solid semi-transparent back
+        color: AppColors.backgroundTertiary.withValues(
+          alpha: 0.85,
+        ),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: _kGlassBorder),
       ),
@@ -852,9 +850,9 @@ class _GlassBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(
-          alpha: 0.7,
-        ), // Higher opacity for badge readability
+        color: AppColors.backgroundTertiary.withValues(
+          alpha: 0.9,
+        ),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: _kGlassBorder),
       ),
@@ -886,7 +884,7 @@ class _PlaceholderEventImage extends StatelessWidget {
         child: Icon(
           Icons.event,
           size: 60,
-          color: Colors.white.withValues(alpha: 0.3),
+          color: AppColors.textHint,
         ),
       ),
     );

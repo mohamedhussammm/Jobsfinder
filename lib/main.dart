@@ -101,20 +101,36 @@ class _BondAppState extends ConsumerState<BondApp> {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary, // Cyan
+      colorScheme: ColorScheme(
         brightness: Brightness.light,
+        primary: AppColors.primary,
+        onPrimary: Colors.white,
+        secondary: AppColors.accent,
+        onSecondary: Colors.white,
+        error: AppColors.error,
+        onError: Colors.white,
+        surface: AppColors.backgroundTertiary,
+        onSurface: AppColors.textPrimary,
       ),
       fontFamily: AppTypography.fontFamily,
       textTheme: _buildTextTheme(),
-      scaffoldBackgroundColor: AppColors.gray50,
+      scaffoldBackgroundColor: AppColors.backgroundPrimary,
+      cardColor: AppColors.backgroundTertiary,
+      dividerColor: AppColors.divider,
       appBarTheme: AppBarTheme(
         elevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.backgroundTertiary,
+        foregroundColor: AppColors.textPrimary,
+        shadowColor: AppColors.border,
         titleTextStyle: AppTypography.headlineMedium.copyWith(
-          color: AppColors.gray900,
+          color: AppColors.textPrimary,
         ),
-        iconTheme: const IconThemeData(color: AppColors.gray900),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppColors.navBackground,
+        selectedItemColor: AppColors.navSelected,
+        unselectedItemColor: AppColors.navUnselected,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -136,16 +152,24 @@ class _BondAppState extends ConsumerState<BondApp> {
           ),
         ),
       ),
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.primaryLight,
+        labelStyle: const TextStyle(color: AppColors.primary),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: Colors.transparent),
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.backgroundSecondary,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.gray200),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.gray200),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -159,7 +183,7 @@ class _BondAppState extends ConsumerState<BondApp> {
           horizontal: 16,
           vertical: 12,
         ),
-        hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.gray400),
+        hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textHint),
       ),
     );
   }

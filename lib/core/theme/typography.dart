@@ -1,141 +1,125 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTypography {
-  // Font families
-  static const String fontFamily = 'Poppins';
-  static const String fontFamilyMono = 'JetBrainsMono';
+  // Font families (for reference)
+  static String get fontFamily => GoogleFonts.poppins().fontFamily!;
+  static String get fontFamilyMono => GoogleFonts.jetBrainsMono().fontFamily!;
 
   // Display styles (large headlines)
-  static const TextStyle displayLarge = TextStyle(
+  static final TextStyle displayLarge = GoogleFonts.poppins(
     fontSize: 56,
     fontWeight: FontWeight.bold,
-    fontFamily: fontFamily,
     letterSpacing: -0.5,
   );
 
-  static const TextStyle displayMedium = TextStyle(
+  static final TextStyle displayMedium = GoogleFonts.poppins(
     fontSize: 45,
     fontWeight: FontWeight.bold,
-    fontFamily: fontFamily,
     letterSpacing: -0.5,
   );
 
-  static const TextStyle displaySmall = TextStyle(
+  static final TextStyle displaySmall = GoogleFonts.poppins(
     fontSize: 36,
     fontWeight: FontWeight.bold,
-    fontFamily: fontFamily,
     letterSpacing: 0,
   );
 
   // Headline styles
-  static const TextStyle headlineLarge = TextStyle(
+  static final TextStyle headlineLarge = GoogleFonts.poppins(
     fontSize: 32,
     fontWeight: FontWeight.bold,
-    fontFamily: fontFamily,
     letterSpacing: 0,
   );
 
-  static const TextStyle headlineMedium = TextStyle(
+  static final TextStyle headlineMedium = GoogleFonts.poppins(
     fontSize: 28,
     fontWeight: FontWeight.w700,
-    fontFamily: fontFamily,
     letterSpacing: 0,
   );
 
-  static const TextStyle headlineSmall = TextStyle(
+  static final TextStyle headlineSmall = GoogleFonts.poppins(
     fontSize: 24,
     fontWeight: FontWeight.w700,
-    fontFamily: fontFamily,
     letterSpacing: 0,
   );
 
   // Title styles
-  static const TextStyle titleLarge = TextStyle(
+  static final TextStyle titleLarge = GoogleFonts.poppins(
     fontSize: 22,
     fontWeight: FontWeight.w600,
-    fontFamily: fontFamily,
     letterSpacing: 0,
   );
 
-  static const TextStyle titleMedium = TextStyle(
+  static final TextStyle titleMedium = GoogleFonts.poppins(
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    fontFamily: fontFamily,
     letterSpacing: 0.1,
   );
 
-  static const TextStyle titleSmall = TextStyle(
+  static final TextStyle titleSmall = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w600,
-    fontFamily: fontFamily,
     letterSpacing: 0.1,
   );
 
   // Body styles
-  static const TextStyle bodyLarge = TextStyle(
+  static final TextStyle bodyLarge = GoogleFonts.poppins(
     fontSize: 16,
     fontWeight: FontWeight.w400,
-    fontFamily: fontFamily,
     letterSpacing: 0.5,
   );
 
-  static const TextStyle bodyMedium = TextStyle(
+  static final TextStyle bodyMedium = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    fontFamily: fontFamily,
     letterSpacing: 0.25,
   );
 
-  static const TextStyle bodySmall = TextStyle(
+  static final TextStyle bodySmall = GoogleFonts.poppins(
     fontSize: 12,
     fontWeight: FontWeight.w400,
-    fontFamily: fontFamily,
     letterSpacing: 0.4,
   );
 
   // Label styles
-  static const TextStyle labelLarge = TextStyle(
+  static final TextStyle labelLarge = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w500,
-    fontFamily: fontFamily,
     letterSpacing: 0.1,
   );
 
-  static const TextStyle labelMedium = TextStyle(
+  static final TextStyle labelMedium = GoogleFonts.poppins(
     fontSize: 12,
     fontWeight: FontWeight.w500,
-    fontFamily: fontFamily,
     letterSpacing: 0.5,
   );
 
-  static const TextStyle labelSmall = TextStyle(
+  static final TextStyle labelSmall = GoogleFonts.poppins(
     fontSize: 11,
     fontWeight: FontWeight.w500,
-    fontFamily: fontFamily,
     letterSpacing: 0.5,
   );
 
   // Caption styles
-  static const TextStyle caption = TextStyle(
+  static final TextStyle caption = GoogleFonts.poppins(
     fontSize: 10,
     fontWeight: FontWeight.w400,
-    fontFamily: fontFamily,
     letterSpacing: 0.5,
   );
 
   // Monospace (for code/technical text)
-  static const TextStyle mono = TextStyle(
+  static final TextStyle mono = GoogleFonts.jetBrainsMono(
     fontSize: 12,
     fontWeight: FontWeight.w400,
-    fontFamily: fontFamilyMono,
     letterSpacing: 0,
   );
 
   // Backward compatibility aliases
-  static const TextStyle heading1 = displayLarge;
-  static const TextStyle heading2 = headlineMedium;
-  static const TextStyle heading3 = headlineSmall;
-  static const TextStyle body1 = bodyLarge;
-  static const TextStyle body2 = bodyMedium;
-  static const TextStyle button = labelLarge;
+  static TextStyle get heading1 => displayLarge;
+  static TextStyle get heading2 => headlineMedium;
+  static TextStyle get heading3 => headlineSmall;
+  static TextStyle get body1 => bodyLarge;
+  static TextStyle get body2 => bodyMedium;
+  static TextStyle get button => labelLarge;
 }

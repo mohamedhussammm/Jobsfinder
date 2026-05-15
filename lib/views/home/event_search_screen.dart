@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/theme/dark_colors.dart';
+import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../models/event_model.dart';
 import '../../controllers/event_controller.dart';
@@ -43,7 +43,7 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
     final eventsAsync = ref.watch(publishedEventsProvider(0));
 
     return Scaffold(
-      backgroundColor: DarkColors.background,
+      backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -79,7 +79,7 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
             Text(
               'Location',
               style: AppTypography.labelLarge.copyWith(
-                color: DarkColors.primary,
+                color: AppColors.primary,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2,
               ),
@@ -108,12 +108,12 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
                               setState(() => _selectedLocation = loc);
                             }
                           },
-                          backgroundColor: DarkColors.gray100,
-                          selectedColor: DarkColors.primary,
+                          backgroundColor: AppColors.backgroundSecondary,
+                          selectedColor: AppColors.primary,
                           labelStyle: TextStyle(
                             color: isSelected
                                 ? Colors.white
-                                : DarkColors.textSecondary,
+                                : AppColors.textSecondary,
                             fontWeight: isSelected
                                 ? FontWeight.bold
                                 : FontWeight.normal,
@@ -123,8 +123,8 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
                           ),
                           side: BorderSide(
                             color: isSelected
-                                ? DarkColors.primary
-                                : DarkColors.borderColor,
+                                ? AppColors.primary
+                                : AppColors.border,
                           ),
                         ),
                       );
@@ -166,18 +166,18 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
               const Icon(
                 Icons.search_off,
                 size: 64,
-                color: DarkColors.textTertiary,
+                color: AppColors.textHint,
               ),
               const SizedBox(height: 16),
               Text(
                 'No events found',
-                style: AppTypography.titleLarge.copyWith(color: Colors.white),
+                style: AppTypography.titleLarge.copyWith(color: AppColors.textPrimary),
               ),
               const SizedBox(height: 8),
               Text(
                 'Try adjusting your search to find what you\'re looking for.',
                 style: AppTypography.bodyMedium.copyWith(
-                  color: DarkColors.textSecondary,
+                  color: AppColors.textSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -215,7 +215,7 @@ class _EventSearchScreenState extends ConsumerState<EventSearchScreen> {
       child: Center(
         child: Text(
           'Error: $e',
-          style: const TextStyle(color: DarkColors.error),
+          style: const TextStyle(color: AppColors.error),
         ),
       ),
     );
@@ -247,7 +247,7 @@ class _SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) {
     return Container(
-      color: DarkColors.background,
+      color: AppColors.backgroundPrimary,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
       child: Row(
         children: [
@@ -255,24 +255,24 @@ class _SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: DarkColors.gray100,
+                color: AppColors.backgroundSecondary,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: DarkColors.borderColor),
+                border: Border.all(color: AppColors.border),
               ),
               child: TextField(
                 controller: controller,
                 autofocus: true,
                 onChanged: onChanged,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'Search events, venues, or roles',
                   hintStyle: const TextStyle(
-                    color: DarkColors.textSecondary,
+                    color: AppColors.textSecondary,
                     fontSize: 14,
                   ),
                   prefixIcon: const Icon(
                     Icons.search,
-                    color: DarkColors.textSecondary,
+                    color: AppColors.textSecondary,
                     size: 20,
                   ),
                   border: InputBorder.none,
@@ -289,13 +289,13 @@ class _SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: showFilters ? DarkColors.primary : DarkColors.gray100,
+                color: showFilters ? AppColors.primary : AppColors.backgroundSecondary,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: DarkColors.borderColor),
+                border: Border.all(color: AppColors.border),
               ),
               child: Icon(
                 Icons.tune,
-                color: showFilters ? Colors.white : DarkColors.textPrimary,
+                color: showFilters ? Colors.white : AppColors.textPrimary,
                 size: 20,
               ),
             ),
@@ -330,9 +330,9 @@ class _EventSearchCard extends ConsumerWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: DarkColors.gray100,
+          color: AppColors.backgroundSecondary,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: DarkColors.borderColor),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           children: [
@@ -373,14 +373,14 @@ class _EventSearchCard extends ConsumerWidget {
                         (event.categoryName ?? 'GENERAL').toUpperCase(),
                         style: AppTypography.labelLarge.copyWith(
                           fontSize: 10,
-                          color: DarkColors.primary,
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
                       Text(
                         'Open',
                         style: AppTypography.bodySmall.copyWith(
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -390,7 +390,7 @@ class _EventSearchCard extends ConsumerWidget {
                   Text(
                     event.title,
                     style: AppTypography.bodyLarge.copyWith(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w900,
                     ),
                     maxLines: 1,
@@ -402,13 +402,13 @@ class _EventSearchCard extends ConsumerWidget {
                       const Icon(
                         Icons.access_time,
                         size: 12,
-                        color: DarkColors.textSecondary,
+                        color: AppColors.textSecondary,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         timeStr,
                         style: TextStyle(
-                          color: DarkColors.textSecondary,
+                          color: AppColors.textSecondary,
                           fontSize: 11,
                         ),
                       ),
@@ -421,14 +421,14 @@ class _EventSearchCard extends ConsumerWidget {
                         const Icon(
                           Icons.location_on_outlined,
                           size: 12,
-                          color: DarkColors.textSecondary,
+                          color: AppColors.textSecondary,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             event.location!.address!,
                             style: TextStyle(
-                              color: DarkColors.textSecondary,
+                              color: AppColors.textSecondary,
                               fontSize: 11,
                             ),
                             maxLines: 1,
@@ -445,12 +445,12 @@ class _EventSearchCard extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: DarkColors.primary.withValues(alpha: 0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.chevron_right,
-                color: DarkColors.primary,
+                color: AppColors.primary,
                 size: 18,
               ),
             ),
@@ -468,12 +468,12 @@ class _ImagePlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: DarkColors.primary.withValues(alpha: 0.1),
+      color: AppColors.primary.withValues(alpha: 0.1),
       child: Center(
         child: Text(
           label.substring(0, 1).toUpperCase(),
           style: const TextStyle(
-            color: DarkColors.primary,
+            color: AppColors.primary,
             fontWeight: FontWeight.bold,
             fontSize: 24,
           ),

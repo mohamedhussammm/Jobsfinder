@@ -8,7 +8,7 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: AppColors.backgroundPrimary,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -26,7 +26,7 @@ class SplashScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: ResponsiveHelper.sp(context, 32),
                 fontWeight: FontWeight.w900,
-                color: Colors.white,
+                color: AppColors.primary,
                 letterSpacing: 2.0,
               ),
             ),
@@ -35,7 +35,7 @@ class SplashScreen extends StatelessWidget {
               'Find your next shift',
               style: TextStyle(
                 fontSize: ResponsiveHelper.sp(context, 14),
-                color: Colors.white54,
+                color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 48),

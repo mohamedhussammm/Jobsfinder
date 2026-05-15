@@ -1,8 +1,10 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../controllers/message_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../../core/theme/colors.dart';
+import '../../core/theme/typography.dart';
 import '../../core/utils/responsive.dart';
 import '../../models/message_model.dart';
 
@@ -118,7 +120,7 @@ class ConversationsScreen extends ConsumerWidget {
                         child: Text(
                           '$unreadCount',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             fontSize: ResponsiveHelper.sp(context, 10),
                             fontWeight: FontWeight.w700,
                           ),
@@ -205,22 +207,55 @@ class _MessagingScreenState extends ConsumerState<MessagingScreen> {
         );
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.white.withValues(alpha: 0.8),
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(color: Colors.transparent),
+          ),
+        ),
+        elevation: 0,
+        titleSpacing: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: AppColors.textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Row(
           children: [
             CircleAvatar(
-              radius: 16,
-              backgroundColor: AppColors.primaryLight,
+              radius: 18,
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               child: Text(
                 widget.otherUserName[0].toUpperCase(),
                 style: const TextStyle(
                   color: AppColors.primary,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            Text(widget.otherUserName),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.otherUserName,
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  'Online',
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppColors.success,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -350,7 +385,7 @@ class _MessagingScreenState extends ConsumerState<MessagingScreen> {
             Text(
               '${msg.createdAt.hour.toString().padLeft(2, '0')}:${msg.createdAt.minute.toString().padLeft(2, '0')}',
               style: TextStyle(
-                color: isMe ? Colors.white60 : AppColors.textTertiary,
+                color: isMe ? AppColors.textSecondary : AppColors.textTertiary,
                 fontSize: ResponsiveHelper.sp(context, 10),
               ),
             ),

@@ -3,7 +3,7 @@ import '../../core/utils/perf_log.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/theme/dark_colors.dart';
+import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../models/application_model.dart';
 import '../../controllers/application_controller.dart';
@@ -44,14 +44,14 @@ class _EventApplicantsScreenState extends ConsumerState<EventApplicantsScreen> {
     );
 
     return Scaffold(
-      backgroundColor: DarkColors.background,
+      backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: Colors.white,
+            color: AppColors.textPrimary,
           ),
           onPressed: () => context.pop(),
         ),
@@ -60,12 +60,12 @@ class _EventApplicantsScreenState extends ConsumerState<EventApplicantsScreen> {
           children: [
             Text(
               'Event Applicants',
-              style: AppTypography.titleLarge.copyWith(color: Colors.white),
+              style: AppTypography.titleLarge.copyWith(color: AppColors.textPrimary),
             ),
             Text(
               widget.eventTitle,
               style: AppTypography.labelSmall.copyWith(
-                color: DarkColors.textTertiary,
+                color: AppColors.textHint,
               ),
             ),
           ],
@@ -103,12 +103,12 @@ class _EventApplicantsScreenState extends ConsumerState<EventApplicantsScreen> {
           Icon(
             Icons.people_outline_rounded,
             size: 64,
-            color: DarkColors.textTertiary,
+            color: AppColors.textHint,
           ),
           const SizedBox(height: 16),
           Text(
             'No applicants yet',
-            style: AppTypography.body1.copyWith(color: DarkColors.textTertiary),
+            style: AppTypography.body1.copyWith(color: AppColors.textHint),
           ),
         ],
       ),
@@ -125,18 +125,18 @@ class _EventApplicantsScreenState extends ConsumerState<EventApplicantsScreen> {
             const Icon(
               Icons.error_outline_rounded,
               size: 64,
-              color: DarkColors.error,
+              color: AppColors.error,
             ),
             const SizedBox(height: 16),
             Text(
               'Failed to load applicants',
-              style: AppTypography.body1.copyWith(color: DarkColors.error),
+              style: AppTypography.body1.copyWith(color: AppColors.error),
             ),
             const SizedBox(height: 8),
             Text(
               error,
               style: AppTypography.caption.copyWith(
-                color: DarkColors.textTertiary,
+                color: AppColors.textHint,
               ),
               textAlign: TextAlign.center,
             ),
@@ -163,9 +163,9 @@ class _ApplicantCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: DarkColors.surface,
+          color: AppColors.backgroundTertiary,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: DarkColors.borderColor),
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           children: [
@@ -173,7 +173,7 @@ class _ApplicantCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: DarkColors.accent.withValues(alpha: 0.1),
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                   backgroundImage: avatar != null
                       ? CachedNetworkImageProvider(
                           avatar,
@@ -185,7 +185,7 @@ class _ApplicantCard extends StatelessWidget {
                       ? Text(
                           name[0].toUpperCase(),
                           style: const TextStyle(
-                            color: DarkColors.accent,
+                            color: AppColors.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         )
@@ -199,7 +199,7 @@ class _ApplicantCard extends StatelessWidget {
                       Text(
                         name,
                         style: AppTypography.bodyLarge.copyWith(
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -215,7 +215,7 @@ class _ApplicantCard extends StatelessWidget {
                 IconButton(
                   icon: const Icon(
                     Icons.chevron_right_rounded,
-                    color: Colors.white54,
+                    color: AppColors.textSecondary,
                   ),
                   onPressed: () {
                     if (user?.id != null) {
@@ -238,7 +238,7 @@ class _ApplicantCard extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
                       side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: AppColors.borderStrong,
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
@@ -263,7 +263,7 @@ class _ApplicantCard extends StatelessWidget {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: DarkColors.accent,
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
@@ -287,11 +287,11 @@ class _ApplicantCard extends StatelessWidget {
       case 'applied':
         return Colors.blue;
       case 'accepted':
-        return DarkColors.success;
+        return AppColors.success;
       case 'rejected':
-        return DarkColors.error;
+        return AppColors.error;
       default:
-        return DarkColors.textTertiary;
+        return AppColors.textHint;
     }
   }
 }

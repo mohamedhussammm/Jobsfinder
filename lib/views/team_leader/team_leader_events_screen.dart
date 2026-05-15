@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/typography.dart';
-import '../../core/theme/dark_colors.dart';
+import '../../core/theme/colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../models/event_model.dart';
 import '../../controllers/team_leader_controller.dart';
@@ -45,14 +45,14 @@ class _TeamLeaderEventsScreenState
     final completedCountAsync = ref.watch(completedAssignmentsCountProvider);
 
     return Scaffold(
-      backgroundColor: DarkColors.background,
+      backgroundColor: AppColors.backgroundPrimary,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           'My Assignments',
           style: AppTypography.titleLarge.copyWith(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontSize: ResponsiveHelper.sp(context, 20),
           ),
         ),
@@ -61,7 +61,7 @@ class _TeamLeaderEventsScreenState
           IconButton(
             icon: const Icon(Icons.logout_rounded),
             tooltip: 'Sign Out',
-            color: DarkColors.error,
+            color: AppColors.error,
             onPressed: () async {
               final confirmed = await showDialog<bool>(
                 context: context,
@@ -81,7 +81,7 @@ class _TeamLeaderEventsScreenState
                     ElevatedButton(
                       onPressed: () => Navigator.pop(ctx, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: DarkColors.error,
+                        backgroundColor: AppColors.error,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -118,7 +118,7 @@ class _TeamLeaderEventsScreenState
                           error: (_, e) => '0',
                         ),
                         icon: Icons.assignment,
-                        color: DarkColors.accent,
+                        color: AppColors.primary,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -131,7 +131,7 @@ class _TeamLeaderEventsScreenState
                           error: (_, e) => '0',
                         ),
                         icon: Icons.check_circle,
-                        color: DarkColors.success,
+                        color: AppColors.success,
                       ),
                     ),
                   ],
@@ -157,13 +157,13 @@ class _TeamLeaderEventsScreenState
                           Icon(
                             Icons.assignment_ind_outlined,
                             size: 64,
-                            color: DarkColors.textTertiary,
+                            color: AppColors.textHint,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'No assignments yet',
                             style: AppTypography.body1.copyWith(
-                              color: DarkColors.textTertiary,
+                              color: AppColors.textHint,
                             ),
                           ),
                         ],
@@ -208,20 +208,20 @@ class _TeamLeaderEventsScreenState
                       Icon(
                         Icons.error_outline,
                         size: 64,
-                        color: DarkColors.error,
+                        color: AppColors.error,
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'Failed to load assignments',
                         style: AppTypography.body1.copyWith(
-                          color: DarkColors.error,
+                          color: AppColors.error,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         error.toString(),
                         style: AppTypography.caption.copyWith(
-                          color: DarkColors.textTertiary,
+                          color: AppColors.textHint,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -257,9 +257,9 @@ class StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: DarkColors.surface.withValues(alpha: 0.5),
+        color: AppColors.backgroundTertiary.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: DarkColors.borderColor),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,7 +276,7 @@ class StatCard extends StatelessWidget {
           Text(
             value,
             style: AppTypography.titleLarge.copyWith(
-              color: Colors.white,
+              color: AppColors.textPrimary,
               fontSize: ResponsiveHelper.sp(context, 22),
             ),
           ),
@@ -284,7 +284,7 @@ class StatCard extends StatelessWidget {
           Text(
             title,
             style: AppTypography.bodySmall.copyWith(
-              color: DarkColors.textSecondary,
+              color: AppColors.textSecondary,
               fontSize: ResponsiveHelper.sp(context, 12),
             ),
           ),
@@ -310,9 +310,9 @@ class EventAssignmentCard extends ConsumerWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DarkColors.surface,
+            color: AppColors.backgroundTertiary,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: DarkColors.borderColor),
+            border: Border.all(color: AppColors.border),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.2),
@@ -342,7 +342,7 @@ class EventAssignmentCard extends ConsumerWidget {
                         Text(
                           event.company,
                           style: AppTypography.body2.copyWith(
-                            color: DarkColors.textTertiary,
+                            color: AppColors.textHint,
                           ),
                         ),
                       ],
@@ -397,7 +397,7 @@ class EventAssignmentCard extends ConsumerWidget {
                   color: Colors.white.withValues(alpha: 0.03),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: AppColors.border,
                   ),
                 ),
                 child: Row(
@@ -409,14 +409,14 @@ class EventAssignmentCard extends ConsumerWidget {
                         Text(
                           '${event.applicants} Applicants',
                           style: AppTypography.bodySmall.copyWith(
-                            color: DarkColors.textSecondary,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Capacity: ${event.capacity}',
                           style: AppTypography.labelSmall.copyWith(
-                            color: DarkColors.textTertiary,
+                            color: AppColors.textHint,
                           ),
                         ),
                       ],
@@ -432,8 +432,8 @@ class EventAssignmentCard extends ConsumerWidget {
                           icon: const Icon(Icons.people, size: 16),
                           label: const Text('Manage'),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: DarkColors.accent,
-                            side: const BorderSide(color: DarkColors.accent),
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.primary),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 8,
@@ -448,8 +448,8 @@ class EventAssignmentCard extends ConsumerWidget {
                           icon: const Icon(Icons.arrow_forward, size: 16),
                           label: const Text('View'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: DarkColors.accent,
-                            foregroundColor: DarkColors.gray50,
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.textSecondary,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 8,
@@ -471,17 +471,17 @@ class EventAssignmentCard extends ConsumerWidget {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
-        return DarkColors.pending;
+        return AppColors.warning;
       case 'approved':
       case 'active':
-        return DarkColors.success;
+        return AppColors.success;
       case 'completed':
-        return DarkColors.completed;
+        return AppColors.info;
       case 'rejected':
       case 'cancelled':
-        return DarkColors.error;
+        return AppColors.error;
       default:
-        return DarkColors.textSecondary;
+        return AppColors.textSecondary;
     }
   }
 
@@ -511,13 +511,13 @@ class _DetailItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: DarkColors.accent),
+        Icon(icon, size: 16, color: AppColors.primary),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             label,
             style: AppTypography.labelSmall.copyWith(
-              color: DarkColors.textSecondary,
+              color: AppColors.textSecondary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

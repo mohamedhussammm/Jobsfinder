@@ -7,24 +7,56 @@ const Rating = require('../models/Rating');
  * Get main dashboard KPIs.
  */
 const getKPIs = async () => {
-    const [totalUsers, totalEvents, totalApplications, totalRatings, publishedEvents, pendingEvents] =
-        await Promise.all([
+    try {
+        const [
+            totalUsers,
+            totalCompanies,
+            totalTeamLeaders,
+            totalEvents,
+            totalApplications,
+            totalRatings,
+            publishedEvents,
+            pendingEvents,
+            activeEvents,
+            acceptedApplications,
+            rejectedApplications,
+            averageRating
+        ] = await Promise.all([
             User.countDocuments({ deletedAt: null }),
+            User.countDocuments({ role: 'company', deletedAt: null }),
+            User.countDocuments({ role: 'team_leader', deletedAt: null }),
             Event.countDocuments(),
             Application.countDocuments(),
             Rating.countDocuments(),
             Event.countDocuments({ status: 'published' }),
             Event.countDocuments({ status: 'pending' }),
+            Event.countDocuments({ status: 'published', startTime: { $lte: new Date() }, endTime: { $gte: new Date() } }),
+            Application.countDocuments({ status: 'accepted' }),
+            Application.countDocuments({ status: 'rejected' }),
+            Rating.aggregate([
+                { $group: { _id: null, avg: { $avg: '$score' } } }
+            ]).then(res => res.length > 0 ? res[0].avg : 0.0)
         ]);
 
-    return {
-        totalUsers,
-        totalEvents,
-        totalApplications,
-        totalRatings,
-        publishedEvents,
-        pendingEvents,
-    };
+        return {
+            totalUsers,
+            totalCompanies,
+            totalTeamLeaders,
+            totalEvents,
+            totalApplications,
+            totalRatings,
+            publishedEvents,
+            pendingEvents,
+            activeEvents,
+            acceptedApplications,
+            rejectedApplications,
+            averageRating,
+            lastUpdated: new Date()
+        };
+    } catch (error) {
+        console.error('❌ Error in getKPIs service:', error);
+        throw error;
+    }
 };
 
 /**

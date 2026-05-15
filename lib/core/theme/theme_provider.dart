@@ -8,7 +8,7 @@ final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>(
 );
 
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  ThemeModeNotifier() : super(ThemeMode.dark) {
+  ThemeModeNotifier() : super(ThemeMode.light) {
     _loadFromStorage();
   }
 
@@ -18,10 +18,10 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   Future<void> _loadFromStorage() async {
     try {
       final box = await Hive.openBox(_boxKey);
-      final stored = box.get(_themeKey, defaultValue: 'dark') as String;
+      final stored = box.get(_themeKey, defaultValue: 'light') as String;
       state = stored == 'dark' ? ThemeMode.dark : ThemeMode.light;
     } catch (_) {
-      // Hive might not be initialized yet — keep default (dark)
+      // Hive might not be initialized yet — keep default (light)
     }
   }
 

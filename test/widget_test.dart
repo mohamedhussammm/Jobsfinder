@@ -9,12 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:shiftsphere/main.dart';
+import 'package:bond/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const ProviderScope(child: ShiftSphereApp()));
+    await tester.pumpWidget(const ProviderScope(child: BondApp()));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

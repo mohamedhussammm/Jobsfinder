@@ -10,7 +10,6 @@ import 'users/admin_users_screen.dart';
 import 'applications/admin_applications_screen.dart';
 import 'events/admin_events_screen.dart';
 import '../../controllers/auth_controller.dart';
-import '../../core/theme/dark_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../common/skeleton_loader.dart';
 import 'package:go_router/go_router.dart';
@@ -38,7 +37,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         title: Text(
           _getTitle(_selectedIndex),
           style: AppTypography.headlineSmall.copyWith(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -62,9 +61,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Theme.of(context).cardColor,
-        selectedItemColor: DarkColors.primary,
-        unselectedItemColor: Colors.white60,
+        backgroundColor: AppColors.backgroundTertiary,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textSecondary,
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
@@ -99,14 +98,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).cardColor,
+        backgroundColor: AppColors.backgroundTertiary,
         title: const Text(
           'Sign Out',
-          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
         ),
         content: const Text(
           'Are you sure you want to sign out of your session?',
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -145,47 +144,106 @@ class _AdminOverviewTab extends ConsumerWidget {
     final analyticsAsync = ref.watch(analyticsKPIProvider);
     final pendingEventsAsync = ref.watch(pendingEventsAdminProvider);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // KPI Cards
-          analyticsAsync.when(
-            data: (kpi) => _buildKPICards(context, kpi),
-            loading: () => const _LoadingKPICards(),
-            error: (error, st) => Text(
-              'Error: $error',
-              style: const TextStyle(color: Colors.red),
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(analyticsKPIProvider);
+        ref.invalidate(pendingEventsAdminProvider);
+        return Future.delayed(const Duration(milliseconds: 500));
+      },
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // KPI Cards (Error handled in internal widget)
+            analyticsAsync.when(
+              data: (kpi) => _buildKPICards(context, kpi),
+              loading: () => const _LoadingKPICards(),
+              error: (error, st) => const SizedBox.shrink(), 
             ),
-          ),
-          const SizedBox(height: 24),
+            
+            // Repeat the error handling here or use a specific widget
+            if (analyticsAsync.hasError)
+               _buildKPIErrorState(context, ref, analyticsAsync.error.toString()),
 
-          // Pending Events Section
-          Text(
-            'Pending Event Requests',
-            style: AppTypography.titleLarge.copyWith(
-              color: Colors.white,
-              fontSize: ResponsiveHelper.sp(context, 18),
+            const SizedBox(height: 24),
+  
+            // Pending Events Section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Pending Event Requests',
+                  style: AppTypography.titleLarge.copyWith(
+                    color: AppColors.textPrimary,
+                    fontSize: ResponsiveHelper.sp(context, 18),
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 12),
+            pendingEventsAsync.when(
+              data: (events) => events.isEmpty
+                  ? _buildEmptyState(context)
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: events.length,
+                      itemBuilder: (context, index) {
+                        final event = events[index];
+                        return _buildPendingEventCard(context, ref, event);
+                      },
+                    ),
+              loading: () => const _LoadingEventList(),
+              error: (error, st) => Text(
+                'Error loading events: $error',
+                style: const TextStyle(color: AppColors.error),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKPIErrorState(BuildContext context, WidgetRef ref, String error) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: AppColors.errorLight.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.error),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  error,
+                  style: AppTypography.bodySmall.copyWith(color: AppColors.error),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
-          pendingEventsAsync.when(
-            data: (events) => events.isEmpty
-                ? _buildEmptyState(context)
-                : ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: events.length,
-                    itemBuilder: (context, index) {
-                      final event = events[index];
-                      return _buildPendingEventCard(context, ref, event);
-                    },
-                  ),
-            loading: () => const _LoadingEventList(),
-            error: (error, st) => Text(
-              'Error: $error',
-              style: const TextStyle(color: Colors.red),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                ref.invalidate(analyticsKPIProvider);
+              },
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Retry Analytics'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.error,
+                side: const BorderSide(color: AppColors.error),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
             ),
           ),
         ],
@@ -202,17 +260,17 @@ class _AdminOverviewTab extends ConsumerWidget {
               child: _KPICard(
                 title: 'Total Users',
                 value: kpi.totalUsers.toString(),
-                icon: Icons.people,
+                icon: Icons.people_outline_rounded,
                 color: AppColors.primary,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _KPICard(
-                title: 'Events',
+                title: 'Live Events',
                 value: kpi.totalEvents.toString(),
-                icon: Icons.event,
-                color: AppColors.success,
+                icon: Icons.auto_awesome_motion_rounded,
+                color: AppColors.primary,
               ),
             ),
           ],
@@ -224,17 +282,17 @@ class _AdminOverviewTab extends ConsumerWidget {
               child: _KPICard(
                 title: 'Applications',
                 value: kpi.totalApplications.toString(),
-                icon: Icons.description,
-                color: AppColors.info,
+                icon: Icons.assignment_turned_in_outlined,
+                color: AppColors.primary,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _KPICard(
-                title: 'Avg Rating',
+                title: 'Platform Rating',
                 value: kpi.averageRating.toStringAsFixed(1),
-                icon: Icons.star,
-                color: AppColors.warning,
+                icon: Icons.star_outline_rounded,
+                color: AppColors.primary,
               ),
             ),
           ],
@@ -245,24 +303,44 @@ class _AdminOverviewTab extends ConsumerWidget {
 
   Widget _buildEmptyState(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: AppColors.backgroundTertiary,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: DarkColors.borderColor.withValues(alpha: 0.1),
-          width: 1,
+          color: AppColors.border.withValues(alpha: 0.1),
         ),
       ),
       child: Column(
         children: [
-          const Icon(Icons.inbox, size: 48, color: AppColors.textTertiary),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.05),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.done_all_rounded,
+              size: 48,
+              color: AppColors.primary.withValues(alpha: 0.5),
+            ),
+          ),
           const SizedBox(height: 16),
           Text(
-            'No Pending Requests',
+            'All caught up!',
             style: AppTypography.titleMedium.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'No new event requests to review right now.',
+            style: AppTypography.bodySmall.copyWith(
               color: AppColors.textSecondary,
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -312,7 +390,7 @@ class _AdminOverviewTab extends ConsumerWidget {
                   height: 50,
                   margin: const EdgeInsets.only(right: 12),
                   decoration: BoxDecoration(
-                    color: DarkColors.surface,
+                    color: AppColors.backgroundTertiary,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.event, color: AppColors.gray400),
@@ -324,7 +402,7 @@ class _AdminOverviewTab extends ConsumerWidget {
                     Text(
                       event.title,
                       style: AppTypography.titleSmall.copyWith(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -379,10 +457,10 @@ class _KPICard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: AppColors.backgroundTertiary,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: DarkColors.borderColor.withValues(alpha: 0.1),
+          color: AppColors.border.withValues(alpha: 0.1),
           width: 1,
         ),
         boxShadow: [
@@ -408,7 +486,7 @@ class _KPICard extends StatelessWidget {
           Text(
             value,
             style: AppTypography.headlineSmall.copyWith(
-              color: Colors.white,
+              color: AppColors.textPrimary,
               fontWeight: FontWeight.bold,
               fontSize: ResponsiveHelper.sp(context, 20),
             ),

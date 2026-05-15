@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../controllers/admin_controller.dart';
 import '../../../core/theme/typography.dart';
-import '../../../core/theme/dark_colors.dart';
+import '../../../core/theme/colors.dart';
 import '../../../core/utils/responsive.dart';
 import '../../common/skeleton_loader.dart';
 import 'package:intl/intl.dart';
@@ -36,7 +36,7 @@ class _AdminApplicationsScreenState
                 child: Text(
                   'Application Management',
                   style: AppTypography.titleLarge.copyWith(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontSize: ResponsiveHelper.sp(context, 20),
                   ),
                   maxLines: 1,
@@ -67,10 +67,10 @@ class _AdminApplicationsScreenState
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: DarkColors.borderColor.withValues(alpha: 0.5),
+                  color: AppColors.border.withValues(alpha: 0.5),
                 ),
               ),
               child: applicationsAsync.when(
@@ -79,39 +79,39 @@ class _AdminApplicationsScreenState
                     return const Center(
                       child: Text(
                         'No applications found',
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(color: AppColors.textSecondary),
                       ),
                     );
                   }
                   return ListView.separated(
                     itemCount: apps.length,
                     separatorBuilder: (_, i) => Divider(
-                      color: DarkColors.borderColor.withValues(alpha: 0.2),
+                      color: AppColors.border.withValues(alpha: 0.2),
                       height: 1,
                     ),
                     itemBuilder: (context, index) {
                       final app = apps[index];
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: DarkColors.primary.withValues(
+                          backgroundColor: AppColors.primary.withValues(
                             alpha: 0.1,
                           ),
                           child: Icon(
                             Icons.description,
-                            color: DarkColors.primary,
+                            color: AppColors.primary,
                           ),
                         ),
                         title: Text(
                           'Application #${app.id.substring(0, 8)}',
                           style: AppTypography.bodyMedium.copyWith(
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         subtitle: Text(
                           'User ID: ${app.userId.substring(0, 8)}... • ${_dateFormatter.format(app.appliedAt)}',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.5),
+                            color: AppColors.textSecondary,
                             fontSize: 12,
                           ),
                         ),
@@ -132,7 +132,7 @@ class _AdminApplicationsScreenState
                 error: (e, s) => Center(
                   child: Text(
                     'Error: $e',
-                    style: const TextStyle(color: DarkColors.error),
+                    style: const TextStyle(color: AppColors.error),
                   ),
                 ),
               ),
@@ -154,16 +154,16 @@ class _AdminApplicationsScreenState
         });
       },
       backgroundColor: Colors.transparent,
-      selectedColor: DarkColors.primary.withValues(alpha: 0.2),
-      checkmarkColor: DarkColors.primary,
+      selectedColor: AppColors.primary.withValues(alpha: 0.2),
+      checkmarkColor: AppColors.primary,
       labelStyle: TextStyle(
-        color: isSelected ? DarkColors.primary : Colors.white60,
+        color: isSelected ? AppColors.primary : AppColors.textSecondary,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
       side: BorderSide(
         color: isSelected
-            ? DarkColors.primary
-            : DarkColors.borderColor.withValues(alpha: 0.3),
+            ? AppColors.primary
+            : AppColors.border.withValues(alpha: 0.3),
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     );
@@ -173,18 +173,18 @@ class _AdminApplicationsScreenState
     Color color;
     switch (status) {
       case 'accepted':
-        color = DarkColors.success;
+        color = AppColors.success;
         break;
       case 'rejected':
       case 'declined':
-        color = DarkColors.error;
+        color = AppColors.error;
         break;
       case 'shortlisted':
       case 'invited':
-        color = DarkColors.warning;
+        color = AppColors.warning;
         break;
       default:
-        color = DarkColors.primary;
+        color = AppColors.primary;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

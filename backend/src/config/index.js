@@ -9,7 +9,7 @@ module.exports = {
   clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
 
   mongoose: {
-    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/shiftsphere',
+    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/bond',
     options: {
       // Mongoose 8 defaults are good, but we can add extras
     },
@@ -31,7 +31,7 @@ module.exports = {
         pass: process.env.SMTP_PASS,
       },
     },
-    from: process.env.EMAIL_FROM || 'ShiftSphere <noreply@shiftsphere.com>',
+    from: process.env.EMAIL_FROM || 'BOND <noreply@bond.com>',
   },
 
   storage: {
@@ -47,9 +47,9 @@ module.exports = {
   },
 
   admin: {
-    email: process.env.ADMIN_EMAIL || 'admin@shiftsphere.com',
+    email: process.env.ADMIN_EMAIL || 'admin@bond.com',
     password: process.env.ADMIN_PASSWORD || 'Admin@123456',
-    name: process.env.ADMIN_NAME || 'System Admin',
+    name: process.env.ADMIN_NAME || 'BOND Admin',
   },
 
   google: {

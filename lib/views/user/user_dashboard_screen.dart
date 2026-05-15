@@ -57,10 +57,10 @@ class UserDashboardScreen extends ConsumerWidget {
                           children: [
                             CircleAvatar(
                               radius: ResponsiveHelper.avatarRadius(context),
-                              backgroundColor: Colors.white24,
+                              backgroundColor: AppColors.textHint,
                               child: Icon(
                                 Icons.person,
-                                color: Colors.white,
+                                color: AppColors.textPrimary,
                                 size: ResponsiveHelper.sp(context, 28),
                               ),
                             ),
@@ -71,14 +71,14 @@ class UserDashboardScreen extends ConsumerWidget {
                                 Text(
                                   'Welcome back,',
                                   style: TextStyle(
-                                    color: Colors.white70,
+                                    color: AppColors.textSecondary,
                                     fontSize: ResponsiveHelper.sp(context, 14),
                                   ),
                                 ),
                                 Text(
                                   currentUser.name ?? 'User',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.textPrimary,
                                     fontSize: ResponsiveHelper.sp(context, 22),
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -97,7 +97,7 @@ class UserDashboardScreen extends ConsumerWidget {
                               },
                               icon: const Icon(
                                 Icons.notifications_outlined,
-                                color: Colors.white,
+                                color: AppColors.textPrimary,
                               ),
                               iconSize: ResponsiveHelper.sp(context, 28),
                             ),
@@ -115,7 +115,7 @@ class UserDashboardScreen extends ConsumerWidget {
                                         child: Text(
                                           count > 9 ? '9+' : '$count',
                                           style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.textPrimary,
                                             fontSize: ResponsiveHelper.sp(
                                               context,
                                               10,
@@ -158,7 +158,7 @@ class UserDashboardScreen extends ConsumerWidget {
                             Text(
                               '${currentUser.ratingAvg.toStringAsFixed(1)} Rating',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.textPrimary,
                                 fontSize: ResponsiveHelper.sp(context, 14),
                                 fontWeight: FontWeight.w600,
                               ),
@@ -166,7 +166,7 @@ class UserDashboardScreen extends ConsumerWidget {
                             Text(
                               ' (${currentUser.ratingCount} reviews)',
                               style: TextStyle(
-                                color: Colors.white60,
+                                color: AppColors.textSecondary,
                                 fontSize: ResponsiveHelper.sp(context, 12),
                               ),
                             ),

@@ -46,6 +46,7 @@ class EventModel {
   final bool isUrgent;
   final String? companyName;
   final String? companyLogo;
+  final int appliedCount;
 
   EventModel({
     required this.id,
@@ -72,6 +73,7 @@ class EventModel {
     this.isUrgent = false,
     this.companyName,
     this.companyLogo,
+    this.appliedCount = 0,
   });
 
   // Status helpers
@@ -167,6 +169,7 @@ class EventModel {
       isUrgent: (json['isUrgent'] ?? json['is_urgent'] ?? false) == true,
       companyName: companyName,
       companyLogo: companyLogo,
+      appliedCount: json['applications'] != null ? (json['applications'] as num).toInt() : 0,
     );
   }
 
@@ -255,7 +258,7 @@ class EventModel {
 extension EventModelExtensions on EventModel {
   String get company => companyName ?? 'Company';
   DateTime get eventDate => startTime;
-  int get applicants => 0;
+  int get applicants => appliedCount;
   double get rating => 0.0;
 }
 

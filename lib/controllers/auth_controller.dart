@@ -132,13 +132,16 @@ class AuthController {
   Future<void> tryAutoLogin() async {
     try {
       await _tokenStorage.init();
-      if (!_tokenStorage.hasTokens) return;
+      if (!_tokenStorage.hasTokens) {
+        return;
+      }
 
       // Try to fetch current user profile with stored token
       final response = await _api.get(ApiEndpoints.me);
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final userData = response.data['data'] as Map<String, dynamic>;
+        final data = response.data['data'] as Map<String, dynamic>;
+        final userData = data['user'] as Map<String, dynamic>;
         final sanitizedData = _sanitizeUserData(userData, null);
         final userModel = UserModel.fromJson(sanitizedData);
 
@@ -404,12 +407,15 @@ class AuthController {
   /// Get current authenticated user
   Future<UserModel?> getCurrentUser() async {
     try {
-      if (!_tokenStorage.hasTokens) return null;
+      if (!_tokenStorage.hasTokens) {
+        return null;
+      }
 
       final response = await _api.get(ApiEndpoints.me);
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final userData = response.data['data'] as Map<String, dynamic>;
+        final data = response.data['data'] as Map<String, dynamic>;
+        final userData = data['user'] as Map<String, dynamic>;
         final sanitizedData = _sanitizeUserData(userData, null);
         return UserModel.fromJson(sanitizedData);
       }
@@ -460,20 +466,30 @@ class AuthController {
   }) async {
     try {
       final updateData = <String, dynamic>{};
-      if (fullName != null) updateData['name'] = fullName;
-      if (phone != null) updateData['phone'] = phone;
+      if (fullName != null) {
+        updateData['name'] = fullName;
+      }
+      if (phone != null) {
+        updateData['phone'] = phone;
+      }
       if (nationalIdNumber != null) {
         updateData['nationalIdNumber'] = nationalIdNumber;
       }
-      if (age != null) updateData['age'] = age;
+      if (age != null) {
+        updateData['age'] = age;
+      }
       if (nationalIdFrontUrl != null) {
         updateData['nationalIdFrontPath'] = nationalIdFrontUrl;
       }
       if (nationalIdBackUrl != null) {
         updateData['nationalIdBackPath'] = nationalIdBackUrl;
       }
-      if (avatarUrl != null) updateData['avatarPath'] = avatarUrl;
-      if (cvUrl != null) updateData['cvPath'] = cvUrl;
+      if (avatarUrl != null) {
+        updateData['avatarPath'] = avatarUrl;
+      }
+      if (cvUrl != null) {
+        updateData['cvPath'] = cvUrl;
+      }
 
       final response = await _api.patch(
         ApiEndpoints.updateProfile,
@@ -482,7 +498,8 @@ class AuthController {
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         // Refresh current user
-        final userData = response.data['data'] as Map<String, dynamic>;
+        final data = response.data['data'] as Map<String, dynamic>;
+        final userData = data['user'] as Map<String, dynamic>;
         final sanitizedData = _sanitizeUserData(userData, null);
         final userModel = UserModel.fromJson(sanitizedData);
         ref.read(currentUserProvider.notifier).state = userModel;
@@ -498,7 +515,9 @@ class AuthController {
   Future<bool> uploadAvatar() async {
     try {
       final user = ref.read(currentUserProvider);
-      if (user == null) return false;
+      if (user == null) {
+        return false;
+      }
 
       // Use a file picker or image picker here
       // For now, I'll implement this but it needs image_picker dependency
@@ -515,7 +534,9 @@ class AuthController {
   Future<bool> uploadCv() async {
     try {
       final user = ref.read(currentUserProvider);
-      if (user == null) return false;
+      if (user == null) {
+        return false;
+      }
       return true;
     } catch (_) {
       return false;
@@ -543,7 +564,9 @@ class AuthController {
   Future<bool> deleteAccount() async {
     try {
       final user = ref.read(currentUserProvider);
-      if (user == null) return false;
+      if (user == null) {
+        return false;
+      }
 
       await _api.delete(ApiEndpoints.userById(user.id));
 

@@ -6,14 +6,13 @@ import '../../models/user_model.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/rating_controller.dart';
 import '../../models/rating_model.dart';
-import '../../core/theme/dark_colors.dart';
+import '../../core/theme/colors.dart';
 import '../../core/utils/perf_log.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../services/file_upload_service.dart';
 import '../../core/utils/result.dart';
-import '../../core/theme/colors.dart';
 
 class UserProfileScreen extends ConsumerStatefulWidget {
   final String? userId;
@@ -52,33 +51,33 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
     if (user == null && userAsync?.isLoading == true) {
       return const Scaffold(
-        backgroundColor: DarkColors.background,
+        backgroundColor: AppColors.backgroundPrimary,
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (user == null) {
       return Scaffold(
-        backgroundColor: DarkColors.background,
+        backgroundColor: AppColors.backgroundPrimary,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
             onPressed: () => context.pop(),
           ),
         ),
         body: Center(
           child: Text(
             userAsync?.error?.toString() ?? 'User not found',
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: AppColors.textPrimary),
           ),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: DarkColors.background,
+      backgroundColor: AppColors.backgroundPrimary,
       body: CustomScrollView(
         slivers: [
           // Elegant Sliver App Bar
@@ -136,7 +135,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                       icon: Icons.folder_open,
                       subtitle: user.cvPath != null
                           ? 'CV Uploaded'
-                          : 'Upload your CV (Required)',
+                          : 'Upload your CV (Optional)',
                       trailing: user.cvPath != null
                           ? const Icon(
                               Icons.check_circle,
@@ -171,8 +170,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           context.go('/auth');
                         },
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: DarkColors.error,
-                          side: const BorderSide(color: DarkColors.error),
+                          foregroundColor: AppColors.error,
+                          side: const BorderSide(color: AppColors.error),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -383,7 +382,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           child: Text(
             'National ID Verification',
             style: AppTypography.bodySmall.copyWith(
-              color: DarkColors.textSecondary,
+              color: AppColors.textSecondary,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -422,12 +421,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       child: Container(
         height: 100,
         decoration: BoxDecoration(
-          color: DarkColors.surface,
+          color: AppColors.backgroundTertiary,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: path != null
                 ? AppColors.success.withValues(alpha: 0.3)
-                : Colors.white.withValues(alpha: 0.05),
+                : AppColors.border,
           ),
         ),
         child: Stack(
@@ -446,7 +445,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   ),
                   errorWidget: (context, url, error) => const Icon(
                     Icons.broken_image_outlined,
-                    color: DarkColors.textTertiary,
+                    color: AppColors.textHint,
                   ),
                 ),
               ),
@@ -468,13 +467,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   children: [
                     Icon(
                       path != null ? Icons.check_circle : Icons.add_a_photo,
-                      color: path != null ? AppColors.success : Colors.white54,
+                      color: path != null ? AppColors.success : AppColors.textSecondary,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       title,
                       style: AppTypography.labelSmall.copyWith(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontSize: 10,
                       ),
                     ),
@@ -493,18 +492,18 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       floating: true,
       pinned: true,
       elevation: 0,
-      backgroundColor: DarkColors.background,
+      backgroundColor: AppColors.backgroundPrimary,
       title: Text(
         isMe ? 'My Profile' : 'User Profile',
         style: AppTypography.titleLarge.copyWith(
-          color: Colors.white,
+          color: AppColors.textPrimary,
           fontSize: 18,
         ),
       ),
       leading: IconButton(
         icon: const Icon(
           Icons.arrow_back_ios_new_rounded,
-          color: Colors.white,
+          color: AppColors.textPrimary,
           size: 20,
         ),
         onPressed: () => isMe ? context.go('/') : context.pop(),
@@ -526,7 +525,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: DarkColors.accent.withValues(alpha: 0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   width: 2,
                 ),
               ),
@@ -536,7 +535,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   child: Container(
                     width: 108,
                     height: 108,
-                    color: DarkColors.surface,
+                    color: AppColors.backgroundTertiary,
                     child: avatarUrl != null
                         ? CachedNetworkImage(
                             imageUrl:
@@ -562,10 +561,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: DarkColors.accent,
+                      color: AppColors.primary,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: DarkColors.background,
+                        color: AppColors.backgroundPrimary,
                         width: 2.5,
                       ),
                       boxShadow: [
@@ -582,12 +581,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                             height: 14,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: AppColors.textPrimary,
                             ),
                           )
                         : const Icon(
                             Icons.camera_alt_rounded,
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             size: 16,
                           ),
                   ),
@@ -598,22 +597,26 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         const SizedBox(height: 16),
         Text(
           user.name ?? 'User',
-          style: AppTypography.titleLarge.copyWith(color: Colors.white),
+          style: AppTypography.titleLarge.copyWith(color: AppColors.textPrimary),
         ),
         const SizedBox(height: 4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.star, color: DarkColors.accent, size: 20),
-            const SizedBox(width: 4),
-            Text(
-              '${user.ratingAvg.toStringAsFixed(1)} (${user.ratingCount} reviews)',
-              style: AppTypography.bodySmall.copyWith(
-                color: DarkColors.textSecondary,
+        if (user.ratingCount > 0) ...[
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 20),
+              const SizedBox(width: 4),
+              Text(
+                '${user.ratingAvg.toStringAsFixed(1)} (${user.ratingCount} reviews)',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -623,7 +626,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       child: Text(
         user.name?[0].toUpperCase() ?? 'U',
         style: AppTypography.heading1.copyWith(
-          color: DarkColors.accent,
+          color: AppColors.primary,
           fontSize: 40,
         ),
       ),
@@ -632,21 +635,14 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
   Widget _buildCompletionCard(UserModel user) {
     final completion = user.profileCompletion;
+    final missing = _getMissingFields(user);
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            DarkColors.surface,
-            DarkColors.surface.withValues(alpha: 0.7),
-          ],
-        ),
+        color: AppColors.backgroundTertiary,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.05),
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -656,45 +652,78 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             children: [
               Text(
                 'Profile Strength',
-                style: AppTypography.bodyMedium.copyWith(
+                style: AppTypography.titleSmall.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: AppColors.textPrimary,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: DarkColors.accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${(completion * 100).toInt()}%',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: DarkColors.accent,
-                    fontWeight: FontWeight.bold,
-                  ),
+              Text(
+                '${(completion * 100).toInt()}%',
+                style: AppTypography.titleSmall.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
               value: completion,
-              backgroundColor: Colors.white.withValues(alpha: 0.05),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                DarkColors.accent,
-              ),
-              minHeight: 10,
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+              minHeight: 8,
             ),
           ),
+          if (missing.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(
+              'Complete these to reach 100%:',
+              style: AppTypography.labelSmall.copyWith(
+                color: AppColors.textSecondary,
+                fontSize: 10,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: missing.map((field) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+                ),
+                child: Text(
+                  field,
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 10,
+                  ),
+                ),
+              )).toList(),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  List<String> _getMissingFields(UserModel user) {
+    final List<String> missing = [];
+    if (user.name == null || user.name!.isEmpty) missing.add('Full Name');
+    if (user.phone == null || user.phone!.isEmpty) missing.add('Phone');
+    if (user.nationalIdNumber == null || user.nationalIdNumber!.isEmpty) {
+      missing.add('National ID');
+    }
+    if (user.age == null || user.age == 0) missing.add('Age');
+    if (user.avatarPath == null) missing.add('Photo');
+    if (user.cvPath == null) missing.add('CV');
+    if (user.nationalIdFrontPath == null) missing.add('ID Front');
+    if (user.nationalIdBackPath == null) missing.add('ID Back');
+    return missing;
   }
 
   Widget _buildCompletionHint(UserModel user) {
@@ -719,13 +748,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Row(
         children: [
-          const Icon(Icons.info_outline, color: DarkColors.accent, size: 16),
+          const Icon(Icons.info_outline, color: AppColors.primary, size: 16),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'Next step: $hint',
               style: AppTypography.labelSmall.copyWith(
-                color: DarkColors.textSecondary,
+                color: AppColors.textSecondary,
               ),
             ),
           ),
@@ -745,31 +774,31 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: DarkColors.surface,
+        color: AppColors.backgroundTertiary,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: AppColors.border),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: DarkColors.accent.withValues(alpha: 0.08),
+            color: AppColors.primary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: DarkColors.accent, size: 22),
+          child: Icon(icon, color: AppColors.primary, size: 22),
         ),
         title: Text(
           title,
           style: AppTypography.bodyMedium.copyWith(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.textPrimary,
           ),
         ),
         subtitle: Text(
           subtitle,
           style: AppTypography.labelSmall.copyWith(
-            color: DarkColors.textSecondary,
+            color: AppColors.textSecondary,
             fontSize: 11,
           ),
         ),
@@ -778,7 +807,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             const Icon(
               Icons.arrow_forward_ios_rounded,
               size: 14,
-              color: DarkColors.textTertiary,
+              color: AppColors.textHint,
             ),
         onTap: onTap,
       ),
@@ -800,7 +829,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           children: [
             Text(
               'Recent Reviews',
-              style: AppTypography.titleMedium.copyWith(color: Colors.white),
+              style: AppTypography.titleMedium.copyWith(color: AppColors.textPrimary),
             ),
             TextButton(
               onPressed: () {
@@ -809,7 +838,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               child: Text(
                 'View All',
                 style: AppTypography.labelSmall.copyWith(
-                  color: DarkColors.accent,
+                  color: AppColors.primary,
                 ),
               ),
             ),
@@ -822,7 +851,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               return Text(
                 'No reviews yet',
                 style: AppTypography.bodySmall.copyWith(
-                  color: DarkColors.textTertiary,
+                  color: AppColors.textHint,
                 ),
               );
             }
@@ -846,9 +875,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: DarkColors.surface,
+        color: AppColors.backgroundTertiary,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: DarkColors.borderColor),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -859,7 +888,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 children: List.generate(5, (i) {
                   return Icon(
                     i < rating.score ? Icons.star : Icons.star_border,
-                    color: DarkColors.accent,
+                    color: AppColors.primary,
                     size: 14,
                   );
                 }),
@@ -875,7 +904,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: AppTypography.bodySmall.copyWith(
-                color: DarkColors.textSecondary,
+                color: AppColors.textSecondary,
                 fontSize: 12,
               ),
             ),
@@ -903,7 +932,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     return Text(
       text,
       style: AppTypography.labelSmall.copyWith(
-        color: DarkColors.textTertiary,
+        color: AppColors.textHint,
         fontSize: 10,
       ),
     );

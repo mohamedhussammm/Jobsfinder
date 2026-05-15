@@ -20,12 +20,12 @@ class EventCard extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
         onTap: onTap,
-        child: GlassContainer(
-          blur: GlassConfig.blurMedium,
-          opacity: 0.2,
-          padding: EdgeInsets.zero,
-          borderRadius: BorderRadius.circular(GlassConfig.radiusLarge),
-          addBorder: true,
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.backgroundTertiary,
+            borderRadius: BorderRadius.circular(GlassConfig.radiusLarge),
+            border: Border.all(color: AppColors.border),
+          ),
           child: RepaintBoundary(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,7 +39,7 @@ class EventCard extends ConsumerWidget {
                       topLeft: Radius.circular(GlassConfig.radiusLarge),
                       topRight: Radius.circular(GlassConfig.radiusLarge),
                     ),
-                    color: Theme.of(context).cardColor,
+                    color: AppColors.backgroundTertiary,
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.only(
@@ -58,11 +58,11 @@ class EventCard extends ConsumerWidget {
                             ),
                             errorWidget: (context, url, error) => Icon(
                               Icons.image_not_supported,
-                              color: AppColors.gray400,
+                              color: AppColors.textHint,
                               size: 48,
                             ),
                           )
-                        : Icon(Icons.event, color: AppColors.gray400, size: 48),
+                        : Icon(Icons.event, color: AppColors.textHint, size: 48),
                   ),
                 ),
               // Event details
@@ -75,7 +75,7 @@ class EventCard extends ConsumerWidget {
                     Text(
                       event.title,
                       style: AppTypography.titleLarge.copyWith(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                       maxLines: 2,
@@ -90,7 +90,7 @@ class EventCard extends ConsumerWidget {
                       Text(
                         event.description!,
                         style: AppTypography.bodyMedium.copyWith(
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: AppColors.textSecondary,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -107,13 +107,13 @@ class EventCard extends ConsumerWidget {
                             Text(
                               'Start',
                               style: AppTypography.labelSmall.copyWith(
-                                color: AppColors.gray500,
+                                color: AppColors.textSecondary,
                               ),
                             ),
                             Text(
                               event.startTime.toDisplayDate(),
                               style: AppTypography.titleSmall.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
+                                color: AppColors.textPrimary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -127,13 +127,13 @@ class EventCard extends ConsumerWidget {
                               Text(
                                 'Capacity',
                                 style: AppTypography.labelSmall.copyWith(
-                                  color: AppColors.gray500,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                               Text(
                                 '${event.capacity} spots',
                                 style: AppTypography.titleSmall.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.9),
+                                  color: AppColors.textPrimary,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -156,7 +156,7 @@ class EventCard extends ConsumerWidget {
                             child: Text(
                               event.location!.address!,
                               style: AppTypography.bodySmall.copyWith(
-                                color: AppColors.gray600,
+                                color: AppColors.textSecondary,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -195,23 +195,23 @@ class EventCard extends ConsumerWidget {
 
     switch (status) {
       case 'published':
-        bgColor = AppColors.successGradient.colors[0].withValues(alpha: 0.15);
+        bgColor = AppColors.successLight;
         textColor = AppColors.success;
         icon = Icons.check_circle;
         break;
       case 'pending':
-        bgColor = AppColors.warning.withValues(alpha: 0.15);
+        bgColor = AppColors.warningLight;
         textColor = AppColors.warning;
         icon = Icons.schedule;
         break;
       case 'completed':
-        bgColor = AppColors.info.withValues(alpha: 0.15);
+        bgColor = AppColors.infoLight;
         textColor = AppColors.info;
         icon = Icons.task_alt;
         break;
       default:
-        bgColor = AppColors.gray200;
-        textColor = AppColors.gray600;
+        bgColor = AppColors.border;
+        textColor = AppColors.textSecondary;
         icon = Icons.info;
     }
 

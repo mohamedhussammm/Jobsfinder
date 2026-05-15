@@ -91,7 +91,7 @@ app.use('/api/upload', uploadRoutes);
 
 // ─── Health Check ───────────────────────────────
 app.get('/api/health', (_req, res) => {
-    res.json({ success: true, message: 'ShiftSphere API is running', timestamp: new Date() });
+    res.json({ success: true, message: 'BOND API is running', timestamp: new Date() });
 });
 
 // ─── 404 Handler ────────────────────────────────

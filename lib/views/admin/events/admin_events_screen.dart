@@ -10,7 +10,6 @@ import '../../../services/file_upload_service.dart';
 import '../../../models/event_model.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
-import '../../../core/theme/dark_colors.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/utils/result.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -67,7 +66,7 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
                 child: Text(
                   'Event Management',
                   style: AppTypography.titleLarge.copyWith(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontSize: ResponsiveHelper.sp(context, 20),
                   ),
                   maxLines: 1,
@@ -80,7 +79,7 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
                 icon: const Icon(Icons.add),
                 label: const Text('Create Event'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: DarkColors.primary,
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                 ),
               ),
@@ -104,10 +103,10 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: DarkColors.surface,
+                color: AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: DarkColors.borderColor.withValues(alpha: 0.1),
+                  color: AppColors.border.withValues(alpha: 0.1),
                   width: 1,
                 ),
               ),
@@ -118,7 +117,7 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
                       child: Text(
                         'No events found',
                         style: AppTypography.body1.copyWith(
-                          color: DarkColors.textTertiary,
+                          color: AppColors.textHint,
                         ),
                       ),
                     );
@@ -152,7 +151,7 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
                 error: (e, s) => Center(
                   child: Text(
                     'Error: $e',
-                    style: TextStyle(color: DarkColors.error),
+                    style: TextStyle(color: AppColors.error),
                   ),
                 ),
               ),
@@ -174,15 +173,15 @@ class _AdminEventsScreenState extends ConsumerState<AdminEventsScreen> {
         });
       },
       backgroundColor: Colors.transparent,
-      selectedColor: DarkColors.primary.withValues(alpha: 0.2),
-      checkmarkColor: DarkColors.primary,
+      selectedColor: AppColors.primary.withValues(alpha: 0.2),
+      checkmarkColor: AppColors.primary,
       labelStyle: TextStyle(
-        color: isSelected ? DarkColors.primary : Colors.white60,
+        color: isSelected ? AppColors.primary : AppColors.textSecondary,
       ),
       side: BorderSide(
         color: isSelected
-            ? DarkColors.primary
-            : DarkColors.borderColor.withValues(alpha: 0.3),
+            ? AppColors.primary
+            : AppColors.border.withValues(alpha: 0.3),
       ),
     );
   }
@@ -333,12 +332,12 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
       padding: const EdgeInsets.only(top: 16, bottom: 8),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: DarkColors.accent),
+          Icon(icon, size: 18, color: AppColors.primary),
           const SizedBox(width: 8),
           Text(
             title,
             style: const TextStyle(
-              color: Colors.white,
+              color: AppColors.textPrimary,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -351,7 +350,7 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: DarkColors.surface,
+      backgroundColor: AppColors.backgroundTertiary,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 520, maxHeight: 700),
@@ -362,27 +361,27 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(
-                color: DarkColors.accent.withOpacity(0.15),
+                color: AppColors.primary.withValues(alpha: 0.15),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(16),
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.event_available, color: DarkColors.accent),
+                  Icon(Icons.event_available, color: AppColors.primary),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
                       'Create & Publish Event',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white54),
+                    icon: const Icon(Icons.close, color: AppColors.textSecondary),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -396,11 +395,17 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                   horizontal: 24,
                   vertical: 8,
                 ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
+                      fillColor: AppColors.backgroundTertiary,
+                    ),
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                       // ── Basic Info ──
                       _sectionHeader('Basic Information', Icons.info_outline),
                       _CompanyDropdown(
@@ -460,7 +465,7 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                                 ),
                                 child: Text(
                                   '${_startDate.day}/${_startDate.month}/${_startDate.year}',
-                                  style: const TextStyle(color: Colors.white),
+                                  style: const TextStyle(color: AppColors.textPrimary),
                                 ),
                               ),
                             ),
@@ -482,7 +487,7 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                                 ),
                                 child: Text(
                                   _startTime.format(context),
-                                  style: const TextStyle(color: Colors.white),
+                                  style: const TextStyle(color: AppColors.textPrimary),
                                 ),
                               ),
                             ),
@@ -510,7 +515,7 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                                 ),
                                 child: Text(
                                   '${_endDate.day}/${_endDate.month}/${_endDate.year}',
-                                  style: const TextStyle(color: Colors.white),
+                                  style: const TextStyle(color: AppColors.textPrimary),
                                 ),
                               ),
                             ),
@@ -532,7 +537,7 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                                 ),
                                 child: Text(
                                   _endTime.format(context),
-                                  style: const TextStyle(color: Colors.white),
+                                  style: const TextStyle(color: AppColors.textPrimary),
                                 ),
                               ),
                             ),
@@ -573,10 +578,10 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                           height: 140,
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            color: DarkColors.accent.withOpacity(0.08),
+                            color: AppColors.primary.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: DarkColors.accent.withOpacity(0.3),
+                              color: AppColors.primary.withValues(alpha: 0.3),
                               width: 1.5,
                             ),
                           ),
@@ -593,7 +598,7 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                                           child: Text(
                                             'Error loading image',
                                             style: TextStyle(
-                                              color: DarkColors.error,
+                                              color: AppColors.error,
                                               fontSize: 10,
                                             ),
                                           ),
@@ -616,7 +621,7 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                                           ),
                                           child: const Icon(
                                             Icons.close,
-                                            color: Colors.white,
+                                            color: AppColors.textPrimary,
                                             size: 16,
                                           ),
                                         ),
@@ -685,13 +690,13 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                                           Icon(
                                             Icons.cloud_upload_outlined,
                                             size: 36,
-                                            color: DarkColors.accent,
+                                            color: AppColors.primary,
                                           ),
                                           const SizedBox(height: 8),
                                           Text(
                                             'Tap to upload event image',
                                             style: TextStyle(
-                                              color: DarkColors.accent,
+                                              color: AppColors.primary,
                                               fontSize: 13,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -700,9 +705,7 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                                           Text(
                                             'JPG, PNG up to 10MB',
                                             style: TextStyle(
-                                              color: Colors.white.withOpacity(
-                                                0.4,
-                                              ),
+                                              color: AppColors.textTertiary,
                                               fontSize: 11,
                                             ),
                                           ),
@@ -738,7 +741,7 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                             child: TextFormField(
                               controller: _salaryController,
                               decoration: const InputDecoration(
-                                labelText: 'Salary (SAR)',
+                                labelText: 'Salary (EGP)',
                                 prefixIcon: Icon(Icons.attach_money),
                               ),
                               keyboardType: TextInputType.number,
@@ -848,10 +851,10 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                                   deleteIcon: const Icon(Icons.close, size: 16),
                                   onDeleted: () =>
                                       setState(() => _tags.remove(tag)),
-                                  backgroundColor: DarkColors.accent
-                                      .withOpacity(0.2),
+                                  backgroundColor: AppColors.primary
+                                      .withValues(alpha: 0.2),
                                   labelStyle: TextStyle(
-                                    color: DarkColors.accent,
+                                    color: AppColors.primary,
                                   ),
                                 ),
                               )
@@ -863,7 +866,7 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                         title: const Text('🔥 Urgent Hiring'),
                         subtitle: const Text('Mark this event as urgent'),
                         value: _isUrgent,
-                        activeThumbColor: DarkColors.accent,
+                        activeThumbColor: AppColors.primary,
                         contentPadding: EdgeInsets.zero,
                         onChanged: (v) => setState(() => _isUrgent = v),
                       ),
@@ -881,29 +884,19 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                 ),
               ),
             ),
+            ),
 
             // ─── Actions ───────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Expanded(
-                    child: Text(
-                      widget.initialEvent == null
-                          ? 'Create & Publish Event'
-                          : 'Edit ${widget.initialEvent!.title}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Cancel'),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   ElevatedButton.icon(
                     icon: Icon(
                       widget.initialEvent == null ? Icons.publish : Icons.save,
@@ -1047,7 +1040,7 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                                     ? 'Event "${event.title}" created!'
                                     : 'Event "${event.title}" updated!',
                               ),
-                              backgroundColor: DarkColors.success,
+                              backgroundColor: AppColors.success,
                             ),
                           );
                         },
@@ -1055,7 +1048,7 @@ class _EventFormDialogState extends ConsumerState<_EventFormDialog> {
                           messenger.showSnackBar(
                             SnackBar(
                               content: Text('Failed: $error'),
-                              backgroundColor: DarkColors.error,
+                              backgroundColor: AppColors.error,
                             ),
                           );
                         },
@@ -1094,7 +1087,6 @@ class _CategoryDropdown extends ConsumerWidget {
           isExpanded: true,
           decoration: const InputDecoration(
             labelText: 'Category',
-            border: OutlineInputBorder(),
           ),
           items: [
             const DropdownMenuItem(value: null, child: Text('No category')),
@@ -1139,7 +1131,6 @@ class _CompanyDropdown extends ConsumerWidget {
           isExpanded: true,
           decoration: const InputDecoration(
             labelText: 'Company Organizer *',
-            border: OutlineInputBorder(),
           ),
           items: companies
               .map(
@@ -1185,10 +1176,10 @@ class _AssignTeamLeaderDialogState
     );
 
     return AlertDialog(
-      backgroundColor: DarkColors.surface,
+      backgroundColor: AppColors.backgroundTertiary,
       title: Text(
         'Manage Team Leaders\n${widget.event.title}',
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: AppColors.textPrimary),
       ),
       content: SizedBox(
         width: 400,
@@ -1216,7 +1207,7 @@ class _AssignTeamLeaderDialogState
                         ),
                         trailing: IconButton(
                           icon: const Icon(Icons.remove_circle_outline),
-                          color: DarkColors.error,
+                          color: AppColors.error,
                           onPressed: () => _removeLeader(leader.id),
                         ),
                       );
@@ -1294,7 +1285,7 @@ class _AssignTeamLeaderDialogState
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Team leader assigned successfully'),
-              backgroundColor: DarkColors.success,
+              backgroundColor: AppColors.success,
             ),
           );
         }
@@ -1304,7 +1295,7 @@ class _AssignTeamLeaderDialogState
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to assign: ${e.message}'),
-              backgroundColor: DarkColors.error,
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -1356,7 +1347,6 @@ class _UserDropdown extends ConsumerWidget {
           hint: const Text('Select Team Leader'),
           isExpanded: true,
           decoration: const InputDecoration(
-            border: OutlineInputBorder(),
             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           items: teamLeaders.map((user) {
@@ -1438,7 +1428,7 @@ class _AdminEventCard extends ConsumerWidget {
                   Text(
                     event.title,
                     style: AppTypography.body1.copyWith(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                     maxLines: 2,
@@ -1448,7 +1438,7 @@ class _AdminEventCard extends ConsumerWidget {
                   Text(
                     '${event.companyId} • ${event.startTime.toString().split(' ')[0]}',
                     style: TextStyle(
-                      color: DarkColors.textTertiary,
+                      color: AppColors.textHint,
                       fontSize: 12,
                     ),
                     maxLines: 1,
@@ -1463,8 +1453,8 @@ class _AdminEventCard extends ConsumerWidget {
             // Actions
             if (isMobile)
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Colors.white70),
-                color: DarkColors.surface,
+                icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+                color: AppColors.backgroundTertiary,
                 onSelected: (value) {
                   switch (value) {
                     case 'approve':
@@ -1491,12 +1481,12 @@ class _AdminEventCard extends ConsumerWidget {
                       child: ListTile(
                         leading: Icon(
                           Icons.check_circle,
-                          color: DarkColors.success,
+                          color: AppColors.success,
                           size: 20,
                         ),
                         title: Text(
                           'Approve',
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppColors.textPrimary),
                         ),
                         dense: true,
                       ),
@@ -1506,12 +1496,12 @@ class _AdminEventCard extends ConsumerWidget {
                       child: ListTile(
                         leading: Icon(
                           Icons.cancel,
-                          color: DarkColors.error,
+                          color: AppColors.error,
                           size: 20,
                         ),
                         title: Text(
                           'Reject',
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppColors.textPrimary),
                         ),
                         dense: true,
                       ),
@@ -1522,12 +1512,12 @@ class _AdminEventCard extends ConsumerWidget {
                     child: ListTile(
                       leading: Icon(
                         Icons.edit_outlined,
-                        color: DarkColors.accent,
+                        color: AppColors.primary,
                         size: 20,
                       ),
                       title: Text(
                         'Edit',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: AppColors.textPrimary),
                       ),
                       dense: true,
                     ),
@@ -1537,12 +1527,12 @@ class _AdminEventCard extends ConsumerWidget {
                     child: ListTile(
                       leading: Icon(
                         Icons.person_add_alt_1,
-                        color: DarkColors.accent,
+                        color: AppColors.primary,
                         size: 20,
                       ),
                       title: Text(
                         'Assign TL',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: AppColors.textPrimary),
                       ),
                       dense: true,
                     ),
@@ -1553,12 +1543,12 @@ class _AdminEventCard extends ConsumerWidget {
                     child: ListTile(
                       leading: Icon(
                         Icons.delete_outline,
-                        color: DarkColors.error,
+                        color: AppColors.error,
                         size: 20,
                       ),
                       title: Text(
                         'Delete',
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(color: AppColors.textSecondary),
                       ),
                       dense: true,
                     ),
@@ -1575,7 +1565,7 @@ class _AdminEventCard extends ConsumerWidget {
                     IconButton(
                       icon: const Icon(
                         Icons.check_circle,
-                        color: DarkColors.success,
+                        color: AppColors.success,
                         size: 20,
                       ),
                       onPressed: onApprove,
@@ -1584,7 +1574,7 @@ class _AdminEventCard extends ConsumerWidget {
                     IconButton(
                       icon: const Icon(
                         Icons.cancel,
-                        color: DarkColors.error,
+                        color: AppColors.error,
                         size: 20,
                       ),
                       onPressed: onReject,
@@ -1594,7 +1584,7 @@ class _AdminEventCard extends ConsumerWidget {
                   IconButton(
                     icon: const Icon(
                       Icons.edit_outlined,
-                      color: DarkColors.accent,
+                      color: AppColors.primary,
                       size: 20,
                     ),
                     onPressed: onEdit,
@@ -1603,7 +1593,7 @@ class _AdminEventCard extends ConsumerWidget {
                   IconButton(
                     icon: const Icon(
                       Icons.person_add_alt_1,
-                      color: DarkColors.accent,
+                      color: AppColors.primary,
                       size: 20,
                     ),
                     onPressed: onAssignTL,
@@ -1612,7 +1602,7 @@ class _AdminEventCard extends ConsumerWidget {
                   IconButton(
                     icon: const Icon(
                       Icons.delete_outline,
-                      color: DarkColors.error,
+                      color: AppColors.error,
                       size: 20,
                     ),
                     onPressed: onDelete,
@@ -1636,16 +1626,16 @@ class _AdminStatusBadge extends StatelessWidget {
     Color color;
     switch (status) {
       case 'published':
-        color = DarkColors.success;
+        color = AppColors.success;
         break;
       case 'pending':
-        color = DarkColors.warning;
+        color = AppColors.warning;
         break;
       case 'cancelled':
-        color = DarkColors.error;
+        color = AppColors.error;
         break;
       default:
-        color = DarkColors.textSecondary;
+        color = AppColors.textSecondary;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

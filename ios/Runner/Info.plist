@@ -52,7 +52,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>io.supabase.shiftsphere</string>
+				<string>com.bond.app</string>
 			</array>
 		</dict>
 	</array>

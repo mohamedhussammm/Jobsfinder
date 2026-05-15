@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'colors.dart';
-import 'dark_colors.dart';
 import 'shadows.dart';
 
 /// Glassmorphic widget styling utilities
 class GlassConfig {
+  const GlassConfig();
+
   // Blur amounts
   static const double blurSmall = 4;
-  static const double blurMedium = 8;
+  static const double blurMedium = 6;
   static const double blurLarge = 12;
   static const double blurXL = 16;
 
@@ -26,17 +27,17 @@ class GlassConfig {
 
   /// Create a glassmorphic container decoration
   static BoxDecoration glassDecoration({
-    Color glassColor = const Color.fromARGB(255, 255, 255, 255),
-    double opacity = 0.15,
+    Color glassColor = AppColors.glassBackground,
+    double? opacity, // unused now, relying on glassBackground's alpha
     double blur = blurMedium,
     BorderRadius? borderRadius,
     bool addBorder = true,
-    Color borderColor = const Color.fromARGB(50, 255, 255, 255),
+    Color borderColor = AppColors.glassBorder,
     double borderWidth = 1.5,
   }) {
     return BoxDecoration(
       borderRadius: borderRadius ?? BorderRadius.circular(radiusLarge),
-      color: glassColor.withValues(alpha: opacity),
+      color: glassColor,
       border: addBorder
           ? Border.all(color: borderColor, width: borderWidth)
           : null,
@@ -60,7 +61,6 @@ class GlassConfig {
     );
   }
 
-  /// TEAL-TINTED GLASS — matches reference designs
   static BoxDecoration tealGlassDecoration({
     double opacity = 0.08,
     BorderRadius? borderRadius,
@@ -68,13 +68,13 @@ class GlassConfig {
   }) {
     return BoxDecoration(
       borderRadius: borderRadius ?? BorderRadius.circular(radiusLarge),
-      color: DarkColors.surface,
+      color: AppColors.backgroundSecondary,
       border: addBorder
-          ? Border.all(color: DarkColors.borderColor, width: 1)
+          ? Border.all(color: AppColors.border, width: 0.5)
           : null,
       boxShadow: [
         BoxShadow(
-          color: DarkColors.primary.withValues(alpha: 0.05),
+          color: AppColors.primary.withValues(alpha: 0.05),
           blurRadius: 20,
           offset: const Offset(0, 4),
         ),
@@ -82,20 +82,19 @@ class GlassConfig {
     );
   }
 
-  /// GRADIENT CARD — navy to darker navy
   static BoxDecoration cardGradientDecoration({
     BorderRadius? borderRadius,
     bool addBorder = true,
   }) {
     return BoxDecoration(
       borderRadius: borderRadius ?? BorderRadius.circular(radiusLarge),
-      gradient: DarkColors.cardGradient,
+      color: AppColors.backgroundSecondary,
       border: addBorder
-          ? Border.all(color: DarkColors.borderColor, width: 1)
+          ? Border.all(color: AppColors.border, width: 0.5)
           : null,
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.3),
+          color: AppColors.primary.withValues(alpha: 0.05),
           blurRadius: 16,
           offset: const Offset(0, 4),
         ),
@@ -103,23 +102,22 @@ class GlassConfig {
     );
   }
 
-  /// HERO GRADIENT — for prominent cards
   static BoxDecoration heroGradientDecoration({
     BorderRadius? borderRadius,
     bool addBorder = true,
   }) {
     return BoxDecoration(
       borderRadius: borderRadius ?? BorderRadius.circular(radiusLarge),
-      gradient: DarkColors.heroGradient,
+      color: AppColors.backgroundSecondary,
       border: addBorder
           ? Border.all(
-              color: DarkColors.primary.withValues(alpha: 0.3),
-              width: 1.5,
+              color: AppColors.border,
+              width: 0.5,
             )
           : null,
       boxShadow: [
         BoxShadow(
-          color: DarkColors.primary.withValues(alpha: 0.15),
+          color: AppColors.primary.withValues(alpha: 0.15),
           blurRadius: 24,
           offset: const Offset(0, 8),
         ),
@@ -235,7 +233,7 @@ class GlassContainer extends StatelessWidget {
         borderRadius:
             borderRadius ?? BorderRadius.circular(GlassConfig.radiusLarge),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+          filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
           child: _buildContainer(effectiveDecoration),
         ),
       );

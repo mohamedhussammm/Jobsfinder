@@ -180,6 +180,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const UserRatingsScreen(),
       ),
       GoRoute(
+        path: '/ratings/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId'];
+          return UserRatingsScreen(userId: userId);
+        },
+      ),
+      GoRoute(
         path: '/history',
         builder: (context, state) => const UserHistoryScreen(),
       ),

@@ -9,7 +9,6 @@ import 'package:image_picker/image_picker.dart';
 import '../../services/file_upload_service.dart';
 import '../../core/utils/result.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/theme/dark_colors.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -81,7 +80,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       child: Container(
                         width: ResponsiveHelper.sp(context, 100),
                         height: ResponsiveHelper.sp(context, 100),
-                        color: DarkColors.surface,
+                        color: AppColors.backgroundTertiary,
                         child: currentUser?.avatarPath != null
                             ? CachedNetworkImage(
                                 imageUrl:
@@ -100,7 +99,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             : Icon(
                                 Icons.person,
                                 size: ResponsiveHelper.sp(context, 48),
-                                color: DarkColors.accent,
+                                color: AppColors.primary,
                               ),
                       ),
                     ),
@@ -109,17 +108,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       right: 0,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: DarkColors.accent,
+                          color: AppColors.primary,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: DarkColors.background,
+                            color: AppColors.backgroundPrimary,
                             width: 2,
                           ),
                         ),
                         child: IconButton(
                           icon: const Icon(
                             Icons.camera_alt,
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             size: 18,
                           ),
                           onPressed: _isUploading ? null : _pickAndUploadAvatar,
@@ -162,8 +161,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _phoneController,
-                decoration: _inputDecoration('Phone', Icons.phone_outlined),
+                decoration: _inputDecoration('Phone (e.g., 01150565129)', Icons.phone_outlined),
                 keyboardType: TextInputType.phone,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Phone number is required';
+                  if (!RegExp(r'^01[0125][0-9]{8}$').hasMatch(v.trim())) {
+                    return 'Enter a valid Egyptian phone (01XXXXXXXXX)';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
 
@@ -172,9 +178,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _nationalIdController,
-                decoration: _inputDecoration('ID Number', Icons.badge_outlined),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'National ID is required' : null,
+                decoration: _inputDecoration('14 digits required', Icons.badge_outlined),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'National ID is required';
+                  if (!RegExp(r'^[0-9]{14}$').hasMatch(v.trim())) {
+                    return 'ID must be exactly 14 digits';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
 
@@ -186,7 +197,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 decoration: _inputDecoration('Minimum 16', Icons.cake_outlined),
                 keyboardType: TextInputType.number,
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Age is required';
+                  if (v == null || v.isEmpty) return null; // Optional
                   final age = int.tryParse(v);
                   if (age == null || age < 16) return 'Must be 16 or older';
                   return null;
@@ -204,7 +215,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   vertical: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
+                  color: AppColors.backgroundTertiary,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.08),
@@ -221,7 +232,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       (currentUser?.role ?? 'User').toUpperCase(),
                       style: TextStyle(
                         fontSize: ResponsiveHelper.sp(context, 14),
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -248,7 +259,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                           ),
                         )
                       : Text(
@@ -276,7 +287,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         style: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: ResponsiveHelper.sp(context, 14),
-          color: Colors.white.withValues(alpha: 0.9),
+          color: AppColors.textPrimary,
         ),
       ),
     );
@@ -295,7 +306,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       child: Text(
         user.name?[0].toUpperCase() ?? 'U',
         style: TextStyle(
-          color: DarkColors.accent,
+          color: AppColors.primary,
           fontSize: ResponsiveHelper.sp(context, 40),
           fontWeight: FontWeight.bold,
         ),
@@ -398,20 +409,25 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated successfully!'),
-          backgroundColor: AppColors.success,
-        ),
-      );
-      Navigator.of(context).pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated successfully!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        Navigator.of(context).pop();
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to update profile'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Update failed. Ensure National ID/Phone are unique.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 }

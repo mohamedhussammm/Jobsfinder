@@ -55,9 +55,9 @@ const register = async ({ email, password, name, nationalIdNumber, role, phone }
         const verifyUrl = `${config.clientUrl}/verify-email/${verifyToken}`;
         await sendEmail({
             to: user.email,
-            subject: 'ShiftSphere - Verify Your Email',
-            text: `Welcome to ShiftSphere! Please verify your email by visiting: ${verifyUrl}`,
-            html: `<h2>Welcome to ShiftSphere!</h2><p>Please verify your email by clicking the link below:</p><a href="${verifyUrl}">Verify Email</a><p>This link expires in 24 hours.</p>`,
+            subject: 'BOND - Verify Your Email',
+            text: `Welcome to BOND! Please verify your email by visiting: ${verifyUrl}`,
+            html: `<h2>Welcome to BOND!</h2><p>Please verify your email by clicking the link below:</p><a href="${verifyUrl}">Verify Email</a><p>This link expires in 24 hours.</p>`,
         });
     } catch (_err) {
         // Don't block registration if email fails
@@ -173,7 +173,7 @@ const forgotPassword = async (email) => {
     const resetUrl = `${config.clientUrl}/reset-password/${resetToken}`;
     await sendEmail({
         to: user.email,
-        subject: 'ShiftSphere - Reset Your Password',
+        subject: 'BOND - Reset Your Password',
         text: `Reset your password by visiting: ${resetUrl} (expires in 1 hour)`,
         html: `<h2>Password Reset</h2><p>Click below to reset your password:</p><a href="${resetUrl}">Reset Password</a><p>This link expires in 1 hour.</p>`,
     });

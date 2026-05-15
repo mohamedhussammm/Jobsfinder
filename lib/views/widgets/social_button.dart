@@ -25,7 +25,7 @@ class SocialButton extends StatelessWidget {
           color: isOutlined ? Colors.transparent : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: isOutlined
-              ? Border.all(color: Colors.white.withValues(alpha: 0.3))
+              ? Border.all(color: AppColors.textHint)
               : null,
           boxShadow: isOutlined
               ? null
