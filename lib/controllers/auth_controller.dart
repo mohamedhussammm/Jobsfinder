@@ -500,6 +500,7 @@ class AuthController {
         // Refresh current user
         final data = response.data['data'] as Map<String, dynamic>;
         final userData = data['user'] as Map<String, dynamic>;
+        print('DEBUG: Updated User Data from API: $userData');
         final sanitizedData = _sanitizeUserData(userData, null);
         final userModel = UserModel.fromJson(sanitizedData);
         ref.read(currentUserProvider.notifier).state = userModel;

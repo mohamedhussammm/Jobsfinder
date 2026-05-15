@@ -11,6 +11,7 @@ import '../../core/utils/perf_log.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../services/file_upload_service.dart';
 import '../../core/utils/result.dart';
 
@@ -137,13 +138,22 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           ? 'CV Uploaded'
                           : 'Upload your CV (Optional)',
                       trailing: user.cvPath != null
-                          ? const Icon(
-                              Icons.check_circle,
-                              color: AppColors.success,
-                              size: 20,
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove_red_eye, color: AppColors.primary),
+                                  onPressed: () => _viewCv(user.cvPath!),
+                                ),
+                                if (isMe)
+                                  IconButton(
+                                    icon: const Icon(Icons.upload_file, color: AppColors.primary),
+                                    onPressed: _pickAndUploadCv,
+                                  ),
+                              ],
                             )
                           : null,
-                      onTap: isMe ? _pickAndUploadCv : () {},
+                      onTap: user.cvPath == null && isMe ? _pickAndUploadCv : () {},
                     ),
 
                     if (isMe) ...[
@@ -314,6 +324,26 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  Future<void> _viewCv(String path) async {
+    final urlStr = ref.read(fileUploadServiceProvider).getPublicUrl(path);
+    final url = Uri.parse(urlStr);
+    try {
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open CV')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening CV: $e')),
+        );
+      }
     }
   }
 

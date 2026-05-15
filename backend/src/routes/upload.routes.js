@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
-const { uploadAvatar, uploadCV, uploadEventImage } = require('../middleware/upload');
+const { uploadAvatar, uploadCV, uploadEventImage, uploadIdCard } = require('../middleware/upload');
 const { uploadFile, getSignedUrl } = require('../utils/storage');
 const asyncHandler = require('../utils/asyncHandler');
 const AppError = require('../utils/AppError');
@@ -32,12 +32,16 @@ router.post(
 // ─── Upload CV ──────────────────────────────────
 router.post(
     '/cv',
-    authorize('normal'),
+    authorize('normal', 'team_leader', 'admin'),
     uploadCV,
     asyncHandler(async (req, res) => {
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
 
         const filePath = await uploadFile(req.file.buffer, req.file.originalname, 'cvs', req.file.mimetype);
+
+        // Update user's cvPath
+        await User.findByIdAndUpdate(req.user._id, { cvPath: filePath });
+
         res.json({ success: true, data: { filePath } });
     })
 );
@@ -58,7 +62,7 @@ router.post(
 // ─── Upload National ID Front ───────────────────
 router.post(
     '/id-front',
-    authorize('normal'),
+    authorize('normal', 'team_leader', 'admin'),
     uploadIdCard,
     asyncHandler(async (req, res) => {
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
@@ -75,7 +79,7 @@ router.post(
 // ─── Upload National ID Back ────────────────────
 router.post(
     '/id-back',
-    authorize('normal'),
+    authorize('normal', 'team_leader', 'admin'),
     uploadIdCard,
     asyncHandler(async (req, res) => {
         if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
